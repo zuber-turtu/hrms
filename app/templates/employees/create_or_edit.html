@@ -3,11 +3,11 @@
 {% block header_title %}{{ 'Edit Employee' if employee else 'Add Employee' }}{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 max-w-3xl">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 max-w-4xl">
     <div class="p-6 border-b border-gray-100 flex justify-between items-center">
         <div>
             <h3 class="text-lg font-semibold text-gray-800">{{ 'Edit Employee Details' if employee else 'New Employee Onboarding' }}</h3>
-            <p class="text-sm text-gray-500 mt-1">Fill in the personal, professional, and salary information.</p>
+            <p class="text-sm text-gray-500 mt-1">Fill in the personal, professional, bank, and salary details.</p>
         </div>
         <a href="/employees" class="text-sm text-gray-500 hover:text-gray-700 flex items-center">
             <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back
@@ -31,13 +31,27 @@
                         <input type="text" name="last_name" id="last_name" value="{{ employee.last_name if employee else '' }}" required
                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     </div>
-                    <div class="md:col-span-2">
+                    <div>
                         <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
                         <input type="email" name="email" id="email" value="{{ employee.email if employee else '' }}" required
                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     </div>
+                    <div>
+                        <label for="phone_number" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <input type="text" name="phone_number" id="phone_number" value="{{ employee.phone_number if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="gender" class="block text-sm font-medium text-gray-700">Gender</label>
+                        <select name="gender" id="gender" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="" {% if not employee or not employee.gender %}selected{% endif %}>Select Gender</option>
+                            <option value="Male" {% if employee and employee.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if employee and employee.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if employee and employee.gender == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
                     {% if not employee %}
-                    <div class="md:col-span-2">
+                    <div>
                         <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
                         <input type="password" name="password" id="password" required
                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
@@ -46,23 +60,50 @@
                 </div>
             </div>
 
-            <!-- Job Info -->
-            <div class="pt-2 border-t border-gray-100">
-                <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Job Details</h4>
+            <!-- Address & Location -->
+            <div class="pt-4 border-t border-gray-100">
+                <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Address & Location</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="home_address" class="block text-sm font-medium text-gray-700">Home Address</label>
+                        <input type="text" name="home_address" id="home_address" value="{{ employee.home_address if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="city" class="block text-sm font-medium text-gray-700">City</label>
+                        <input type="text" name="city" id="city" value="{{ employee.city if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="state" class="block text-sm font-medium text-gray-700">State</label>
+                        <input type="text" name="state" id="state" value="{{ employee.state if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
+                        <input type="text" name="country" id="country" value="{{ employee.country if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Education & Job Info -->
+            <div class="pt-4 border-t border-gray-100">
+                <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Job & Education Details</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="department" class="block text-sm font-medium text-gray-700">Department</label>
                         <input type="text" name="department" id="department" value="{{ employee.department if employee else '' }}"
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            {% if user.role not in ['super_admin', 'hr_admin'] %}disabled class="mt-1 block w-full border border-gray-300 bg-gray-100 text-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"{% else %}class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"{% endif %}>
                     </div>
                     <div>
                         <label for="designation" class="block text-sm font-medium text-gray-700">Designation</label>
                         <input type="text" name="designation" id="designation" value="{{ employee.designation if employee else '' }}"
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            {% if user.role not in ['super_admin', 'hr_admin'] %}disabled class="mt-1 block w-full border border-gray-300 bg-gray-100 text-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"{% else %}class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"{% endif %}>
                     </div>
                     <div>
                         <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
-                        <select name="role" id="role" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <select name="role" id="role" {% if user.role not in ['super_admin', 'hr_admin'] %}disabled class="mt-1 block w-full border border-gray-300 bg-gray-100 text-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"{% else %}class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"{% endif %}>
                             <option value="employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee</option>
                             <option value="manager" {% if employee and employee.role == 'manager' %}selected{% endif %}>Manager</option>
                             <option value="hr_admin" {% if employee and employee.role == 'hr_admin' %}selected{% endif %}>HR Admin</option>
@@ -71,40 +112,113 @@
                             {% endif %}
                         </select>
                     </div>
+
+                    <div>
+                        <label for="qualification" class="block text-sm font-medium text-gray-700">Qualification</label>
+                        <input type="text" name="qualification" id="qualification" value="{{ employee.qualification if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="experience" class="block text-sm font-medium text-gray-700">Experience</label>
+                        <input type="text" name="experience" id="experience" value="{{ employee.experience if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. 5 Years">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Government Identification -->
+            <div class="pt-4 border-t border-gray-100">
+                <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Identification IDs</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="aadhar_number" class="block text-sm font-medium text-gray-700">Aadhar Card Number</label>
+                        <input type="text" name="aadhar_number" id="aadhar_number" value="{{ employee.aadhar_number if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="pan_number" class="block text-sm font-medium text-gray-700">PAN Card Number</label>
+                        <input type="text" name="pan_number" id="pan_number" value="{{ employee.pan_number if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="pt-4 border-t border-gray-100">
+                <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Emergency Contact</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="emergency_contact_name" class="block text-sm font-medium text-gray-700">Contact Name</label>
+                        <input type="text" name="emergency_contact_name" id="emergency_contact_name" value="{{ employee.emergency_contact_name if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="emergency_contact_relation" class="block text-sm font-medium text-gray-700">Relation</label>
+                        <input type="text" name="emergency_contact_relation" id="emergency_contact_relation" value="{{ employee.emergency_contact_relation if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="emergency_contact" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <input type="text" name="emergency_contact" id="emergency_contact" value="{{ employee.emergency_contact if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Details -->
+            <div class="pt-4 border-t border-gray-100">
+                <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Bank Details</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="bank_name" class="block text-sm font-medium text-gray-700">Bank Name</label>
+                        <input type="text" name="bank_name" id="bank_name" value="{{ employee.bank_name if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="account_number" class="block text-sm font-medium text-gray-700">Account Number</label>
+                        <input type="text" name="account_number" id="account_number" value="{{ employee.account_number if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="ifsc_code" class="block text-sm font-medium text-gray-700">IFSC Code</label>
+                        <input type="text" name="ifsc_code" id="ifsc_code" value="{{ employee.ifsc_code if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
                 </div>
             </div>
 
             <!-- Salary Info -->
-            <div class="pt-2 border-t border-gray-100">
+            <div class="pt-4 border-t border-gray-100">
                 <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Salary Components</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="base_salary" class="block text-sm font-medium text-gray-700">Basic Salary</label>
                         <input type="number" step="0.01" name="base_salary" id="base_salary" value="{{ employee.base_salary if employee else 0 }}"
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            {% if user.role not in ['super_admin', 'hr_admin'] %}disabled class="mt-1 block w-full border border-gray-300 bg-gray-100 text-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"{% else %}class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"{% endif %}>
                     </div>
                     <div>
                         <label for="hra" class="block text-sm font-medium text-gray-700">HRA</label>
                         <input type="number" step="0.01" name="hra" id="hra" value="{{ employee.hra if employee else 0 }}"
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            {% if user.role not in ['super_admin', 'hr_admin'] %}disabled class="mt-1 block w-full border border-gray-300 bg-gray-100 text-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"{% else %}class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"{% endif %}>
                     </div>
                     <div>
                         <label for="custom_allowances" class="block text-sm font-medium text-gray-700">Allowances</label>
                         <input type="number" step="0.01" name="custom_allowances" id="custom_allowances" value="{{ employee.custom_allowances if employee else 0 }}"
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            {% if user.role not in ['super_admin', 'hr_admin'] %}disabled class="mt-1 block w-full border border-gray-300 bg-gray-100 text-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"{% else %}class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"{% endif %}>
                     </div>
                     <div>
                         <label for="pf_deduction" class="block text-sm font-medium text-gray-700">PF Deduction</label>
                         <input type="number" step="0.01" name="pf_deduction" id="pf_deduction" value="{{ employee.pf_deduction if employee else 0 }}"
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            {% if user.role not in ['super_admin', 'hr_admin'] %}disabled class="mt-1 block w-full border border-gray-300 bg-gray-100 text-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"{% else %}class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"{% endif %}>
                     </div>
                     <div>
                         <label for="tax_deduction" class="block text-sm font-medium text-gray-700">Tax Deduction</label>
                         <input type="number" step="0.01" name="tax_deduction" id="tax_deduction" value="{{ employee.tax_deduction if employee else 0 }}"
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            {% if user.role not in ['super_admin', 'hr_admin'] %}disabled class="mt-1 block w-full border border-gray-300 bg-gray-100 text-gray-500 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"{% else %}class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"{% endif %}>
                     </div>
                 </div>
             </div>
+
 
             <div class="flex justify-end pt-4 border-t border-gray-100">
                 <a href="/employees" class="mr-3 inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Cancel</a>

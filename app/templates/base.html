@@ -41,10 +41,17 @@
                 </li>
                 
                 <li>
+                    <a href="/employees/{{ user.id }}/view" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                        <i data-lucide="user" class="w-5 h-5 mr-3"></i> My Profile
+                    </a>
+                </li>
+                
+                <li>
                     <a href="/change-password" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
                         <i data-lucide="key-round" class="w-5 h-5 mr-3"></i> Change Password
                     </a>
                 </li>
+
 
 
                 {% if user.role in ['hr_admin', 'super_admin'] %}
@@ -93,10 +100,36 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50">
         <!-- Top header -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center px-8 shrink-0">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
             <h1 class="text-xl font-semibold text-gray-800">
                 {% block header_title %}HRMS Portal{% endblock %}
             </h1>
+            
+            {% if user %}
+            <div>
+                {% if request.state.is_checked_in %}
+                    <!-- Active Check In session: display Check Out button with current check-in time -->
+                    <form action="/attendance/check-out" method="POST" class="inline-block">
+                        <button id="checkout-btn" data-checkin-time="{{ request.state.active_check_in.isoformat() }}" data-accumulated-seconds="{{ request.state.accumulated_seconds }}" type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 shadow-sm transition-all transform active:scale-95">
+                            <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Check Out (In: {{ request.state.active_check_in.strftime('%I:%M %p') }})
+                            <span id="active-timer" class="ml-2 px-1.5 py-0.5 rounded text-xs bg-red-800 text-red-100 font-mono"></span>
+                        </button>
+                    </form>
+                {% else %}
+                    <!-- All sessions checked out or start of day: display Check In button with last checkout time (if any) -->
+                    <form action="/attendance/check-in" method="POST" class="inline-block">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all transform active:scale-95">
+                            <i data-lucide="log-in" class="w-4 h-4 mr-2"></i> Check In 
+                            {% if request.state.accumulated_seconds > 0 %}
+                                (Active Today: {{ request.state.accumulated_time_str }})
+                            {% elif request.state.last_check_out %}
+                                (Last Out: {{ request.state.last_check_out.strftime('%I:%M %p') }})
+                            {% endif %}
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+            {% endif %}
         </header>
 
         <!-- Page content -->
@@ -110,6 +143,38 @@
     <!-- Initialize Lucide icons -->
     <script>
       lucide.createIcons();
+
+      // Active check-in duration timer (continues from accumulated time)
+      function updateTimer() {
+          const btn = document.getElementById('checkout-btn');
+          if (!btn) return;
+          const checkinStr = btn.getAttribute('data-checkin-time');
+          const accumSecs = parseInt(btn.getAttribute('data-accumulated-seconds') || '0', 10);
+          if (!checkinStr) return;
+          
+          const checkinTime = new Date(checkinStr);
+          const now = new Date();
+          const diff = now - checkinTime;
+          
+          if (diff < 0) return;
+          
+          const activeSecs = Math.floor(diff / 1000);
+          const totalSecs = accumSecs + activeSecs;
+          
+          const hrs = Math.floor(totalSecs / 3600);
+          const mins = Math.floor((totalSecs % 3600) / 60);
+          const secs = totalSecs % 60;
+          
+          const pad = (num) => String(num).padStart(2, '0');
+          const timeStr = `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+          
+          const timerSpan = document.getElementById('active-timer');
+          if (timerSpan) {
+              timerSpan.textContent = timeStr;
+          }
+      }
+      setInterval(updateTimer, 1000);
+      updateTimer();
     </script>
 </body>
 </html>

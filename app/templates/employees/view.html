@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block header_title %}Employee Profile{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 max-w-4xl mx-auto overflow-hidden">
+    <!-- Header Summary Block -->
+    <div class="p-6 bg-slate-900 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center">
+            <div class="h-16 w-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-2xl shadow-inner">
+                {{ employee.first_name[0] }}{{ employee.last_name[0] }}
+            </div>
+            <div class="ml-4">
+                <h3 class="text-xl font-bold">{{ employee.first_name }} {{ employee.last_name }}</h3>
+                <p class="text-sm text-slate-300">{{ employee.designation or 'No Designation Set' }} | {{ employee.department or 'No Department' }}</p>
+                <p class="text-xs text-slate-400 capitalize mt-1">Role: {{ employee.role.replace('_', ' ') }}</p>
+            </div>
+        </div>
+        <div class="flex space-x-2">
+            {% if user.role in ['hr_admin', 'super_admin'] %}
+            <a href="/employees" class="inline-flex items-center px-4 py-2 border border-slate-700 rounded-md text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
+                <i data-lucide="users" class="w-4 h-4 mr-2"></i> Directory
+            </a>
+            {% endif %}
+            <a href="/employees/{{ employee.id }}/edit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
+                <i data-lucide="edit-2" class="w-4 h-4 mr-2"></i> Edit Profile
+            </a>
+        </div>
+    </div>
+    
+    <div class="p-8 space-y-8">
+        <!-- 2 Column Layout for Profile details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Contact & Personal Details -->
+            <div>
+                <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b">Contact & Personal</h4>
+                <dl class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Email Address</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.email }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Phone Number</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.phone_number or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Gender</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.gender or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Joining Date</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.joining_date }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Home Address -->
+            <div>
+                <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b">Address Details</h4>
+                <dl class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Home Address</dt>
+                        <dd class="font-medium text-gray-900 text-right max-w-xs">{{ employee.home_address or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">City</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.city or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">State</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.state or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Country</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.country or '-' }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Education & Qualification -->
+            <div>
+                <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b">Qualifications</h4>
+                <dl class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Highest Qualification</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.qualification or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Work Experience</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.experience or '-' }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Identification IDs -->
+            <div>
+                <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b">Identification</h4>
+                <dl class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Aadhar Card</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.aadhar_number or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">PAN Number</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.pan_number or '-' }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div>
+                <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b">Emergency Contact</h4>
+                <dl class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Contact Name</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.emergency_contact_name or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Relationship</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.emergency_contact_relation or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Phone Number</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.emergency_contact or '-' }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Bank Details -->
+            <div>
+                <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b">Bank Account</h4>
+                <dl class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Bank Name</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.bank_name or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">Account Number</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.account_number or '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-500">IFSC Code</dt>
+                        <dd class="font-medium text-gray-900">{{ employee.ifsc_code or '-' }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+        </div>
+
+        <!-- Full Width: Salary Structure (Only visible to viewer if Admin or viewing own profile) -->
+        {% if user.role in ['super_admin', 'hr_admin'] or user.id == employee.id %}
+        <div class="pt-4">
+            <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b">Salary Structure</h4>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="text-xs text-gray-500">Basic Salary</div>
+                    <div class="text-lg font-bold text-gray-900">{{ employee.base_salary }}</div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="text-xs text-gray-500">HRA</div>
+                    <div class="text-lg font-bold text-gray-900">{{ employee.hra }}</div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="text-xs text-gray-500">Allowances</div>
+                    <div class="text-lg font-bold text-gray-900">{{ employee.custom_allowances }}</div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg text-red-600">
+                    <div class="text-xs text-red-500">PF Deduction</div>
+                    <div class="text-lg font-bold">{{ employee.pf_deduction }}</div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg text-red-600">
+                    <div class="text-xs text-red-500">Tax Deduction</div>
+                    <div class="text-lg font-bold">{{ employee.tax_deduction }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+    </div>
+</div>
+{% endblock %}

@@ -22,18 +22,78 @@ async def attendance_log(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
+    from collections import defaultdict
+    
     if current_user.role == "employee":
-        logs = (
+        raw_logs = (
             db.query(Attendance)
             .filter(Attendance.employee_id == current_user.id)
-            .order_by(Attendance.date.desc())
+            .order_by(Attendance.date.desc(), Attendance.check_in.asc())
             .all()
         )
     else:
-        logs = db.query(Attendance).order_by(Attendance.date.desc()).all()
+        raw_logs = db.query(Attendance).order_by(Attendance.date.desc(), Attendance.check_in.asc()).all()
+
+    # Group raw logs by (date, employee_id)
+    grouped = defaultdict(list)
+    for log in raw_logs:
+        grouped[(log.date, log.employee_id)].append(log)
+
+    logs_data = []
+    today = datetime.date.today()
+    for (date, emp_id), group_logs in grouped.items():
+        employee = group_logs[0].employee
+        
+        total_seconds = 0
+        sessions = []
+        is_overridden = False
+        override_reason = ""
+        is_missed = False
+        
+        for log in group_logs:
+            if log.is_overridden:
+                is_overridden = True
+                override_reason = log.override_reason
+                
+            start = log.check_in
+            if log.check_out:
+                end = log.check_out
+                out_str = log.check_out.strftime('%I:%M %p')
+            else:
+                if log.date < today:
+                    end = log.check_in  # 0 duration
+                    out_str = "Missed"
+                    is_missed = True
+                else:
+                    end = datetime.datetime.now()
+                    out_str = "Active"
+            
+            diff = (end - start).total_seconds()
+            total_seconds += max(0, diff)
+            
+            in_str = log.check_in.strftime('%I:%M %p')
+            sessions.append(f"{in_str} - {out_str}")
+            
+        hrs = int(total_seconds // 3600)
+        mins = int((total_seconds % 3600) // 60)
+        secs = int(total_seconds % 60)
+        total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
+        
+        logs_data.append({
+            "id": group_logs[0].id,  # primary ID for override actions
+            "date": date,
+            "employee": employee,
+            "sessions": ", ".join(sessions),
+            "total_active": f"{total_active_str} (Missed)" if is_missed else total_active_str,
+            "is_overridden": is_overridden,
+            "override_reason": override_reason,
+            "is_missed": is_missed,
+            "check_in": group_logs[0].check_in,
+            "check_out": group_logs[-1].check_out
+        })
 
     return templates.TemplateResponse(
-        request, "attendance/log.html", {"user": current_user, "logs": logs}
+        request, "attendance/log.html", {"user": current_user, "logs": logs_data}
     )
 
 
@@ -44,12 +104,14 @@ async def check_in(
     current_user: Employee = Depends(require_auth),
 ):
     today = datetime.date.today()
-    log = db.query(Attendance).filter(
+    # Check if there is an active check-in (check_out is None)
+    active_log = db.query(Attendance).filter(
         Attendance.employee_id == current_user.id,
         Attendance.date == today,
+        Attendance.check_out == None
     ).first()
 
-    if not log:
+    if not active_log:
         log = Attendance(
             employee_id=current_user.id,
             date=today,
@@ -58,7 +120,8 @@ async def check_in(
         db.add(log)
         db.commit()
 
-    return RedirectResponse(url="/attendance", status_code=302)
+    referer = request.headers.get("referer", "/dashboard")
+    return RedirectResponse(url=referer, status_code=302)
 
 
 @router.post("/check-out")
@@ -68,16 +131,19 @@ async def check_out(
     current_user: Employee = Depends(require_auth),
 ):
     today = datetime.date.today()
+    # Find the active check-in log to checkout
     log = db.query(Attendance).filter(
         Attendance.employee_id == current_user.id,
         Attendance.date == today,
-    ).first()
+        Attendance.check_out == None
+    ).order_by(Attendance.check_in.desc()).first()
 
-    if log and not log.check_out:
+    if log:
         log.check_out = datetime.datetime.now()
         db.commit()
 
-    return RedirectResponse(url="/attendance", status_code=302)
+    referer = request.headers.get("referer", "/dashboard")
+    return RedirectResponse(url=referer, status_code=302)
 
 
 @router.post("/{log_id}/override")
