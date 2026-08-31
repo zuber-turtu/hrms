@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block header_title %}Edit Payslip{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 max-w-4xl mx-auto">
+    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-800">Payslip details for {{ payslip.employee.first_name }} {{ payslip.employee.last_name }}</h3>
+            <p class="text-sm text-gray-500 mt-1">Period: {{ payslip.month }}/{{ payslip.year }} | Days Worked: {{ payslip.days_worked }}/{{ payslip.payable_days }}</p>
+        </div>
+        <a href="/payroll" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
+    </div>
+    
+    <div class="p-6">
+        <form action="/payroll/{{ payslip.id }}/edit" method="POST">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Earnings -->
+                <div>
+                    <h4 class="text-md font-semibold text-gray-700 mb-4 border-b pb-2">Earnings</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Basic Salary</label>
+                            <input type="number" step="0.01" name="basic" value="{{ payslip.basic }}" class="amount-input mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">House Rent Allowance (HRA)</label>
+                            <input type="number" step="0.01" name="hra" value="{{ payslip.hra }}" class="amount-input mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Allowances</label>
+                            <input type="number" step="0.01" name="allowances" value="{{ payslip.allowances }}" class="amount-input mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Bonus</label>
+                            <input type="number" step="0.01" name="bonus" value="{{ payslip.bonus }}" class="amount-input mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-gray-50 rounded-md flex justify-between items-center">
+                        <span class="font-semibold text-gray-700">Total Earnings:</span>
+                        <span id="total_earnings" class="font-bold text-gray-900">0.00</span>
+                    </div>
+                </div>
+                
+                <!-- Deductions -->
+                <div>
+                    <h4 class="text-md font-semibold text-gray-700 mb-4 border-b pb-2">Deductions</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Provident Fund (PF)</label>
+                            <input type="number" step="0.01" name="pf" value="{{ payslip.pf }}" class="amount-input-deduct mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Tax</label>
+                            <input type="number" step="0.01" name="tax" value="{{ payslip.tax }}" class="amount-input-deduct mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Other Deductions</label>
+                            <input type="number" step="0.01" name="other_deductions" value="{{ payslip.other_deductions }}" class="amount-input-deduct mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-gray-50 rounded-md flex justify-between items-center">
+                        <span class="font-semibold text-gray-700">Total Deductions:</span>
+                        <span id="total_deductions" class="font-bold text-gray-900">0.00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0 w-full md:w-auto flex items-center space-x-4">
+                        <label for="status" class="font-medium text-gray-700">Status:</label>
+                        <select name="status" id="status" class="border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="draft" {% if payslip.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="finalized" {% if payslip.status == 'finalized' %}selected{% endif %}>Finalized</option>
+                            <option value="paid" {% if payslip.status == 'paid' %}selected{% endif %}>Paid</option>
+                        </select>
+                    </div>
+                    
+                    <div class="text-right w-full md:w-auto">
+                        <span class="text-gray-500 mr-4">Net Salary:</span>
+                        <span id="net_salary" class="text-3xl font-bold text-blue-600">{{ payslip.net_salary }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 flex justify-end">
+                <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Save Payslip
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Simple Alpine-like vanilla JS logic for real-time total calculation
+    const earningInputs = document.querySelectorAll('.amount-input');
+    const deductionInputs = document.querySelectorAll('.amount-input-deduct');
+    
+    function calculateTotals() {
+        let earn = 0;
+        earningInputs.forEach(i => {
+            earn += parseFloat(i.value) || 0;
+        });
+        document.getElementById('total_earnings').innerText = earn.toFixed(2);
+        
+        let deduct = 0;
+        deductionInputs.forEach(i => {
+            deduct += parseFloat(i.value) || 0;
+        });
+        document.getElementById('total_deductions').innerText = deduct.toFixed(2);
+        
+        const net = earn - deduct;
+        document.getElementById('net_salary').innerText = net.toFixed(2);
+    }
+    
+    earningInputs.forEach(i => i.addEventListener('input', calculateTotals));
+    deductionInputs.forEach(i => i.addEventListener('input', calculateTotals));
+    
+    // Initial calc
+    calculateTotals();
+</script>
+{% endblock %}

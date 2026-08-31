@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block header_title %}Attendance Log{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-gray-800">Recent Records</h3>
+    </div>
+    
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check In</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                {% if user.role in ['hr_admin', 'super_admin'] %}
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for log in logs %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ log.date }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.employee.first_name }} {{ log.employee.last_name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.check_in.strftime('%H:%M:%S') if log.check_in else '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.check_out.strftime('%H:%M:%S') if log.check_out else '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {% if log.is_overridden %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" title="{{ log.override_reason }}">Overridden</span>
+                    {% else %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Normal</span>
+                    {% endif %}
+                </td>
+                
+                {% if user.role in ['hr_admin', 'super_admin'] %}
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="text-blue-600 hover:text-blue-900 text-sm flex justify-end items-center">
+                        <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Edit
+                    </button>
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="px-6 py-4 text-center text-gray-500">No attendance logs found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Override Modal (Hidden by default) -->
+{% if user.role in ['hr_admin', 'super_admin'] %}
+<div id="overrideModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Override Attendance</h3>
+            <button onclick="closeOverrideModal()" class="text-gray-400 hover:text-gray-500">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form id="overrideForm" method="POST" class="space-y-4">
+            <div>
+                <label for="check_in_time" class="block text-sm font-medium text-gray-700">Check In Time</label>
+                <input type="time" name="check_in_time" id="modal_check_in" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+            
+            <div>
+                <label for="check_out_time" class="block text-sm font-medium text-gray-700">Check Out Time</label>
+                <input type="time" name="check_out_time" id="modal_check_out" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+            
+            <div>
+                <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Override</label>
+                <input type="text" name="reason" id="modal_reason" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. Forgot to punch out">
+            </div>
+            
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">Save Override</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openOverrideModal(id, inTime, outTime) {
+        document.getElementById('overrideModal').classList.remove('hidden');
+        document.getElementById('overrideForm').action = "/attendance/" + id + "/override";
+        document.getElementById('modal_check_in').value = inTime;
+        document.getElementById('modal_check_out').value = outTime;
+    }
+    
+    function closeOverrideModal() {
+        document.getElementById('overrideModal').classList.add('hidden');
+    }
+</script>
+{% endif %}
+
+{% endblock %}

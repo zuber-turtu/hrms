@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block header_title %}Payroll Management{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <h2 class="text-xl font-bold text-gray-800">Payslips</h2>
+    
+    {% if user.role in ['hr_admin', 'super_admin'] %}
+    <button onclick="document.getElementById('generateModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
+        <i data-lucide="calculator" class="w-4 h-4 mr-2"></i> Generate Draft Payslip
+    </button>
+    {% endif %}
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month/Year</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Salary</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for payslip in payslips %}
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">{{ payslip.employee.first_name }} {{ payslip.employee.last_name }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payslip.month }}/{{ payslip.year }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ payslip.net_salary }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        {% if payslip.status == 'draft' %} bg-yellow-100 text-yellow-800 
+                        {% elif payslip.status == 'finalized' %} bg-blue-100 text-blue-800 
+                        {% elif payslip.status == 'paid' %} bg-green-100 text-green-800 
+                        {% endif %}">
+                        {{ payslip.status | title }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                    {% if user.role in ['hr_admin', 'super_admin'] %}
+                    <a href="/payroll/{{ payslip.id }}/edit" class="text-blue-600 hover:text-blue-900"><i data-lucide="edit-3" class="w-4 h-4 inline"></i></a>
+                    {% endif %}
+                    <a href="/payroll/{{ payslip.id }}/pdf" class="text-gray-600 hover:text-gray-900" target="_blank"><i data-lucide="download" class="w-4 h-4 inline"></i></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No payslips found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if user.role in ['hr_admin', 'super_admin'] %}
+<!-- Generate Modal -->
+<div id="generateModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 relative">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Generate Payslip</h3>
+            <button onclick="document.getElementById('generateModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-500">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form action="/payroll/generate-draft" method="POST" class="space-y-4">
+            <div>
+                <label for="employee_id" class="block text-sm font-medium text-gray-700">Employee</label>
+                <select name="employee_id" id="employee_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}">{{ emp.first_name }} {{ emp.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="month" class="block text-sm font-medium text-gray-700">Month</label>
+                    <select name="month" id="month" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        {% for i in range(1, 13) %}
+                        <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="year" class="block text-sm font-medium text-gray-700">Year</label>
+                    <select name="year" id="year" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium w-full">Generate</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

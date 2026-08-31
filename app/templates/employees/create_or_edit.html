@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block header_title %}{{ 'Edit Employee' if employee else 'Add Employee' }}{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 max-w-3xl">
+    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-800">{{ 'Edit Employee Details' if employee else 'New Employee Onboarding' }}</h3>
+            <p class="text-sm text-gray-500 mt-1">Fill in the personal, professional, and salary information.</p>
+        </div>
+        <a href="/employees" class="text-sm text-gray-500 hover:text-gray-700 flex items-center">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back
+        </a>
+    </div>
+
+    <div class="p-6">
+        <form action="{{ '/employees/' ~ employee.id ~ '/edit' if employee else '/employees/create' }}" method="POST" class="space-y-6">
+
+            <!-- Personal Info -->
+            <div>
+                <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Personal Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="first_name" class="block text-sm font-medium text-gray-700">First Name</label>
+                        <input type="text" name="first_name" id="first_name" value="{{ employee.first_name if employee else '' }}" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="last_name" class="block text-sm font-medium text-gray-700">Last Name</label>
+                        <input type="text" name="last_name" id="last_name" value="{{ employee.last_name if employee else '' }}" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" name="email" id="email" value="{{ employee.email if employee else '' }}" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    {% if not employee %}
+                    <div class="md:col-span-2">
+                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" name="password" id="password" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Job Info -->
+            <div class="pt-2 border-t border-gray-100">
+                <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Job Details</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="department" class="block text-sm font-medium text-gray-700">Department</label>
+                        <input type="text" name="department" id="department" value="{{ employee.department if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="designation" class="block text-sm font-medium text-gray-700">Designation</label>
+                        <input type="text" name="designation" id="designation" value="{{ employee.designation if employee else '' }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
+                        <select name="role" id="role" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee</option>
+                            <option value="manager" {% if employee and employee.role == 'manager' %}selected{% endif %}>Manager</option>
+                            <option value="hr_admin" {% if employee and employee.role == 'hr_admin' %}selected{% endif %}>HR Admin</option>
+                            {% if user.role == 'super_admin' %}
+                            <option value="super_admin" {% if employee and employee.role == 'super_admin' %}selected{% endif %}>Super Admin</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salary Info -->
+            <div class="pt-2 border-t border-gray-100">
+                <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Salary Components</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="base_salary" class="block text-sm font-medium text-gray-700">Basic Salary</label>
+                        <input type="number" step="0.01" name="base_salary" id="base_salary" value="{{ employee.base_salary if employee else 0 }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="hra" class="block text-sm font-medium text-gray-700">HRA</label>
+                        <input type="number" step="0.01" name="hra" id="hra" value="{{ employee.hra if employee else 0 }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="custom_allowances" class="block text-sm font-medium text-gray-700">Allowances</label>
+                        <input type="number" step="0.01" name="custom_allowances" id="custom_allowances" value="{{ employee.custom_allowances if employee else 0 }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="pf_deduction" class="block text-sm font-medium text-gray-700">PF Deduction</label>
+                        <input type="number" step="0.01" name="pf_deduction" id="pf_deduction" value="{{ employee.pf_deduction if employee else 0 }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="tax_deduction" class="block text-sm font-medium text-gray-700">Tax Deduction</label>
+                        <input type="number" step="0.01" name="tax_deduction" id="tax_deduction" value="{{ employee.tax_deduction if employee else 0 }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-gray-100">
+                <a href="/employees" class="mr-3 inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Cancel</a>
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    {{ 'Update Employee' if employee else 'Create Employee' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

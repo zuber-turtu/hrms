@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic HRMS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    {% if user %}
+    <aside class="w-64 bg-slate-900 text-white flex flex-col h-full shrink-0 shadow-lg">
+        <div class="h-16 flex items-center px-6 border-b border-slate-700">
+            <i data-lucide="building-2" class="w-6 h-6 mr-3 text-blue-400"></i>
+            <span class="text-xl font-bold tracking-wide">HRMS</span>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1">
+                <li>
+                    <a href="/dashboard" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="/attendance" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                        <i data-lucide="clock" class="w-5 h-5 mr-3"></i> Attendance
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="/payroll" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                        <i data-lucide="banknote" class="w-5 h-5 mr-3"></i> Payroll
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="/change-password" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                        <i data-lucide="key-round" class="w-5 h-5 mr-3"></i> Change Password
+                    </a>
+                </li>
+
+
+                {% if user.role in ['hr_admin', 'super_admin'] %}
+                <li class="pt-4 pb-2 px-6">
+                    <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Administration</span>
+                </li>
+                <li>
+                    <a href="/employees" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                        <i data-lucide="users" class="w-5 h-5 mr-3"></i> Employees
+                    </a>
+                </li>
+                <li>
+                    <a href="/company/profile" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                        <i data-lucide="settings" class="w-5 h-5 mr-3"></i> Company Profile
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if user.role == 'super_admin' %}
+                <li>
+                    <a href="/audit" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                        <i data-lucide="shield-alert" class="w-5 h-5 mr-3"></i> Audit Logs
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        
+        <div class="p-4 border-t border-slate-700">
+            <div class="flex items-center mb-4 px-2">
+                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-sm">
+                    {{ user.first_name[0] }}{{ user.last_name[0] }}
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium">{{ user.first_name }} {{ user.last_name }}</p>
+                    <p class="text-xs text-slate-400 capitalize">{{ user.role.replace('_', ' ') }}</p>
+                </div>
+            </div>
+            <a href="/logout" class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">
+                <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Logout
+            </a>
+        </div>
+    </aside>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50">
+        <!-- Top header -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center px-8 shrink-0">
+            <h1 class="text-xl font-semibold text-gray-800">
+                {% block header_title %}HRMS Portal{% endblock %}
+            </h1>
+        </header>
+
+        <!-- Page content -->
+        <div class="flex-1 overflow-y-auto p-8">
+            <div class="max-w-7xl mx-auto">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </main>
+
+    <!-- Initialize Lucide icons -->
+    <script>
+      lucide.createIcons();
+    </script>
+</body>
+</html>
