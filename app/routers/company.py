@@ -11,7 +11,7 @@ from app.dependencies import require_auth, RoleChecker
 router = APIRouter(prefix="/company")
 templates = Jinja2Templates(directory="app/templates")
 
-allow_hr_admin = RoleChecker(["super_admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["admin", "hr_admin"])
 
 
 @router.get("/profile", response_class=HTMLResponse)

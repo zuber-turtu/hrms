@@ -21,17 +21,19 @@ async def lifespan(app: FastAPI):
         admin = db.query(Employee).filter(Employee.email == "admin@hrms.local").first()
         if not admin:
             admin = Employee(
-                first_name="Super",
-                last_name="Admin",
+                name="Admin",
                 email="admin@hrms.local",
                 hashed_password=get_password_hash("Admin@123"),
-                role="super_admin",
+                role="admin",
                 department="Management",
                 designation="System Administrator",
             )
             db.add(admin)
             db.commit()
-            print("Seeded default super admin: admin@hrms.local / Admin@123")
+            print("Seeded default admin: admin@hrms.local / Admin@123")
+        elif admin.role != "admin":
+            admin.role = "admin"
+            db.commit()
     finally:
         db.close()
     yield  # app runs

@@ -10,12 +10,11 @@ class Employee(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     
-    # Roles: super_admin, hr_admin, manager, employee
+    # Roles: admin, hr_admin, manager, employee
     role = Column(String, default="employee")
     is_active = Column(Boolean, default=True)
     
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
+    name = Column(String, nullable=False)
     department = Column(String)
     designation = Column(String)
     joining_date = Column(Date, default=datetime.date.today)

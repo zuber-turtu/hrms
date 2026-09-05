@@ -16,7 +16,7 @@ from app.services.pdf_generator import generate_payslip_pdf
 router = APIRouter(prefix="/payroll")
 templates = Jinja2Templates(directory="app/templates")
 
-allow_hr_admin = RoleChecker(["super_admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["admin", "hr_admin"])
 
 
 @router.get("/", response_class=HTMLResponse)

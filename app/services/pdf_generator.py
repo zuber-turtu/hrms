@@ -27,7 +27,7 @@ def generate_payslip_pdf(payslip, company, employee):
     
     # Employee Info Table
     emp_info = [
-        ["Employee Name:", f"{employee.first_name} {employee.last_name}", "Month/Year:", f"{payslip.month}/{payslip.year}"],
+        ["Employee Name:", employee.name, "Month/Year:", f"{payslip.month}/{payslip.year}"],
         ["Designation:", employee.designation or "-", "Department:", employee.department or "-"],
         ["Days Worked:", f"{payslip.days_worked}/{payslip.payable_days}", "Generated On:", str(payslip.generated_on)]
     ]

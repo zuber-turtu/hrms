@@ -9,8 +9,8 @@
 
 ## 2. Core Modules & Endpoints
 1. **Authentication & Roles:**
-   - Roles: `super_admin`, `hr_admin`, `manager`, `employee`.
-   - Super-Admin can dynamically promote/demote employee roles.
+   - Roles: `admin`, `hr_admin`, `manager`, `employee`.
+   - Admin can dynamically promote/demote employee roles.
 2. **Company Profile:**
    - Name, logo, registration details, currency symbol, weekly working days configuration.
 3. **Employee Directory:**

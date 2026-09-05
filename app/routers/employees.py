@@ -13,7 +13,7 @@ from app.models.audit import AuditLog
 router = APIRouter(prefix="/employees")
 templates = Jinja2Templates(directory="app/templates")
 
-allow_hr_admin = RoleChecker(["super_admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["admin", "hr_admin"])
 
 def clean_str(val):
     if val is None:
@@ -50,8 +50,7 @@ async def create_employee_form(
 @router.post("/create")
 async def create_employee(
     request: Request,
-    first_name: str = Form(...),
-    last_name: str = Form(...),
+    name: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
     role: str = Form(...),
@@ -83,8 +82,7 @@ async def create_employee(
 ):
     hashed_password = get_password_hash(password)
     emp = Employee(
-        first_name=first_name,
-        last_name=last_name,
+        name=name,
         email=email,
         hashed_password=hashed_password,
         role=role,
@@ -125,7 +123,7 @@ async def view_employee(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role not in ["super_admin", "hr_admin"] and current_user.id != emp_id:
+    if current_user.role not in ["admin", "hr_admin"] and current_user.id != emp_id:
         raise HTTPException(status_code=403, detail="Operation not permitted")
         
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
@@ -144,7 +142,7 @@ async def edit_employee_form(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role not in ["super_admin", "hr_admin"] and current_user.id != emp_id:
+    if current_user.role not in ["admin", "hr_admin"] and current_user.id != emp_id:
         raise HTTPException(status_code=403, detail="Operation not permitted")
         
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
@@ -160,8 +158,7 @@ async def edit_employee_form(
 async def edit_employee(
     emp_id: int,
     request: Request,
-    first_name: str = Form(...),
-    last_name: str = Form(...),
+    name: str = Form(...),
     email: str = Form(...),
     role: str = Form(None),
     department: str = Form(""),
@@ -190,17 +187,16 @@ async def edit_employee(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role not in ["super_admin", "hr_admin"] and current_user.id != emp_id:
+    if current_user.role not in ["admin", "hr_admin"] and current_user.id != emp_id:
         raise HTTPException(status_code=403, detail="Operation not permitted")
         
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
     if employee:
-        employee.first_name = first_name
-        employee.last_name = last_name
+        employee.name = name
         employee.email = email
         
         # Only Admins can modify role, department, designation, and salary components
-        if current_user.role in ["super_admin", "hr_admin"]:
+        if current_user.role in ["admin", "hr_admin"]:
             old_role = employee.role
             # Keep previous role if not submitted or if it is empty
             if role:
@@ -277,9 +273,7 @@ async def import_employees(
                 continue
                 
             full_name = clean_str(row[1])
-            name_parts = full_name.split(" ", 1)
-            first_name = name_parts[0] if name_parts[0] else "Employee"
-            last_name = name_parts[1] if len(name_parts) > 1 else "User"
+            name = full_name if full_name else "Employee"
             
             phone = clean_str(row[3])
             # Default password is the phone number
@@ -289,8 +283,7 @@ async def import_employees(
             emp = Employee(
                 email=email,
                 hashed_password=hashed_pw,
-                first_name=first_name,
-                last_name=last_name,
+                name=name,
                 role="employee", # default role
                 phone_number=phone,
                 home_address=clean_str(row[4]),
@@ -315,3 +308,37 @@ async def import_employees(
         db.commit()
         
     return RedirectResponse(url=f"/employees?imported={imported_count}&skipped={skipped_count}", status_code=302)
+
+
+@router.post("/{emp_id}/reset-password")
+async def admin_reset_password(
+    emp_id: int,
+    request: Request,
+    new_password: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    employee = db.query(Employee).filter(Employee.id == emp_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    employee.hashed_password = get_password_hash(new_password)
+    
+    # Record Audit Log
+    audit = AuditLog(
+        actor_id=current_user.id,
+        actor_email=current_user.email,
+        action="ADMIN_PASSWORD_RESET",
+        entity="Employee",
+        entity_id=emp_id,
+        old_value="[REDACTED]",
+        new_value="[PASSWORD_RESET_BY_ADMIN]",
+    )
+    db.add(audit)
+    db.commit()
+
+    referer = request.headers.get("referer", f"/employees/{emp_id}/view")
+    separator = "&" if "?" in referer else "?"
+    if "reset_success=1" not in referer:
+        referer = f"{referer}{separator}reset_success=1"
+    return RedirectResponse(url=referer, status_code=302)

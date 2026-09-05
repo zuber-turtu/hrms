@@ -54,7 +54,7 @@
 
 
 
-                {% if user.role in ['hr_admin', 'super_admin'] %}
+                {% if user.role in ['admin', 'hr_admin'] %}
                 <li class="pt-4 pb-2 px-6">
                     <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Administration</span>
                 </li>
@@ -70,7 +70,7 @@
                 </li>
                 {% endif %}
 
-                {% if user.role == 'super_admin' %}
+                {% if user.role == 'admin' %}
                 <li>
                     <a href="/audit" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
                         <i data-lucide="shield-alert" class="w-5 h-5 mr-3"></i> Audit Logs
@@ -83,10 +83,10 @@
         <div class="p-4 border-t border-slate-700">
             <div class="flex items-center mb-4 px-2">
                 <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-sm">
-                    {{ user.first_name[0] }}{{ user.last_name[0] }}
+                    {{ user.name[0] if user.name else 'U' }}
                 </div>
                 <div class="ml-3">
-                    <p class="text-sm font-medium">{{ user.first_name }} {{ user.last_name }}</p>
+                    <p class="text-sm font-medium">{{ user.name }}</p>
                     <p class="text-xs text-slate-400 capitalize">{{ user.role.replace('_', ' ') }}</p>
                 </div>
             </div>

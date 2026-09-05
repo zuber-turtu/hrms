@@ -3,27 +3,43 @@
 {% block header_title %}Employee Profile{% endblock %}
 
 {% block content %}
+{% if request.query_params.get('reset_success') %}
+<div class="max-w-4xl mx-auto mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-md shadow-sm">
+    <div class="flex items-center">
+        <div class="flex-shrink-0 text-green-500">
+            <i data-lucide="check-circle-2" class="h-5 w-5"></i>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm font-medium text-green-800">Password has been reset successfully!</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 max-w-4xl mx-auto overflow-hidden">
     <!-- Header Summary Block -->
     <div class="p-6 bg-slate-900 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div class="flex items-center">
             <div class="h-16 w-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-2xl shadow-inner">
-                {{ employee.first_name[0] }}{{ employee.last_name[0] }}
+                {{ employee.name[0] if employee.name else 'E' }}
             </div>
             <div class="ml-4">
-                <h3 class="text-xl font-bold">{{ employee.first_name }} {{ employee.last_name }}</h3>
+                <h3 class="text-xl font-bold">{{ employee.name }}</h3>
                 <p class="text-sm text-slate-300">{{ employee.designation or 'No Designation Set' }} | {{ employee.department or 'No Department' }}</p>
                 <p class="text-xs text-slate-400 capitalize mt-1">Role: {{ employee.role.replace('_', ' ') }}</p>
             </div>
         </div>
-        <div class="flex space-x-2">
-            {% if user.role in ['hr_admin', 'super_admin'] %}
-            <a href="/employees" class="inline-flex items-center px-4 py-2 border border-slate-700 rounded-md text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
-                <i data-lucide="users" class="w-4 h-4 mr-2"></i> Directory
+        <div class="flex flex-wrap gap-2">
+            {% if user.role in ['admin', 'hr_admin'] %}
+            <a href="/employees" class="inline-flex items-center px-3.5 py-2 border border-slate-700 rounded-md text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
+                <i data-lucide="users" class="w-4 h-4 mr-1.5"></i> Directory
             </a>
+            <button onclick="openPasswordResetModal({{ employee.id }}, '{{ employee.name }}')" class="inline-flex items-center px-3.5 py-2 border border-amber-500/40 rounded-md text-sm font-medium text-amber-300 bg-amber-950/40 hover:bg-amber-900/60 shadow-sm transition-colors">
+                <i data-lucide="key" class="w-4 h-4 mr-1.5"></i> Reset Password
+            </button>
             {% endif %}
-            <a href="/employees/{{ employee.id }}/edit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
-                <i data-lucide="edit-2" class="w-4 h-4 mr-2"></i> Edit Profile
+            <a href="/employees/{{ employee.id }}/edit" class="inline-flex items-center px-3.5 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
+                <i data-lucide="edit-2" class="w-4 h-4 mr-1.5"></i> Edit Profile
             </a>
         </div>
     </div>
@@ -149,7 +165,7 @@
         </div>
 
         <!-- Full Width: Salary Structure (Only visible to viewer if Admin or viewing own profile) -->
-        {% if user.role in ['super_admin', 'hr_admin'] or user.id == employee.id %}
+        {% if user.role in ['admin', 'hr_admin'] or user.id == employee.id %}
         <div class="pt-4">
             <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 pb-2 border-b">Salary Structure</h4>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -179,4 +195,50 @@
         
     </div>
 </div>
+
+{% if user.role in ['admin', 'hr_admin'] %}
+<!-- Admin Password Reset Modal -->
+<div id="resetPasswordModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                <i data-lucide="key-round" class="w-5 h-5 mr-2 text-amber-600"></i>
+                Reset Employee Password
+            </h3>
+            <button onclick="closePasswordResetModal()" class="text-gray-400 hover:text-gray-500">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <p class="text-sm text-gray-500 mb-4">
+            Enter a new password for <span id="resetModalEmployeeName" class="font-semibold text-gray-800"></span>.
+        </p>
+
+        <form id="resetPasswordForm" method="POST" class="space-y-4">
+            <div>
+                <label for="new_password" class="block text-sm font-medium text-gray-700">New Password</label>
+                <input type="password" name="new_password" id="new_password" required minlength="6" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Minimum 6 characters">
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" onclick="closePasswordResetModal()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="submit" class="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 text-sm font-medium shadow-sm">Save Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openPasswordResetModal(empId, empName) {
+        document.getElementById('resetPasswordModal').classList.remove('hidden');
+        document.getElementById('resetPasswordForm').action = "/employees/" + empId + "/reset-password";
+        document.getElementById('resetModalEmployeeName').textContent = empName;
+        document.getElementById('new_password').value = "";
+    }
+    function closePasswordResetModal() {
+        document.getElementById('resetPasswordModal').classList.add('hidden');
+    }
+</script>
+{% endif %}
+
 {% endblock %}

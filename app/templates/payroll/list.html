@@ -6,7 +6,7 @@
 <div class="mb-6 flex justify-between items-center">
     <h2 class="text-xl font-bold text-gray-800">Payslips</h2>
     
-    {% if user.role in ['hr_admin', 'super_admin'] %}
+    {% if user.role in ['admin', 'hr_admin'] %}
     <button onclick="document.getElementById('generateModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
         <i data-lucide="calculator" class="w-4 h-4 mr-2"></i> Generate Draft Payslip
     </button>
@@ -28,7 +28,7 @@
             {% for payslip in payslips %}
             <tr class="hover:bg-gray-50 transition-colors">
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">{{ payslip.employee.first_name }} {{ payslip.employee.last_name }}</div>
+                    <div class="text-sm font-medium text-gray-900">{{ payslip.employee.name }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payslip.month }}/{{ payslip.year }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ payslip.net_salary }}</td>
@@ -42,7 +42,7 @@
                     </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                    {% if user.role in ['hr_admin', 'super_admin'] %}
+                    {% if user.role in ['admin', 'hr_admin'] %}
                     <a href="/payroll/{{ payslip.id }}/edit" class="text-blue-600 hover:text-blue-900"><i data-lucide="edit-3" class="w-4 h-4 inline"></i></a>
                     {% endif %}
                     <a href="/payroll/{{ payslip.id }}/pdf" class="text-gray-600 hover:text-gray-900" target="_blank"><i data-lucide="download" class="w-4 h-4 inline"></i></a>
@@ -57,7 +57,7 @@
     </table>
 </div>
 
-{% if user.role in ['hr_admin', 'super_admin'] %}
+{% if user.role in ['admin', 'hr_admin'] %}
 <!-- Generate Modal -->
 <div id="generateModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 relative">
@@ -73,7 +73,7 @@
                 <label for="employee_id" class="block text-sm font-medium text-gray-700">Employee</label>
                 <select name="employee_id" id="employee_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     {% for emp in employees %}
-                    <option value="{{ emp.id }}">{{ emp.first_name }} {{ emp.last_name }}</option>
+                    <option value="{{ emp.id }}">{{ emp.name }}</option>
                     {% endfor %}
                 </select>
             </div>

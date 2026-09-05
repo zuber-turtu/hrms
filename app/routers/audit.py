@@ -11,14 +11,14 @@ from app.dependencies import RoleChecker
 router = APIRouter(prefix="/audit")
 templates = Jinja2Templates(directory="app/templates")
 
-allow_super_admin = RoleChecker(["super_admin"])
+allow_admin = RoleChecker(["admin"])
 
 
 @router.get("/", response_class=HTMLResponse)
 async def view_audit_logs(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Employee = Depends(allow_super_admin),
+    current_user: Employee = Depends(allow_admin),
 ):
     logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).all()
     return templates.TemplateResponse(

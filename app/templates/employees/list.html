@@ -21,6 +21,19 @@
 </div>
 {% endif %}
 
+{% if request.query_params.get('reset_success') %}
+<div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-md">
+    <div class="flex items-center">
+        <div class="flex-shrink-0 text-green-500">
+            <i data-lucide="check-circle-2" class="h-5 w-5"></i>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm text-green-700 font-medium">Employee password has been reset successfully!</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="mb-6 flex justify-between items-center">
     <h2 class="text-xl font-bold text-gray-800">Directory</h2>
     <div class="flex items-center space-x-3">
@@ -56,17 +69,17 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                            {{ emp.first_name[0] }}{{ emp.last_name[0] }}
+                            {{ emp.name[0] if emp.name else 'E' }}
                         </div>
                         <div class="ml-4">
-                            <div class="text-sm font-medium text-gray-900">{{ emp.first_name }} {{ emp.last_name }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ emp.name }}</div>
                             <div class="text-sm text-gray-500">{{ emp.email }}</div>
                         </div>
                     </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        {% if emp.role == 'super_admin' %} bg-red-100 text-red-800 
+                        {% if emp.role == 'admin' %} bg-red-100 text-red-800 
                         {% elif emp.role == 'hr_admin' %} bg-purple-100 text-purple-800 
                         {% elif emp.role == 'manager' %} bg-yellow-100 text-yellow-800
                         {% else %} bg-green-100 text-green-800 {% endif %}">
@@ -76,10 +89,13 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {{ emp.department or '-' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                     <a href="/employees/{{ emp.id }}/view" class="text-blue-600 hover:text-blue-900 inline-flex items-center">
                         <i data-lucide="eye" class="w-4 h-4 mr-1"></i> View Details
                     </a>
+                    <button onclick="openPasswordResetModal({{ emp.id }}, '{{ emp.name }}')" class="text-amber-600 hover:text-amber-900 inline-flex items-center" title="Reset Password">
+                        <i data-lucide="key" class="w-4 h-4 mr-1"></i> Reset
+                    </button>
                 </td>
             </tr>
             {% else %}
@@ -90,4 +106,47 @@
         </tbody>
     </table>
 </div>
+
+<!-- Admin Password Reset Modal -->
+<div id="resetPasswordModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                <i data-lucide="key-round" class="w-5 h-5 mr-2 text-amber-600"></i>
+                Reset Employee Password
+            </h3>
+            <button onclick="closePasswordResetModal()" class="text-gray-400 hover:text-gray-500">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <p class="text-sm text-gray-500 mb-4">
+            Enter a new password for <span id="resetModalEmployeeName" class="font-semibold text-gray-800"></span>.
+        </p>
+
+        <form id="resetPasswordForm" method="POST" class="space-y-4">
+            <div>
+                <label for="new_password" class="block text-sm font-medium text-gray-700">New Password</label>
+                <input type="password" name="new_password" id="new_password" required minlength="6" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Minimum 6 characters">
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" onclick="closePasswordResetModal()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="submit" class="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 text-sm font-medium shadow-sm">Save Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openPasswordResetModal(empId, empName) {
+        document.getElementById('resetPasswordModal').classList.remove('hidden');
+        document.getElementById('resetPasswordForm').action = "/employees/" + empId + "/reset-password";
+        document.getElementById('resetModalEmployeeName').textContent = empName;
+        document.getElementById('new_password').value = "";
+    }
+    function closePasswordResetModal() {
+        document.getElementById('resetPasswordModal').classList.add('hidden');
+    }
+</script>
 {% endblock %}

@@ -16,7 +16,7 @@
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session(s)</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Active Time</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                {% if user.role in ['hr_admin', 'super_admin'] %}
+                {% if user.role in ['admin', 'hr_admin'] %}
                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 {% endif %}
             </tr>
@@ -25,7 +25,7 @@
             {% for log in logs %}
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ log.date }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.employee.first_name }} {{ log.employee.last_name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.employee.name }}</td>
                 <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="{{ log.sessions }}">{{ log.sessions }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{{ log.total_active }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -38,7 +38,7 @@
                     {% endif %}
                 </td>
                 
-                {% if user.role in ['hr_admin', 'super_admin'] %}
+                {% if user.role in ['admin', 'hr_admin'] %}
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="text-blue-600 hover:text-blue-900 text-sm flex justify-end items-center">
                         <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Edit
@@ -56,7 +56,7 @@
 </div>
 
 <!-- Override Modal (Hidden by default) -->
-{% if user.role in ['hr_admin', 'super_admin'] %}
+{% if user.role in ['admin', 'hr_admin'] %}
 <div id="overrideModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
         <div class="flex justify-between items-center mb-4">
