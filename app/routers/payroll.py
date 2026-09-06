@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Form
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -12,6 +12,7 @@ from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.services.payroll_calculator import generate_draft_payslip
 from app.services.pdf_generator import generate_payslip_pdf
+from app.services.formatters import number_to_words, get_month_name, mask_account_number
 
 router = APIRouter(prefix="/payroll")
 templates = Jinja2Templates(directory="app/templates")
@@ -86,21 +87,25 @@ async def edit_payslip_form(
 async def update_payslip(
     payslip_id: int,
     request: Request,
-    basic: float = Form(...),
-    hra: float = Form(...),
-    allowances: float = Form(...),
-    bonus: float = Form(...),
-    pf: float = Form(...),
-    tax: float = Form(...),
-    other_deductions: float = Form(...),
-    status: str = Form(...),
+    basic: float = Form(0.0),
+    hra: float = Form(0.0),
+    allowances: float = Form(0.0),
+    bonus: float = Form(0.0),
+    pf: float = Form(0.0),
+    tax: float = Form(0.0),
+    other_deductions: float = Form(0.0),
+    status: str = Form("draft"),
+    payable_days: int = Form(22),
+    days_worked: float = Form(22.0),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
     payslip = db.query(Payslip).filter(Payslip.id == payslip_id).first()
     if payslip:
-        old_val = f"Basic: {payslip.basic}, Net: {payslip.net_salary}"
+        old_val = f"Basic: {payslip.basic}, Days: {payslip.days_worked}/{payslip.payable_days}, Net: {payslip.net_salary}"
 
+        payslip.payable_days = payable_days
+        payslip.days_worked = days_worked
         payslip.basic = basic
         payslip.hra = hra
         payslip.allowances = allowances
@@ -111,7 +116,7 @@ async def update_payslip(
         payslip.net_salary = (basic + hra + allowances + bonus) - (pf + tax + other_deductions)
         payslip.status = status
 
-        new_val = f"Basic: {payslip.basic}, Net: {payslip.net_salary}"
+        new_val = f"Basic: {payslip.basic}, Days: {payslip.days_worked}/{payslip.payable_days}, Net: {payslip.net_salary}"
 
         audit = AuditLog(
             actor_id=current_user.id,
@@ -126,6 +131,43 @@ async def update_payslip(
         db.commit()
 
     return RedirectResponse(url="/payroll", status_code=302)
+
+
+@router.get("/{payslip_id}/view", response_class=HTMLResponse)
+async def view_payslip(
+    payslip_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(require_auth),
+):
+    payslip = db.query(Payslip).filter(Payslip.id == payslip_id).first()
+    if not payslip:
+        raise HTTPException(status_code=404, detail="Payslip not found")
+
+    if current_user.role == "employee" and payslip.employee_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Unauthorized to view this payslip")
+
+    company = db.query(Company).first()
+    currency = company.currency_symbol if company and company.currency_symbol else "$"
+    month_name = get_month_name(payslip.month)
+    amount_in_words = number_to_words(payslip.net_salary, "Dollars" if currency == "$" else "Rupees")
+    masked_acc = mask_account_number(
+        payslip.employee.bank_account.account_number if payslip.employee and payslip.employee.bank_account else ""
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="payroll/view_payslip.html",
+        context={
+            "user": current_user,
+            "payslip": payslip,
+            "company": company,
+            "currency": currency,
+            "month_name": month_name,
+            "amount_in_words": amount_in_words,
+            "masked_account": masked_acc,
+        },
+    )
 
 
 @router.get("/{payslip_id}/pdf")

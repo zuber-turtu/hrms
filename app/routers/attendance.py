@@ -152,7 +152,7 @@ async def override_attendance(
     request: Request,
     check_in_time: str = Form(None),
     check_out_time: str = Form(None),
-    reason: str = Form(...),
+    reason: str = Form("Manual HR Adjustment"),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):

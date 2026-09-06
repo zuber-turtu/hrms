@@ -28,15 +28,64 @@
         </div>
 
         <div class="flex items-center space-x-3">
+            <a href="/payroll/{{ payslip.id }}/view" class="inline-flex items-center px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm transition-colors">
+                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1.5 text-indigo-600"></i> View Payslip
+            </a>
             <a href="/payroll/{{ payslip.id }}/pdf" target="_blank" class="inline-flex items-center px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm transition-colors">
-                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1.5 text-blue-600"></i> Preview PDF
+                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1.5 text-blue-600"></i> Download PDF
             </a>
         </div>
     </div>
 
     <!-- Edit Payslip Form -->
-    <form action="/payroll/{{ payslip.id }}/edit" method="POST" class="space-y-6">
+    <form action="/payroll/{{ payslip.id }}/edit" method="POST" class="space-y-6"
+          id="payslipEditForm"
+          data-base="{{ payslip.employee.base_salary }}"
+          data-hra="{{ payslip.employee.hra }}"
+          data-allowances="{{ payslip.employee.custom_allowances }}"
+          data-pf="{{ payslip.employee.pf_deduction }}"
+          data-tax="{{ payslip.employee.tax_deduction }}">
         
+        <!-- Working Days & Attendance Control -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-5 gap-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                        <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Attendance & Working Days</h3>
+                        <p class="text-xs text-slate-400">Modify the number of days present/worked and total monthly payable days</p>
+                    </div>
+                </div>
+                <button type="button" onclick="recalculateProRata()" class="self-start sm:self-auto text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 px-3 py-1.5 rounded-lg transition-colors flex items-center shadow-sm">
+                    <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1.5"></i> Recalculate Pro-Rata
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div>
+                    <label for="payable_days" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Total Payable Days <span class="text-rose-500">*</span></label>
+                    <input type="number" id="payable_days" name="payable_days" value="{{ payslip.payable_days }}" min="1" max="31" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <p class="text-[11px] text-slate-400 mt-1">Standard monthly baseline days</p>
+                </div>
+
+                <div>
+                    <label for="days_worked" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Days Worked / Present <span class="text-rose-500">*</span></label>
+                    <input type="number" step="0.5" id="days_worked" name="days_worked" value="{{ payslip.days_worked }}" min="0" max="31" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono font-bold focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <p class="text-[11px] text-slate-400 mt-1">Number of active attendance days</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Unpaid Leave (LOP)</label>
+                    <div id="lop_display" class="w-full text-sm bg-slate-100 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-700 font-mono font-bold flex items-center">
+                        {{ "%.1f"|format(payslip.payable_days - payslip.days_worked) }} Days
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">Difference (Payable - Worked)</p>
+                </div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             <!-- Earnings Card -->
@@ -148,6 +197,10 @@
 <script>
     const earningInputs = document.querySelectorAll('.amount-input');
     const deductionInputs = document.querySelectorAll('.amount-input-deduct');
+    const payableInput = document.getElementById('payable_days');
+    const workedInput = document.getElementById('days_worked');
+    const lopDisplay = document.getElementById('lop_display');
+    const form = document.getElementById('payslipEditForm');
     
     function calculateTotals() {
         let earn = 0;
@@ -165,10 +218,42 @@
         const net = Math.max(0, earn - deduct);
         document.getElementById('net_salary').innerText = net.toFixed(2);
     }
+
+    function updateLop() {
+        const payable = parseFloat(payableInput.value) || 0;
+        const worked = parseFloat(workedInput.value) || 0;
+        const lop = Math.max(0, payable - worked);
+        if (lopDisplay) {
+            lopDisplay.innerText = lop.toFixed(1) + ' Days';
+        }
+    }
+
+    function recalculateProRata() {
+        const payable = parseFloat(payableInput.value) || 1;
+        const worked = parseFloat(workedInput.value) || 0;
+        const ratio = payable > 0 ? (worked / payable) : 0;
+
+        const base = parseFloat(form.dataset.base) || 0;
+        const hra = parseFloat(form.dataset.hra) || 0;
+        const allowances = parseFloat(form.dataset.allowances) || 0;
+        const pf = parseFloat(form.dataset.pf) || 0;
+        const tax = parseFloat(form.dataset.tax) || 0;
+
+        document.querySelector('input[name="basic"]').value = (base * ratio).toFixed(2);
+        document.querySelector('input[name="hra"]').value = (hra * ratio).toFixed(2);
+        document.querySelector('input[name="allowances"]').value = (allowances * ratio).toFixed(2);
+        document.querySelector('input[name="pf"]').value = (pf * ratio).toFixed(2);
+        document.querySelector('input[name="tax"]').value = (tax * ratio).toFixed(2);
+
+        calculateTotals();
+    }
     
     earningInputs.forEach(i => i.addEventListener('input', calculateTotals));
     deductionInputs.forEach(i => i.addEventListener('input', calculateTotals));
+    if (payableInput) payableInput.addEventListener('input', updateLop);
+    if (workedInput) workedInput.addEventListener('input', updateLop);
     
     calculateTotals();
+    updateLop();
 </script>
 {% endblock %}

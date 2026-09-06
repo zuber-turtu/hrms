@@ -43,6 +43,9 @@
         }
     </script>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/static/images/logo.png">
+    
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
@@ -59,9 +62,7 @@
         <!-- App Brand Logo -->
         <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80 bg-slate-950/40">
             <a href="/dashboard" class="flex items-center space-x-3 group">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                    <i data-lucide="building-2" class="w-5 h-5"></i>
-                </div>
+                <img src="/static/images/logo.png" alt="Logo" class="w-9 h-9 object-contain rounded-xl bg-white/10 p-1 shadow-md shadow-blue-500/10 group-hover:scale-105 transition-transform shrink-0">
                 <div class="flex flex-col">
                     <span class="text-base font-bold text-white tracking-tight leading-tight">HRMS<span class="text-blue-400">Portal</span></span>
                     <span class="text-[10px] uppercase font-semibold tracking-wider text-slate-400">Enterprise HR</span>
@@ -131,6 +132,12 @@
                         <a href="/employees" data-nav-link="/employees" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
                             <i data-lucide="users-round" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
                             <span>Employee Directory</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/departments" data-nav-link="/departments" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
+                            <i data-lucide="network" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                            <span>Departments & Roles</span>
                         </a>
                     </li>
                     <li>
@@ -226,6 +233,36 @@
         <!-- Main Scrollable Body Content -->
         <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <div class="max-w-7xl mx-auto space-y-6">
+                
+                <!-- Global Flash Notifications -->
+                {% if request.query_params.get('success') %}
+                <div class="flash-message bg-emerald-50 border border-emerald-200 rounded-2xl p-4 shadow-sm flex items-start space-x-3.5 animate-fadeIn">
+                    <div class="p-1.5 rounded-xl bg-emerald-100 text-emerald-600 shrink-0">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex-1 text-xs sm:text-sm font-semibold text-emerald-800 leading-snug pt-0.5">
+                        {{ request.query_params.get('success') }}
+                    </div>
+                    <button onclick="this.closest('.flash-message').remove()" class="text-emerald-500 hover:text-emerald-700 p-1 rounded-lg hover:bg-emerald-100/50 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                {% endif %}
+
+                {% if request.query_params.get('error') %}
+                <div class="flash-message bg-rose-50 border border-rose-200 rounded-2xl p-4 shadow-sm flex items-start space-x-3.5 animate-fadeIn">
+                    <div class="p-1.5 rounded-xl bg-rose-100 text-rose-600 shrink-0">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex-1 text-xs sm:text-sm font-semibold text-rose-800 leading-snug pt-0.5">
+                        {{ request.query_params.get('error') }}
+                    </div>
+                    <button onclick="this.closest('.flash-message').remove()" class="text-rose-500 hover:text-rose-700 p-1 rounded-lg hover:bg-rose-100/50 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                {% endif %}
+
                 {% block content %}{% endblock %}
             </div>
         </div>

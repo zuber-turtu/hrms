@@ -66,18 +66,17 @@ async def change_password_page(
 @router.post("/change-password")
 async def change_password(
     request: Request,
-    old_password: str = Form(...),
     new_password: str = Form(...),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth)
 ):
-    if not verify_password(old_password, current_user.hashed_password):
+    if len(new_password) < 6:
         return templates.TemplateResponse(
             request, 
             "auth/change_password.html", 
-            {"user": current_user, "error": "Incorrect old password"}
+            {"user": current_user, "error": "New password must be at least 6 characters long."}
         )
-        
+
     current_user.hashed_password = get_password_hash(new_password)
     db.commit()
     

@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block header_title %}Departments & Designations{% endblock %}
+
+{% block content %}
+<!-- Flash Notification Alerts -->
+{% if request.query_params.get('success') %}
+<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm flex items-start space-x-3">
+    <div class="p-1 rounded-full bg-emerald-100 text-emerald-600 shrink-0">
+        <i data-lucide="check-check" class="w-4 h-4"></i>
+    </div>
+    <div class="flex-1 text-sm font-medium text-emerald-800">
+        {{ request.query_params.get('success') }}
+    </div>
+    <a href="/departments" class="text-emerald-500 hover:text-emerald-700">
+        <i data-lucide="x" class="w-4 h-4"></i>
+    </a>
+</div>
+{% endif %}
+
+{% if request.query_params.get('error') %}
+<div class="bg-rose-50 border border-rose-200 rounded-xl p-4 shadow-sm flex items-start space-x-3">
+    <div class="p-1 rounded-full bg-rose-100 text-rose-600 shrink-0">
+        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+    </div>
+    <div class="flex-1 text-sm font-medium text-rose-800">
+        {{ request.query_params.get('error') }}
+    </div>
+    <a href="/departments" class="text-rose-500 hover:text-rose-700">
+        <i data-lucide="x" class="w-4 h-4"></i>
+    </a>
+</div>
+{% endif %}
+
+<!-- Top Header & Actions -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <div class="flex items-center space-x-2.5">
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Organizational Structure</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700">
+                {{ departments|length }} Departments
+            </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">Define corporate divisions, hierarchy, and assigned job designations</p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center space-x-3 self-start sm:self-auto">
+        <button onclick="openDesignationModal()" class="inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm transition-all active:scale-95">
+            <i data-lucide="briefcase" class="w-4 h-4 mr-1.5 text-blue-600"></i> Add Designation
+        </button>
+        <button onclick="openDepartmentModal()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95">
+            <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Add Department
+        </button>
+    </div>
+</div>
+
+<!-- Key Stat Counters -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+        <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Departments</p>
+            <h4 class="text-xl font-bold text-slate-800 mt-0.5">{{ departments|length }}</h4>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+            <i data-lucide="building" class="w-5 h-5"></i>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+        <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Job Designations</p>
+            <h4 class="text-xl font-bold text-indigo-600 mt-0.5">{{ designations|length }}</h4>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+            <i data-lucide="award" class="w-5 h-5"></i>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+        <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assigned Positions</p>
+            <h4 class="text-xl font-bold text-emerald-600 mt-0.5">
+                {{ departments | map(attribute='employees') | map('length') | sum }}
+            </h4>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+            <i data-lucide="users" class="w-5 h-5"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Departments List Grid -->
+<div class="space-y-4">
+    <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900">Departments & Job Hierarchy</h3>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {% for dept in departments %}
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6 flex flex-col justify-between hover:shadow-card-hover transition-all">
+            <div>
+                <!-- Dept Header -->
+                <div class="flex items-start justify-between pb-3 border-b border-slate-100 mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm border border-blue-100 shrink-0">
+                            {{ dept.code or dept.name[:3]|upper }}
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h4 class="text-base font-bold text-slate-900">{{ dept.name }}</h4>
+                                {% if dept.code %}
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-slate-100 text-slate-600 border border-slate-200">
+                                    {{ dept.code }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5">{{ dept.description or 'No description provided' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center space-x-1.5">
+                        <button onclick="openDepartmentModal({{ dept.id }}, '{{ dept.name }}', '{{ dept.code or '' }}', '{{ dept.description or '' }}')" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors" title="Edit Department">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="confirmDeleteDepartment({{ dept.id }}, '{{ dept.name }}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Delete Department">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Designations under this Department -->
+                <div class="mb-4">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Job Designations:</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for des in dept.designations %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 border border-slate-200/70 text-slate-700 group hover:border-slate-300 transition-colors">
+                            <span>{{ des.title }}</span>
+                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', {{ dept.id }}, '{{ des.description or '' }}')" class="ml-1.5 text-slate-400 hover:text-blue-600 transition-colors" title="Edit Designation">
+                                <i data-lucide="edit" class="w-3 h-3"></i>
+                            </button>
+                            <button type="button" onclick="confirmDeleteDesignation({{ des.id }}, '{{ des.title }}')" class="ml-1 text-slate-400 hover:text-rose-600 transition-colors" title="Delete Designation">
+                                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                            </button>
+                        </span>
+                        {% else %}
+                        <span class="text-xs text-slate-400 italic">No designations assigned yet.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer stats -->
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span class="inline-flex items-center font-medium text-slate-700">
+                    <i data-lucide="users" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                    {{ dept.employees|length }} Assigned Staff
+                </span>
+                <button onclick="openDesignationModal(null, '', {{ dept.id }})" class="text-xs font-semibold text-blue-600 hover:text-blue-700 inline-flex items-center">
+                    <i data-lucide="plus" class="w-3 h-3 mr-1"></i> Add Title
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-500">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="building" class="w-6 h-6"></i>
+            </div>
+            <p class="text-sm font-semibold text-slate-700">No departments configured yet.</p>
+            <p class="text-xs text-slate-400 mt-1">Click "Add Department" to start building your organizational hierarchy.</p>
+        </div>
+        {% endfor %}
+
+        {% set unassigned_desigs = designations | selectattr('department_id', 'none') | list %}
+        {% if unassigned_desigs %}
+        <div class="bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm p-6 flex flex-col justify-between hover:shadow-card transition-all">
+            <div>
+                <div class="flex items-start justify-between pb-3 border-b border-slate-100 mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-sm border border-purple-100 shrink-0">
+                            GEN
+                        </div>
+                        <div>
+                            <h4 class="text-base font-bold text-slate-900">General / Cross-Department Roles</h4>
+                            <p class="text-xs text-slate-400 mt-0.5">Designations available across all departments</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Job Designations:</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for des in unassigned_desigs %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 border border-slate-200/70 text-slate-700 group hover:border-slate-300 transition-colors">
+                            <span>{{ des.title }}</span>
+                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', '', '{{ des.description or '' }}')" class="ml-1.5 text-slate-400 hover:text-blue-600 transition-colors" title="Edit Designation">
+                                <i data-lucide="edit" class="w-3 h-3"></i>
+                            </button>
+                            <button type="button" onclick="confirmDeleteDesignation({{ des.id }}, '{{ des.title }}')" class="ml-1 text-slate-400 hover:text-rose-600 transition-colors" title="Delete Designation">
+                                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                            </button>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span class="inline-flex items-center font-medium text-slate-700">
+                    <i data-lucide="award" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                    {{ unassigned_desigs|length }} General Roles
+                </span>
+                <button onclick="openDesignationModal(null, '', '')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 inline-flex items-center">
+                    <i data-lucide="plus" class="w-3 h-3 mr-1"></i> Add Title
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- 1. Department Modal (Add/Edit) -->
+<div id="departmentModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closeDepartmentModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                            <i data-lucide="building" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900" id="deptModalTitle">Add Department</h3>
+                            <p class="text-xs text-slate-500">Department parameters</p>
+                        </div>
+                    </div>
+                    <button onclick="closeDepartmentModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <form id="departmentForm" method="POST" action="/departments/create" class="mt-4 space-y-4">
+                    <div>
+                        <label for="dept_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Department Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="name" id="dept_name" required placeholder="e.g. Engineering" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="dept_code" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Short Code</label>
+                        <input type="text" name="code" id="dept_code" placeholder="e.g. ENG" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 uppercase font-mono focus:bg-white focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="dept_description" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Description</label>
+                        <textarea name="description" id="dept_description" rows="2" placeholder="Brief function or role of department" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="closeDepartmentModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                            Save Department
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Designation Modal (Add/Edit) -->
+<div id="designationModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closeDesignationModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+                            <i data-lucide="award" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900" id="desigModalTitle">Add Job Designation</h3>
+                            <p class="text-xs text-slate-500">Assign title to department</p>
+                        </div>
+                    </div>
+                    <button onclick="closeDesignationModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <form id="designationForm" method="POST" action="/departments/designations/create" class="mt-4 space-y-4">
+                    <div>
+                        <label for="desig_title" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Job Title <span class="text-rose-500">*</span></label>
+                        <input type="text" name="title" id="desig_title" required placeholder="e.g. Senior Software Engineer" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="desig_dept_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Parent Department</label>
+                        <select name="department_id" id="desig_dept_id" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            <option value="">-- No Specific Department --</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="desig_description" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Job Responsibilities</label>
+                        <textarea name="description" id="desig_description" rows="2" placeholder="Brief job scope" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="closeDesignationModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all">
+                            Save Designation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Delete Forms -->
+<form id="deleteDeptForm" method="POST" class="hidden"></form>
+
+<script>
+    function openDepartmentModal(id = null, name = '', code = '', desc = '') {
+        const modal = document.getElementById('departmentModal');
+        const form = document.getElementById('departmentForm');
+        const title = document.getElementById('deptModalTitle');
+
+        if (id) {
+            title.textContent = "Edit Department";
+            form.action = `/departments/${id}/edit`;
+            document.getElementById('dept_name').value = name;
+            document.getElementById('dept_code').value = code;
+            document.getElementById('dept_description').value = desc;
+        } else {
+            title.textContent = "Add Department";
+            form.action = "/departments/create";
+            document.getElementById('dept_name').value = "";
+            document.getElementById('dept_code').value = "";
+            document.getElementById('dept_description').value = "";
+        }
+        modal.classList.remove('hidden');
+    }
+
+    function closeDepartmentModal() {
+        document.getElementById('departmentModal').classList.add('hidden');
+    }
+
+    function openDesignationModal(id = null, titleVal = '', deptId = '', desc = '') {
+        const modal = document.getElementById('designationModal');
+        const form = document.getElementById('designationForm');
+        const title = document.getElementById('desigModalTitle');
+
+        if (id) {
+            title.textContent = "Edit Designation";
+            form.action = `/departments/designations/${id}/edit`;
+            document.getElementById('desig_title').value = titleVal;
+            document.getElementById('desig_dept_id').value = deptId || "";
+            document.getElementById('desig_description').value = desc;
+        } else {
+            title.textContent = "Add Job Designation";
+            form.action = "/departments/designations/create";
+            document.getElementById('desig_title').value = "";
+            document.getElementById('desig_dept_id').value = deptId || "";
+            document.getElementById('desig_description').value = "";
+        }
+        modal.classList.remove('hidden');
+    }
+
+    function closeDesignationModal() {
+        document.getElementById('designationModal').classList.add('hidden');
+    }
+
+    function confirmDeleteDepartment(id, name) {
+        if (confirm(`Are you sure you want to delete the department "${name}"?`)) {
+            const form = document.getElementById('deleteDeptForm');
+            form.action = `/departments/${id}/delete`;
+            form.submit();
+        }
+    }
+
+    function confirmDeleteDesignation(id, title) {
+        if (confirm(`Are you sure you want to delete the job designation "${title}"?`)) {
+            const form = document.getElementById('deleteDeptForm');
+            form.action = `/departments/designations/${id}/delete`;
+            form.submit();
+        }
+    }
+</script>
+{% endblock %}

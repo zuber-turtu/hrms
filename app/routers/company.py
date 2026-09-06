@@ -35,10 +35,10 @@ async def company_profile(
 @router.post("/profile")
 async def update_company_profile(
     request: Request,
-    name: str = Form(...),
-    address: str = Form(...),
-    currency_symbol: str = Form(...),
-    working_days_per_month: int = Form(...),
+    name: str = Form("Acme Corp"),
+    address: str = Form(""),
+    currency_symbol: str = Form("$"),
+    working_days_per_month: int = Form(22),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):

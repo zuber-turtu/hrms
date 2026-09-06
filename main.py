@@ -6,10 +6,22 @@ from jose import jwt
 import datetime
 
 from app.database import engine, Base, SessionLocal
-from app.models import Company, Employee, Attendance, Payslip, AuditLog  # ensure all models imported so tables are created
+from app.models import (
+    Company,
+    Employee,
+    Department,
+    Designation,
+    EmployeeProfile,
+    EmployeeBankAccount,
+    EmployeeEmergencyContact,
+    SalaryStructure,
+    Attendance,
+    Payslip,
+    AuditLog,
+)
 from app.dependencies import get_password_hash
 from app.config import settings
-from app.routers import auth, dashboard, company, employees, attendance, payroll, audit
+from app.routers import auth, dashboard, company, employees, attendance, payroll, audit, departments
 
 
 @asynccontextmanager
@@ -20,15 +32,30 @@ async def lifespan(app: FastAPI):
     try:
         admin = db.query(Employee).filter(Employee.email == "admin@hrms.local").first()
         if not admin:
+            dept = db.query(Department).filter(Department.name == "Management").first()
+            if not dept:
+                dept = Department(name="Management", code="MGMT")
+                db.add(dept)
+                db.flush()
+            desig = db.query(Designation).filter(Designation.title == "System Administrator").first()
+            if not desig:
+                desig = Designation(title="System Administrator", department_id=dept.id)
+                db.add(desig)
+                db.flush()
             admin = Employee(
                 name="Admin",
                 email="admin@hrms.local",
                 hashed_password=get_password_hash("Admin@123"),
                 role="admin",
-                department="Management",
-                designation="System Administrator",
+                department_id=dept.id,
+                designation_id=desig.id,
             )
             db.add(admin)
+            db.flush()
+            admin_profile = EmployeeProfile(employee_id=admin.id)
+            admin_salary = SalaryStructure(employee_id=admin.id, base_salary=100000.0)
+            db.add(admin_profile)
+            db.add(admin_salary)
             db.commit()
             print("Seeded default admin: admin@hrms.local / Admin@123")
         elif admin.role != "admin":
@@ -59,57 +86,163 @@ async def add_attendance_state_middleware(request: Request, call_next):
                 user = db.query(Employee).filter(Employee.email == email).first()
                 if user:
                     today = datetime.date.today()
-                    attendance_today = db.query(Attendance).filter(
+                    # Query all logs today
+                    today_logs = db.query(Attendance).filter(
                         Attendance.employee_id == user.id,
                         Attendance.date == today
                     ).order_by(Attendance.check_in.asc()).all()
                     
-                    accumulated_seconds = 0
-                    active = None
-                    for r in attendance_today:
-                        if r.check_out:
-                            diff = (r.check_out - r.check_in).total_seconds()
-                            accumulated_seconds += max(0, diff)
-                        else:
-                            active = r
-                            
-                    request.state.accumulated_seconds = int(accumulated_seconds)
-                    hrs = request.state.accumulated_seconds // 3600
-                    mins = (request.state.accumulated_seconds % 3600) // 60
-                    secs = request.state.accumulated_seconds % 60
-                    request.state.accumulated_time_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
+                    accumulated = 0
+                    active_checkin = None
+                    last_out = None
                     
-                    if active:
+                    for log in today_logs:
+                        if log.check_in and log.check_out:
+                            diff = (log.check_out - log.check_in).total_seconds()
+                            if diff > 0:
+                                accumulated += diff
+                            last_out = log.check_out
+                        elif log.check_in and not log.check_out:
+                            active_checkin = log.check_in
+                    
+                    if active_checkin:
                         request.state.is_checked_in = True
-                        request.state.active_check_in = active.check_in
-                    elif attendance_today:
-                        request.state.last_check_out = attendance_today[-1].check_out
+                        request.state.active_check_in = active_checkin
+                        request.state.accumulated_seconds = int(accumulated)
+                    else:
+                        request.state.is_checked_in = False
+                        request.state.last_check_out = last_out
+                        request.state.accumulated_seconds = int(accumulated)
+                        hrs = int(accumulated // 3600)
+                        mins = int((accumulated % 3600) // 60)
+                        secs = int(accumulated % 60)
+                        request.state.accumulated_time_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
         except Exception:
             pass
         finally:
             db.close()
-            
+
     response = await call_next(request)
     return response
+
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.responses import JSONResponse, RedirectResponse
+import urllib.parse
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Global Exception Handlers to Prevent Raw JSON Errors on Web Forms
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    accept = request.headers.get("accept", "")
+    path = request.url.path
+    is_api = "application/json" in accept or path.startswith("/api") or "/api/" in path
+
+    if is_api:
+        return JSONResponse(
+            status_code=422,
+            content={"detail": exc.errors()},
+        )
+
+    # Extract friendly missing/invalid field names
+    missing_fields = []
+    other_errors = []
+    for err in exc.errors():
+        loc = err.get("loc", [])
+        field = str(loc[-1]) if loc else "field"
+        clean_field = field.replace("_", " ").title()
+        err_type = err.get("type", "")
+        if "missing" in err_type or "required" in err.get("msg", "").lower():
+            missing_fields.append(clean_field)
+        else:
+            other_errors.append(f"{clean_field}: {err.get('msg', 'invalid value')}")
+
+    parts = []
+    if missing_fields:
+        parts.append(f"Required fields missing: {', '.join(missing_fields)}")
+    if other_errors:
+        parts.append("; ".join(other_errors))
+
+    error_message = ". ".join(parts) if parts else "Please provide all required form inputs."
+
+    referer = request.headers.get("referer")
+    if referer:
+        parsed = urllib.parse.urlparse(referer)
+        query_dict = dict(urllib.parse.parse_qsl(parsed.query))
+        query_dict["error"] = error_message
+        new_query = urllib.parse.urlencode(query_dict)
+        redirect_url = urllib.parse.urlunparse(
+            (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
+        )
+        return RedirectResponse(url=redirect_url, status_code=303)
+
+    return RedirectResponse(url=f"/dashboard?error={urllib.parse.quote(error_message)}", status_code=303)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    accept = request.headers.get("accept", "")
+    path = request.url.path
+    is_api = "application/json" in accept or path.startswith("/api") or "/api/" in path
+
+    if is_api:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
+
+    if exc.status_code == 401:
+        return RedirectResponse(url="/login?error=Please+log+in+to+continue", status_code=303)
+
+    if exc.status_code == 403:
+        referer = request.headers.get("referer", "/dashboard")
+        parsed = urllib.parse.urlparse(referer)
+        query_dict = dict(urllib.parse.parse_qsl(parsed.query))
+        query_dict["error"] = "Access Denied: You do not have permission for this action."
+        new_query = urllib.parse.urlencode(query_dict)
+        redirect_url = urllib.parse.urlunparse(
+            (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
+        )
+        return RedirectResponse(url=redirect_url, status_code=303)
+
+    if exc.status_code == 404:
+        referer = request.headers.get("referer", "/dashboard")
+        parsed = urllib.parse.urlparse(referer)
+        query_dict = dict(urllib.parse.parse_qsl(parsed.query))
+        query_dict["error"] = "The requested resource or page was not found."
+        new_query = urllib.parse.urlencode(query_dict)
+        redirect_url = urllib.parse.urlunparse(
+            (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
+        )
+        return RedirectResponse(url=redirect_url, status_code=303)
+
+    referer = request.headers.get("referer", "/dashboard")
+    parsed = urllib.parse.urlparse(referer)
+    query_dict = dict(urllib.parse.parse_qsl(parsed.query))
+    query_dict["error"] = str(exc.detail)
+    new_query = urllib.parse.urlencode(query_dict)
+    redirect_url = urllib.parse.urlunparse(
+        (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
+    )
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
 # Include Routers
 app.include_router(auth.router)
 app.include_router(dashboard.router)
-app.include_router(company.router)
 app.include_router(employees.router)
 app.include_router(attendance.router)
 app.include_router(payroll.router)
+app.include_router(company.router)
 app.include_router(audit.router)
-
+app.include_router(departments.router)
 
 @app.get("/")
-def read_root():
-    return RedirectResponse(url="/login")
+def root():
+    return RedirectResponse(url="/dashboard")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
-
+    uvicorn.run("main.py:app", host="127.0.0.1", port=8000, reload=True)
