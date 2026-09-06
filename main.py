@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
-        admin = db.query(Employee).filter(Employee.email == "admin@hrms.local").first()
+        admin = db.query(Employee).filter(Employee.role == "admin").first()
         if not admin:
             dept = db.query(Department).filter(Department.name == "Management").first()
             if not dept:

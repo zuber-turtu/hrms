@@ -19,8 +19,9 @@ from app.models.employee import (
 from app.models.department import Department, Designation
 from app.models.attendance import Attendance
 from app.models.payroll import Payslip
-from app.dependencies import require_auth, RoleChecker, get_password_hash
+from app.dependencies import require_auth, RoleChecker, get_password_hash, create_access_token
 from app.models.audit import AuditLog
+from app.config import settings
 
 router = APIRouter(prefix="/employees")
 templates = Jinja2Templates(directory="app/templates")
@@ -436,10 +437,22 @@ async def edit_employee(
         employee.emergency_contacts[0].contact_name = emergency_contact_name
         employee.emergency_contacts[0].relationship = emergency_contact_relation
         employee.emergency_contacts[0].phone_number = emergency_contact
-
         db.commit()
 
-    return RedirectResponse(url=f"/employees/{emp_id}/view", status_code=302)
+    response = RedirectResponse(url=f"/employees/{emp_id}/view", status_code=302)
+    if current_user.id == emp_id and email != current_user.email:
+        access_token_expires = datetime.timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        new_token = create_access_token(
+            data={"sub": employee.email}, expires_delta=access_token_expires
+        )
+        response.set_cookie(
+            key=settings.COOKIE_NAME,
+            value=new_token,
+            httponly=True,
+            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
+    return response
 
 
 
