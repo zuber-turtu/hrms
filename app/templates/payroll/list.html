@@ -3,105 +3,248 @@
 {% block header_title %}Payroll Management{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex justify-between items-center">
-    <h2 class="text-xl font-bold text-gray-800">Payslips</h2>
+<!-- Header Bar -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <div class="flex items-center space-x-2.5">
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Payroll & Salary Slips</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700" id="payslip-count-badge">
+                {{ payslips|length }}
+            </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">Generate, audit, and disburse monthly compensation payslips</p>
+    </div>
     
     {% if user.role in ['admin', 'hr_admin'] %}
-    <button onclick="document.getElementById('generateModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
+    <button onclick="document.getElementById('generateModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95 self-start sm:self-auto">
         <i data-lucide="calculator" class="w-4 h-4 mr-2"></i> Generate Draft Payslip
     </button>
     {% endif %}
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month/Year</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Salary</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            {% for payslip in payslips %}
-            <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">{{ payslip.employee.name }}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payslip.month }}/{{ payslip.year }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ payslip.net_salary }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        {% if payslip.status == 'draft' %} bg-yellow-100 text-yellow-800 
-                        {% elif payslip.status == 'finalized' %} bg-blue-100 text-blue-800 
-                        {% elif payslip.status == 'paid' %} bg-green-100 text-green-800 
-                        {% endif %}">
-                        {{ payslip.status | title }}
-                    </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                    {% if user.role in ['admin', 'hr_admin'] %}
-                    <a href="/payroll/{{ payslip.id }}/edit" class="text-blue-600 hover:text-blue-900"><i data-lucide="edit-3" class="w-4 h-4 inline"></i></a>
-                    {% endif %}
-                    <a href="/payroll/{{ payslip.id }}/pdf" class="text-gray-600 hover:text-gray-900" target="_blank"><i data-lucide="download" class="w-4 h-4 inline"></i></a>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No payslips found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<!-- Search & Status Filter Bar -->
+<div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+    <div class="relative flex-1">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input type="text" id="payslipSearch" onkeyup="filterPayslips()" placeholder="Search by employee name or period (MM/YYYY)..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition-all">
+    </div>
+
+    <div class="flex items-center space-x-2">
+        <label for="payrollStatusFilter" class="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">Status:</label>
+        <select id="payrollStatusFilter" onchange="filterPayslips()" class="py-2 px-3 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:bg-white focus:outline-none focus:border-blue-500">
+            <option value="all">All Statuses</option>
+            <option value="draft">Draft</option>
+            <option value="finalized">Finalized</option>
+            <option value="paid">Paid</option>
+        </select>
+    </div>
+</div>
+
+<!-- Payslips Table Card -->
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-100" id="payslipsTable">
+            <thead class="bg-slate-50/80">
+                <tr>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Payroll Period</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Net Payable</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+                {% for payslip in payslips %}
+                <tr class="hover:bg-slate-50/80 transition-colors payslip-row"
+                    data-emp="{{ payslip.employee.name|lower }}"
+                    data-period="{{ payslip.month }}/{{ payslip.year }}"
+                    data-status="{{ payslip.status|lower }}">
+                    
+                    <!-- Employee -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                                {{ payslip.employee.name[0] if payslip.employee.name else 'E' }}
+                            </div>
+                            <div class="text-sm font-bold text-slate-900">{{ payslip.employee.name }}</div>
+                        </div>
+                    </td>
+
+                    <!-- Period -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-semibold font-mono">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                            {{ "%02d" % payslip.month }}/{{ payslip.year }}
+                        </span>
+                    </td>
+
+                    <!-- Net Salary -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-bold font-mono text-slate-900">{{ payslip.net_salary }}</span>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border
+                            {% if payslip.status == 'draft' %} bg-amber-50 text-amber-700 border-amber-200/80
+                            {% elif payslip.status == 'finalized' %} bg-blue-50 text-blue-700 border-blue-200/80
+                            {% elif payslip.status == 'paid' %} bg-emerald-50 text-emerald-700 border-emerald-200/80
+                            {% endif %}">
+                            <span class="w-1.5 h-1.5 rounded-full mr-1.5 
+                                {% if payslip.status == 'draft' %} bg-amber-500
+                                {% elif payslip.status == 'finalized' %} bg-blue-500
+                                {% elif payslip.status == 'paid' %} bg-emerald-500
+                                {% endif %}"></span>
+                            {{ payslip.status | title }}
+                        </span>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        {% if user.role in ['admin', 'hr_admin'] %}
+                        <a href="/payroll/{{ payslip.id }}/edit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-blue-600 transition-colors" title="Edit Line Items">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Edit
+                        </a>
+                        {% endif %}
+                        <a href="/payroll/{{ payslip.id }}/pdf" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors" target="_blank" title="Download Salary Slip PDF">
+                            <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> PDF
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr id="server-empty-row">
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="banknote" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-slate-700">No payslips found</p>
+                        <p class="text-xs text-slate-400 mt-1">Generate a draft payslip to begin monthly payroll calculation.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                <tr id="noResultsRow" class="hidden">
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="search-x" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-slate-700">No matching payslips found</p>
+                        <p class="text-xs text-slate-400 mt-1">Try adjusting your search query or status filter.</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% if user.role in ['admin', 'hr_admin'] %}
 <!-- Generate Modal -->
-<div id="generateModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 relative">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Generate Payslip</h3>
-            <button onclick="document.getElementById('generateModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-500">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
+<div id="generateModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="document.getElementById('generateModal').classList.add('hidden')"></div>
         
-        <form action="/payroll/generate-draft" method="POST" class="space-y-4">
-            <div>
-                <label for="employee_id" class="block text-sm font-medium text-gray-700">Employee</label>
-                <select name="employee_id" id="employee_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    {% for emp in employees %}
-                    <option value="{{ emp.id }}">{{ emp.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="month" class="block text-sm font-medium text-gray-700">Month</label>
-                    <select name="month" id="month" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        {% for i in range(1, 13) %}
-                        <option value="{{ i }}">{{ i }}</option>
-                        {% endfor %}
-                    </select>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                            <i data-lucide="calculator" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Generate Draft Payslip</h3>
+                            <p class="text-xs text-slate-500">Pro-rata calculation from attendance</p>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('generateModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
                 </div>
-                <div>
-                    <label for="year" class="block text-sm font-medium text-gray-700">Year</label>
-                    <select name="year" id="year" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        <option value="2026">2026</option>
-                        <option value="2027">2027</option>
-                    </select>
-                </div>
+                
+                <form action="/payroll/generate-draft" method="POST" class="mt-4 space-y-4">
+                    <div>
+                        <label for="employee_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Select Employee</label>
+                        <select name="employee_id" id="employee_id" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.department or 'General' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Month</label>
+                            <select name="month" id="month" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}" {% if i == 9 %}selected{% endif %}>{{ i }} ({{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Year</label>
+                            <select name="year" id="year" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                                <option value="2026" selected>2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="document.getElementById('generateModal').classList.add('hidden')" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                            Generate Draft
+                        </button>
+                    </div>
+                </form>
             </div>
-            
-            <div class="flex justify-end pt-2">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium w-full">Generate</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
+
+<script>
+    function filterPayslips() {
+        const query = document.getElementById('payslipSearch').value.toLowerCase().trim();
+        const statusFilter = document.getElementById('payrollStatusFilter').value.toLowerCase();
+        const rows = document.querySelectorAll('.payslip-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const emp = row.getAttribute('data-emp') || '';
+            const period = row.getAttribute('data-period') || '';
+            const status = row.getAttribute('data-status') || '';
+
+            const matchesQuery = !query || emp.includes(query) || period.includes(query);
+            const matchesStatus = (statusFilter === 'all') || (status === statusFilter);
+
+            if (matchesQuery && matchesStatus) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const noResults = document.getElementById('noResultsRow');
+        if (noResults) {
+            if (visibleCount === 0 && rows.length > 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+            }
+        }
+
+        const badge = document.getElementById('payslip-count-badge');
+        if (badge) {
+            badge.textContent = visibleCount;
+        }
+    }
+</script>
 {% endif %}
 
 {% endblock %}

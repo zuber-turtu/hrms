@@ -1,56 +1,231 @@
 {% extends "base.html" %}
 
-{% block header_title %}Dashboard{% endblock %}
+{% block header_title %}Dashboard Overview{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
-        <div class="p-4 rounded-full bg-blue-50 text-blue-600 mr-4">
-            <i data-lucide="users" class="w-8 h-8"></i>
+<!-- Welcome Hero Card -->
+<div class="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-slate-900/10 border border-slate-700/50">
+    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center space-x-4">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xl sm:text-2xl shadow-lg shadow-blue-500/30 ring-2 ring-white/20 shrink-0">
+                {{ user.name[0] if user.name else 'U' }}
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                        {{ user.role.replace('_', ' ') | title }}
+                    </span>
+                    <span class="text-xs text-slate-400">• {{ user.department or 'General' }}</span>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight mt-1">
+                    Welcome back, {{ user.name }}!
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-300 mt-0.5">
+                    {{ user.designation or 'Team Member' }} | Enterprise HRMS Portal
+                </p>
+            </div>
         </div>
-        <div>
-            <p class="text-sm font-medium text-gray-500">Welcome</p>
-            <h3 class="text-xl font-bold text-gray-900">{{ user.name }}</h3>
+
+        <div class="flex items-center space-x-3 self-start md:self-auto">
+            <a href="/employees/{{ user.id }}/view" class="inline-flex items-center px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 transition-all duration-150 shadow-sm">
+                <i data-lucide="user" class="w-4 h-4 mr-2 text-blue-300"></i> View Profile
+            </a>
+            <a href="/attendance" class="inline-flex items-center px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-600/30 transition-all duration-150">
+                <i data-lucide="clock" class="w-4 h-4 mr-2"></i> Attendance
+            </a>
         </div>
     </div>
-    
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
-        <div class="p-4 rounded-full bg-green-50 text-green-600 mr-4">
-            <i data-lucide="check-circle" class="w-8 h-8"></i>
-        </div>
+
+    <!-- Decorative background glow elements -->
+    <div class="absolute -right-12 -bottom-12 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -left-12 -top-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+</div>
+
+<!-- Key Stat Metric Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <!-- Metric 1: Account Info -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center justify-between">
         <div>
-            <p class="text-sm font-medium text-gray-500">Role</p>
-            <h3 class="text-xl font-bold text-gray-900 capitalize">{{ user.role.replace('_', ' ') }}</h3>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Account Role</p>
+            <h4 class="text-lg font-bold text-slate-800 mt-1 capitalize">{{ user.role.replace('_', ' ') }}</h4>
+            <span class="inline-flex items-center text-[11px] font-medium text-blue-600 mt-1">
+                <i data-lucide="shield" class="w-3 h-3 mr-1"></i> Verified Access
+            </span>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+            <i data-lucide="shield-check" class="w-6 h-6"></i>
         </div>
     </div>
-    
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
-        <div class="p-4 rounded-full bg-purple-50 text-purple-600 mr-4">
-            <i data-lucide="calendar" class="w-8 h-8"></i>
-        </div>
+
+    <!-- Metric 2: Attendance Status -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center justify-between">
         <div>
-            <p class="text-sm font-medium text-gray-500">Joined Date</p>
-            <h3 class="text-xl font-bold text-gray-900">{{ user.joining_date }}</h3>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Shift Status</p>
+            <div class="flex items-center space-x-1.5 mt-1">
+                {% if request.state.is_checked_in %}
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse-dot"></span>
+                    <h4 class="text-lg font-bold text-emerald-600">Active Working</h4>
+                {% else %}
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                    <h4 class="text-lg font-bold text-slate-700">Checked Out</h4>
+                {% endif %}
+            </div>
+            <span class="inline-flex items-center text-[11px] font-medium text-slate-500 mt-1">
+                {% if request.state.accumulated_seconds > 0 %}
+                    Today: {{ request.state.accumulated_time_str }}
+                {% else %}
+                    Ready to check in
+                {% endif %}
+            </span>
+        </div>
+        <div class="w-12 h-12 rounded-xl {% if request.state.is_checked_in %}bg-emerald-50 text-emerald-600 border border-emerald-100{% else %}bg-slate-50 text-slate-600 border border-slate-100{% endif %} flex items-center justify-center shrink-0">
+            <i data-lucide="clock" class="w-6 h-6"></i>
+        </div>
+    </div>
+
+    <!-- Metric 3: Department -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center justify-between">
+        <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Department</p>
+            <h4 class="text-lg font-bold text-slate-800 mt-1 truncate max-w-[130px]">{{ user.department or 'General' }}</h4>
+            <span class="inline-flex items-center text-[11px] font-medium text-indigo-600 mt-1 truncate max-w-[130px]">
+                <i data-lucide="briefcase" class="w-3 h-3 mr-1"></i> {{ user.designation or 'Staff' }}
+            </span>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+            <i data-lucide="building" class="w-6 h-6"></i>
+        </div>
+    </div>
+
+    <!-- Metric 4: Joined Date -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center justify-between">
+        <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Joining Date</p>
+            <h4 class="text-lg font-bold text-slate-800 mt-1">{{ user.joining_date }}</h4>
+            <span class="inline-flex items-center text-[11px] font-medium text-emerald-600 mt-1">
+                <i data-lucide="calendar-check" class="w-3 h-3 mr-1"></i> Active Member
+            </span>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
+            <i data-lucide="calendar" class="w-6 h-6"></i>
         </div>
     </div>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="p-6 border-b border-gray-100">
-        <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+<!-- Quick Navigation & Portals Grid -->
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div>
+            <h3 class="text-base font-bold text-slate-900">Quick Navigation & Portals</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Direct shortcuts to frequent HR operations</p>
+        </div>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1 text-blue-500"></i> Operations
+        </span>
     </div>
-    <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        
-        <a href="/attendance" class="py-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg flex flex-col items-center justify-center transition-colors">
-            <i data-lucide="list" class="w-6 h-6 mb-2"></i>
-            <span class="font-medium">View Logs</span>
+    
+    <div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1: Attendance Log -->
+        <a href="/attendance" class="p-5 rounded-xl border border-slate-200/80 hover:border-blue-500/50 hover:bg-blue-50/30 transition-all duration-200 group flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all"></i>
+            </div>
+            <div class="mt-4">
+                <h4 class="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">Attendance Log</h4>
+                <p class="text-xs text-slate-500 mt-1">Review punch timestamps, sessions & work hours</p>
+            </div>
         </a>
-        
-        <a href="/payroll" class="py-4 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg flex flex-col items-center justify-center transition-colors">
-            <i data-lucide="banknote" class="w-6 h-6 mb-2"></i>
-            <span class="font-medium">Payslips</span>
+
+        <!-- Card 2: Payroll & Payslips -->
+        <a href="/payroll" class="p-5 rounded-xl border border-slate-200/80 hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all duration-200 group flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"></i>
+            </div>
+            <div class="mt-4">
+                <h4 class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">Payslips & Payroll</h4>
+                <p class="text-xs text-slate-500 mt-1">View monthly statements and download salary slips</p>
+            </div>
         </a>
-        
+
+        <!-- Card 3: My Profile -->
+        <a href="/employees/{{ user.id }}/view" class="p-5 rounded-xl border border-slate-200/80 hover:border-indigo-500/50 hover:bg-indigo-50/30 transition-all duration-200 group flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="user-check" class="w-5 h-5"></i>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all"></i>
+            </div>
+            <div class="mt-4">
+                <h4 class="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Employee Profile</h4>
+                <p class="text-xs text-slate-500 mt-1">View personal KYC, bank details and salary structure</p>
+            </div>
+        </a>
+
+        <!-- Card 4: Change Password -->
+        <a href="/change-password" class="p-5 rounded-xl border border-slate-200/80 hover:border-purple-500/50 hover:bg-purple-50/30 transition-all duration-200 group flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="key-round" class="w-5 h-5"></i>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all"></i>
+            </div>
+            <div class="mt-4">
+                <h4 class="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors">Security Settings</h4>
+                <p class="text-xs text-slate-500 mt-1">Update login credentials and account password</p>
+            </div>
+        </a>
+
+        {% if user.role in ['admin', 'hr_admin'] %}
+        <!-- Admin Card 1: Directory -->
+        <a href="/employees" class="p-5 rounded-xl border border-slate-200/80 hover:border-blue-500/50 hover:bg-blue-50/30 transition-all duration-200 group flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="users-round" class="w-5 h-5"></i>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all"></i>
+            </div>
+            <div class="mt-4">
+                <h4 class="text-sm font-bold text-slate-900 group-hover:text-amber-600 transition-colors">Manage Employees</h4>
+                <p class="text-xs text-slate-500 mt-1">Add, edit, bulk import Excel and reset credentials</p>
+            </div>
+        </a>
+
+        <!-- Admin Card 2: Company Settings -->
+        <a href="/company/profile" class="p-5 rounded-xl border border-slate-200/80 hover:border-slate-500/50 hover:bg-slate-50/50 transition-all duration-200 group flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="building" class="w-5 h-5"></i>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-slate-800 group-hover:translate-x-0.5 transition-all"></i>
+            </div>
+            <div class="mt-4">
+                <h4 class="text-sm font-bold text-slate-900 group-hover:text-slate-800 transition-colors">Company Profile</h4>
+                <p class="text-xs text-slate-500 mt-1">Configure company name, currency & working days</p>
+            </div>
+        </a>
+        {% endif %}
+
+        {% if user.role == 'admin' %}
+        <!-- Admin Card 3: Audit Logs -->
+        <a href="/audit" class="p-5 rounded-xl border border-slate-200/80 hover:border-red-500/50 hover:bg-red-50/30 transition-all duration-200 group flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-red-600 group-hover:translate-x-0.5 transition-all"></i>
+            </div>
+            <div class="mt-4">
+                <h4 class="text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors">Audit Trail</h4>
+                <p class="text-xs text-slate-500 mt-1">Review immutable logs of security and system changes</p>
+            </div>
+        </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

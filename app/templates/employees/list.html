@@ -1,140 +1,236 @@
 {% extends "base.html" %}
 
-{% block header_title %}Employees{% endblock %}
+{% block header_title %}Employee Directory{% endblock %}
 
 {% block content %}
+<!-- Flash Notification Banners -->
 {% if request.query_params.get('imported') is not none %}
-<div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-md">
-    <div class="flex">
-        <div class="flex-shrink-0">
-            <i data-lucide="check-circle" class="h-5 w-5 text-green-400"></i>
-        </div>
-        <div class="ml-3">
-            <p class="text-sm text-green-700 font-medium">
-                Import complete: Successfully imported {{ request.query_params.get('imported') }} employees.
-                {% if request.query_params.get('skipped')|int > 0 %}
-                (Skipped {{ request.query_params.get('skipped') }} already existing emails)
-                {% endif %}
-            </p>
-        </div>
+<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm flex items-start space-x-3">
+    <div class="p-1 rounded-full bg-emerald-100 text-emerald-600 shrink-0">
+        <i data-lucide="check" class="w-4 h-4"></i>
     </div>
+    <div class="flex-1 text-sm text-emerald-800">
+        <span class="font-bold">Excel Import Successful!</span> Successfully imported {{ request.query_params.get('imported') }} employee records.
+        {% if request.query_params.get('skipped')|int > 0 %}
+            <span class="text-emerald-700 font-medium">({{ request.query_params.get('skipped') }} existing email records were skipped).</span>
+        {% endif %}
+    </div>
+    <a href="/employees" class="text-emerald-500 hover:text-emerald-700">
+        <i data-lucide="x" class="w-4 h-4"></i>
+    </a>
 </div>
 {% endif %}
 
 {% if request.query_params.get('reset_success') %}
-<div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-md">
-    <div class="flex items-center">
-        <div class="flex-shrink-0 text-green-500">
-            <i data-lucide="check-circle-2" class="h-5 w-5"></i>
-        </div>
-        <div class="ml-3">
-            <p class="text-sm text-green-700 font-medium">Employee password has been reset successfully!</p>
-        </div>
+<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm flex items-start space-x-3">
+    <div class="p-1 rounded-full bg-emerald-100 text-emerald-600 shrink-0">
+        <i data-lucide="check-check" class="w-4 h-4"></i>
     </div>
+    <div class="flex-1 text-sm text-emerald-800">
+        <span class="font-bold">Password Reset:</span> Employee password has been reset successfully.
+    </div>
+    <a href="/employees" class="text-emerald-500 hover:text-emerald-700">
+        <i data-lucide="x" class="w-4 h-4"></i>
+    </a>
 </div>
 {% endif %}
 
-<div class="mb-6 flex justify-between items-center">
-    <h2 class="text-xl font-bold text-gray-800">Directory</h2>
-    <div class="flex items-center space-x-3">
-        <!-- Import Excel Form -->
-        <form action="/employees/import" method="POST" enctype="multipart/form-data" class="flex items-center">
-            <label for="excel_file" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 cursor-pointer transition-colors">
-                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-2 text-green-600"></i>
-                <span id="file_label">Import Excel</span>
+<!-- Header & Action Controls -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <div class="flex items-center space-x-2.5">
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Staff Members</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700" id="emp-count-badge">
+                {{ employees|length }}
+            </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">Manage personnel profiles, roles, and credentials</p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center space-x-3 self-start sm:self-auto">
+        <!-- Import Excel Button -->
+        <form action="/employees/import" method="POST" enctype="multipart/form-data" class="inline-flex">
+            <label for="excel_file" class="inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm cursor-pointer transition-all active:scale-95 group">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-2 text-emerald-600 group-hover:scale-110 transition-transform"></i>
+                <span>Import Excel</span>
                 <input type="file" id="excel_file" name="file" accept=".xlsx" class="hidden" onchange="this.form.submit()">
             </label>
         </form>
 
-        <a href="/employees/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
-            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Add Employee
+        <!-- Add Employee Button -->
+        <a href="/employees/create" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95">
+            <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i> Add Employee
         </a>
     </div>
 </div>
 
+<!-- Search & Filter Bar -->
+<div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+    <!-- Search Input -->
+    <div class="relative flex-1">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input type="text" id="employeeSearch" onkeyup="filterEmployees()" placeholder="Search by employee name, email, department, role..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition-all">
+    </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            {% for emp in employees %}
-            <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                            {{ emp.name[0] if emp.name else 'E' }}
+    <!-- Role Filter Select -->
+    <div class="flex items-center space-x-2">
+        <label for="roleFilter" class="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">Role:</label>
+        <select id="roleFilter" onchange="filterEmployees()" class="py-2 px-3 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:bg-white focus:outline-none focus:border-blue-500">
+            <option value="all">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="hr_admin">HR Admin</option>
+            <option value="manager">Manager</option>
+            <option value="employee">Employee</option>
+        </select>
+    </div>
+</div>
+
+<!-- Employees Table Card -->
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-100" id="employeesTable">
+            <thead class="bg-slate-50/80">
+                <tr>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Role</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Department & Title</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Contact</th>
+                    <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+                {% for emp in employees %}
+                <tr class="hover:bg-slate-50/80 transition-colors emp-row" data-name="{{ emp.name|lower }}" data-email="{{ emp.email|lower }}" data-dept="{{ (emp.department or '')|lower }}" data-role="{{ emp.role|lower }}">
+                    
+                    <!-- Name & Email -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-slate-100 shrink-0">
+                                {{ emp.name[0] if emp.name else 'E' }}
+                            </div>
+                            <div class="min-w-0">
+                                <a href="/employees/{{ emp.id }}/view" class="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block">
+                                    {{ emp.name }}
+                                </a>
+                                <span class="text-xs text-slate-500 block truncate">{{ emp.email }}</span>
+                            </div>
                         </div>
-                        <div class="ml-4">
-                            <div class="text-sm font-medium text-gray-900">{{ emp.name }}</div>
-                            <div class="text-sm text-gray-500">{{ emp.email }}</div>
+                    </td>
+
+                    <!-- Role Badge -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border
+                            {% if emp.role == 'admin' %} bg-rose-50 text-rose-700 border-rose-200/80
+                            {% elif emp.role == 'hr_admin' %} bg-purple-50 text-purple-700 border-purple-200/80
+                            {% elif emp.role == 'manager' %} bg-amber-50 text-amber-700 border-amber-200/80
+                            {% else %} bg-emerald-50 text-emerald-700 border-emerald-200/80 {% endif %}">
+                            {{ emp.role.replace('_', ' ') | title }}
+                        </span>
+                    </td>
+
+                    <!-- Department & Title -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-slate-800">{{ emp.department or 'Unassigned' }}</div>
+                        <div class="text-xs text-slate-400">{{ emp.designation or 'No designation' }}</div>
+                    </td>
+
+                    <!-- Contact -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-xs text-slate-600 font-mono">{{ emp.phone_number or '—' }}</span>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <a href="/employees/{{ emp.id }}/view" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-blue-600 transition-colors" title="View Profile">
+                            <i data-lucide="eye" class="w-3.5 h-3.5 mr-1"></i> View
+                        </a>
+                        <button onclick="openPasswordResetModal({{ emp.id }}, '{{ emp.name }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/60 transition-colors" title="Reset Password">
+                            <i data-lucide="key" class="w-3.5 h-3.5 mr-1"></i> Reset Key
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr id="server-empty-row">
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="users" class="w-6 h-6"></i>
                         </div>
-                    </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        {% if emp.role == 'admin' %} bg-red-100 text-red-800 
-                        {% elif emp.role == 'hr_admin' %} bg-purple-100 text-purple-800 
-                        {% elif emp.role == 'manager' %} bg-yellow-100 text-yellow-800
-                        {% else %} bg-green-100 text-green-800 {% endif %}">
-                        {{ emp.role.replace('_', ' ') | title }}
-                    </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ emp.department or '-' }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                    <a href="/employees/{{ emp.id }}/view" class="text-blue-600 hover:text-blue-900 inline-flex items-center">
-                        <i data-lucide="eye" class="w-4 h-4 mr-1"></i> View Details
-                    </a>
-                    <button onclick="openPasswordResetModal({{ emp.id }}, '{{ emp.name }}')" class="text-amber-600 hover:text-amber-900 inline-flex items-center" title="Reset Password">
-                        <i data-lucide="key" class="w-4 h-4 mr-1"></i> Reset
-                    </button>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="4" class="px-6 py-4 text-center text-gray-500">No employees found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        <p class="text-sm font-semibold text-slate-700">No employees registered yet.</p>
+                        <p class="text-xs text-slate-400 mt-1">Add an employee manually or import an Excel spreadsheet.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                <!-- Dynamic Client-side Empty Search Row (hidden by default) -->
+                <tr id="noResultsRow" class="hidden">
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="search-x" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-slate-700">No matching employees found</p>
+                        <p class="text-xs text-slate-400 mt-1">Try adjusting your search terms or filter selection.</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Admin Password Reset Modal -->
-<div id="resetPasswordModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-medium text-gray-900 flex items-center">
-                <i data-lucide="key-round" class="w-5 h-5 mr-2 text-amber-600"></i>
-                Reset Employee Password
-            </h3>
-            <button onclick="closePasswordResetModal()" class="text-gray-400 hover:text-gray-500">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
+{% if user.role in ['admin', 'hr_admin'] %}
+<div id="resetPasswordModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closePasswordResetModal()"></div>
         
-        <p class="text-sm text-gray-500 mb-4">
-            Enter a new password for <span id="resetModalEmployeeName" class="font-semibold text-gray-800"></span>.
-        </p>
+        <!-- Center alignment trick -->
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <form id="resetPasswordForm" method="POST" class="space-y-4">
-            <div>
-                <label for="new_password" class="block text-sm font-medium text-gray-700">New Password</label>
-                <input type="password" name="new_password" id="new_password" required minlength="6" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Minimum 6 characters">
+        <!-- Modal Dialog -->
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
+                            <i data-lucide="key-round" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Reset Employee Password</h3>
+                            <p class="text-xs text-slate-500">Admin override action</p>
+                        </div>
+                    </div>
+                    <button onclick="closePasswordResetModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <p class="text-xs sm:text-sm text-slate-600 mt-4">
+                    Enter a new password for <span id="resetModalEmployeeName" class="font-bold text-slate-900"></span>.
+                </p>
+
+                <form id="resetPasswordForm" method="POST" class="mt-4 space-y-4">
+                    <div>
+                        <label for="new_password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">New Password</label>
+                        <div class="relative rounded-lg shadow-sm">
+                            <input type="password" name="new_password" id="new_password" required minlength="6" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500" placeholder="Minimum 6 characters">
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Must be at least 6 characters long.</p>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="closePasswordResetModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/20 transition-all">
+                            Save Password
+                        </button>
+                    </div>
+                </form>
             </div>
-            
-            <div class="flex justify-end space-x-3 pt-2">
-                <button type="button" onclick="closePasswordResetModal()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" class="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 text-sm font-medium shadow-sm">Save Password</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -148,5 +244,46 @@
     function closePasswordResetModal() {
         document.getElementById('resetPasswordModal').classList.add('hidden');
     }
+
+    // Client-side search and role filter
+    function filterEmployees() {
+        const query = document.getElementById('employeeSearch').value.toLowerCase().trim();
+        const roleFilter = document.getElementById('roleFilter').value.toLowerCase();
+        const rows = document.querySelectorAll('.emp-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            const email = row.getAttribute('data-email') || '';
+            const dept = row.getAttribute('data-dept') || '';
+            const role = row.getAttribute('data-role') || '';
+
+            const matchesQuery = !query || name.includes(query) || email.includes(query) || dept.includes(query) || role.includes(query);
+            const matchesRole = (roleFilter === 'all') || (role === roleFilter);
+
+            if (matchesQuery && matchesRole) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const noResults = document.getElementById('noResultsRow');
+        if (noResults) {
+            if (visibleCount === 0 && rows.length > 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+            }
+        }
+
+        const badge = document.getElementById('emp-count-badge');
+        if (badge) {
+            badge.textContent = visibleCount;
+        }
+    }
 </script>
+{% endif %}
+
 {% endblock %}

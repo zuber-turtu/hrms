@@ -3,89 +3,240 @@
 {% block header_title %}Attendance Log{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-        <h3 class="text-lg font-semibold text-gray-800">Recent Records</h3>
+<!-- Attendance Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <div class="flex items-center space-x-2.5">
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Time & Attendance Records</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700" id="log-count-badge">
+                {{ logs|length }}
+            </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">Chronological daily work sessions, punch timestamps & active durations</p>
     </div>
-    
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session(s)</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Active Time</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                {% if user.role in ['admin', 'hr_admin'] %}
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            {% for log in logs %}
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ log.date }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.employee.name }}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="{{ log.sessions }}">{{ log.sessions }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{{ log.total_active }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    {% if log.is_missed %}
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" title="Missing Check-Out from a previous day">Missed Punch</span>
-                    {% elif log.is_overridden %}
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" title="{{ log.override_reason }}">Overridden</span>
-                    {% else %}
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Normal</span>
-                    {% endif %}
-                </td>
-                
-                {% if user.role in ['admin', 'hr_admin'] %}
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="text-blue-600 hover:text-blue-900 text-sm flex justify-end items-center">
-                        <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Edit
-                    </button>
-                </td>
-                {% endif %}
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="6" class="px-6 py-4 text-center text-gray-500">No attendance logs found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </div>
 
-<!-- Override Modal (Hidden by default) -->
-{% if user.role in ['admin', 'hr_admin'] %}
-<div id="overrideModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Override Attendance</h3>
-            <button onclick="closeOverrideModal()" class="text-gray-400 hover:text-gray-500">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+<!-- Quick Stat Summary Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+        <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Recorded Days</p>
+            <h4 class="text-xl font-bold text-slate-800 mt-0.5">{{ logs|length }}</h4>
         </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+            <i data-lucide="calendar-days" class="w-5 h-5"></i>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+        <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Normal Punches</p>
+            <h4 class="text-xl font-bold text-emerald-600 mt-0.5">
+                {{ logs | selectattr("is_missed", "equalto", False) | selectattr("is_overridden", "equalto", False) | list | length }}
+            </h4>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+        <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Exceptions / Overridden</p>
+            <h4 class="text-xl font-bold text-amber-600 mt-0.5">
+                {{ logs | selectattr("is_missed", "equalto", True) | list | length + logs | selectattr("is_overridden", "equalto", True) | list | length }}
+            </h4>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+    <div class="relative flex-1">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input type="text" id="attendanceSearch" onkeyup="filterAttendance()" placeholder="Search by employee name or date (YYYY-MM-DD)..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition-all">
+    </div>
+
+    <div class="flex items-center space-x-2">
+        <label for="statusFilter" class="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">Status:</label>
+        <select id="statusFilter" onchange="filterAttendance()" class="py-2 px-3 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:bg-white focus:outline-none focus:border-blue-500">
+            <option value="all">All Records</option>
+            <option value="normal">Normal</option>
+            <option value="missed">Missed Punch</option>
+            <option value="overridden">Overridden</option>
+        </select>
+    </div>
+</div>
+
+<!-- Attendance Log Table Card -->
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-100" id="attendanceTable">
+            <thead class="bg-slate-50/80">
+                <tr>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Session(s) / Timestamps</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Active Time</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    {% if user.role in ['admin', 'hr_admin'] %}
+                    <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+                {% for log in logs %}
+                <tr class="hover:bg-slate-50/80 transition-colors att-row" 
+                    data-date="{{ log.date|string|lower }}" 
+                    data-emp="{{ log.employee.name|lower }}" 
+                    data-status="{% if log.is_missed %}missed{% elif log.is_overridden %}overridden{% else %}normal{% endif %}">
+                    
+                    <!-- Date -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center space-x-2 text-sm font-semibold text-slate-900">
+                            <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+                            <span>{{ log.date }}</span>
+                        </div>
+                    </td>
+
+                    <!-- Employee Name -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                                {{ log.employee.name[0] if log.employee.name else 'E' }}
+                            </div>
+                            <span class="text-sm font-medium text-slate-800">{{ log.employee.name }}</span>
+                        </div>
+                    </td>
+
+                    <!-- Session Timestamps -->
+                    <td class="px-6 py-4 text-xs text-slate-600 max-w-sm">
+                        <span class="inline-block px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-mono truncate max-w-xs" title="{{ log.sessions }}">
+                            {{ log.sessions }}
+                        </span>
+                    </td>
+
+                    <!-- Total Active Duration -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs font-bold font-mono text-slate-900">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i>
+                            {{ log.total_active }}
+                        </span>
+                    </td>
+
+                    <!-- Status Pill -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if log.is_missed %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80" title="Missing Check-Out from a previous day">
+                            <i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Missed Punch
+                        </span>
+                        {% elif log.is_overridden %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80" title="{{ log.override_reason }}">
+                            <i data-lucide="edit-2" class="w-3 h-3 mr-1"></i> Overridden
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                            <i data-lucide="check" class="w-3 h-3 mr-1"></i> Normal
+                        </span>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- Admin Edit Action -->
+                    {% if user.role in ['admin', 'hr_admin'] %}
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Override
+                        </button>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr id="server-empty-row">
+                    <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="calendar-x" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-slate-700">No attendance logs found</p>
+                        <p class="text-xs text-slate-400 mt-1">Attendance records will show here once employees check in.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                <!-- Dynamic Client-side Empty Row -->
+                <tr id="noResultsRow" class="hidden">
+                    <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="search-x" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-slate-700">No matching records found</p>
+                        <p class="text-xs text-slate-400 mt-1">Try adjusting your search query or status filter.</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Override Modal -->
+{% if user.role in ['admin', 'hr_admin'] %}
+<div id="overrideModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closeOverrideModal()"></div>
         
-        <form id="overrideForm" method="POST" class="space-y-4">
-            <div>
-                <label for="check_in_time" class="block text-sm font-medium text-gray-700">Check In Time</label>
-                <input type="time" name="check_in_time" id="modal_check_in" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                            <i data-lucide="clock-4" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Override Attendance</h3>
+                            <p class="text-xs text-slate-500">Adjust in/out timestamps</p>
+                        </div>
+                    </div>
+                    <button onclick="closeOverrideModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <form id="overrideForm" method="POST" class="mt-4 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="modal_check_in" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Check In Time</label>
+                            <input type="time" name="check_in_time" id="modal_check_in" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label for="modal_check_out" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Check Out Time</label>
+                            <input type="time" name="check_out_time" id="modal_check_out" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="modal_reason" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Reason for Override <span class="text-rose-500">*</span></label>
+                        <input type="text" name="reason" id="modal_reason" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500" placeholder="e.g. System punch failure / approved regularisation">
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="closeOverrideModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                            Save Override
+                        </button>
+                    </div>
+                </form>
             </div>
-            
-            <div>
-                <label for="check_out_time" class="block text-sm font-medium text-gray-700">Check Out Time</label>
-                <input type="time" name="check_out_time" id="modal_check_out" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-            </div>
-            
-            <div>
-                <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Override</label>
-                <input type="text" name="reason" id="modal_reason" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. Forgot to punch out">
-            </div>
-            
-            <div class="flex justify-end pt-2">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">Save Override</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -99,6 +250,44 @@
     
     function closeOverrideModal() {
         document.getElementById('overrideModal').classList.add('hidden');
+    }
+
+    // Attendance client-side filtering
+    function filterAttendance() {
+        const query = document.getElementById('attendanceSearch').value.toLowerCase().trim();
+        const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+        const rows = document.querySelectorAll('.att-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const date = row.getAttribute('data-date') || '';
+            const emp = row.getAttribute('data-emp') || '';
+            const status = row.getAttribute('data-status') || '';
+
+            const matchesQuery = !query || date.includes(query) || emp.includes(query);
+            const matchesStatus = (statusFilter === 'all') || (status === statusFilter);
+
+            if (matchesQuery && matchesStatus) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const noResults = document.getElementById('noResultsRow');
+        if (noResults) {
+            if (visibleCount === 0 && rows.length > 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+            }
+        }
+
+        const badge = document.getElementById('log-count-badge');
+        if (badge) {
+            badge.textContent = visibleCount;
+        }
     }
 </script>
 {% endif %}

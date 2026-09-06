@@ -1,129 +1,220 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic HRMS</title>
-    <!-- Tailwind CSS -->
+    <title>Dynamic HRMS - Enterprise Portal</title>
+    
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02)',
+                        'card-hover': '0 10px 20px -5px rgba(0, 0, 0, 0.04), 0 6px 8px -4px rgba(0, 0, 0, 0.02)',
+                    }
+                }
+            }
+        }
+    </script>
+    
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans antialiased h-screen flex overflow-hidden">
+<body class="h-full flex overflow-hidden font-sans text-slate-800 antialiased bg-slate-50">
 
-    <!-- Sidebar -->
     {% if user %}
-    <aside class="w-64 bg-slate-900 text-white flex flex-col h-full shrink-0 shadow-lg">
-        <div class="h-16 flex items-center px-6 border-b border-slate-700">
-            <i data-lucide="building-2" class="w-6 h-6 mr-3 text-blue-400"></i>
-            <span class="text-xl font-bold tracking-wide">HRMS</span>
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm hidden md:hidden transition-opacity duration-300"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar-menu" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col h-full shrink-0 shadow-2xl transition-transform duration-300 transform -translate-x-full md:translate-x-0 md:static border-r border-slate-800">
+        
+        <!-- App Brand Logo -->
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80 bg-slate-950/40">
+            <a href="/dashboard" class="flex items-center space-x-3 group">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                    <i data-lucide="building-2" class="w-5 h-5"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-base font-bold text-white tracking-tight leading-tight">HRMS<span class="text-blue-400">Portal</span></span>
+                    <span class="text-[10px] uppercase font-semibold tracking-wider text-slate-400">Enterprise HR</span>
+                </div>
+            </a>
+            <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
         </div>
         
-        <nav class="flex-1 overflow-y-auto py-4">
-            <ul class="space-y-1">
-                <li>
-                    <a href="/dashboard" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                        <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
-                    </a>
-                </li>
-                
-                <li>
-                    <a href="/attendance" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                        <i data-lucide="clock" class="w-5 h-5 mr-3"></i> Attendance
-                    </a>
-                </li>
-                
-                <li>
-                    <a href="/payroll" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                        <i data-lucide="banknote" class="w-5 h-5 mr-3"></i> Payroll
-                    </a>
-                </li>
-                
-                <li>
-                    <a href="/employees/{{ user.id }}/view" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                        <i data-lucide="user" class="w-5 h-5 mr-3"></i> My Profile
-                    </a>
-                </li>
-                
-                <li>
-                    <a href="/change-password" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                        <i data-lucide="key-round" class="w-5 h-5 mr-3"></i> Change Password
-                    </a>
-                </li>
+        <!-- Nav Items -->
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-6 sidebar-scroll">
+            
+            <!-- Main Section -->
+            <div>
+                <div class="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Main Menu</div>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/dashboard" data-nav-link="/dashboard" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
+                            <i data-lucide="layout-dashboard" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/attendance" data-nav-link="/attendance" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
+                            <i data-lucide="calendar-clock" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                            <span>Attendance Log</span>
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/payroll" data-nav-link="/payroll" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
+                            <i data-lucide="wallet-cards" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                            <span>Payroll & Payslips</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
 
+            <!-- Account Section -->
+            <div>
+                <div class="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">My Account</div>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/employees/{{ user.id }}/view" data-nav-link="/employees/{{ user.id }}/view" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
+                            <i data-lucide="user-check" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                            <span>My Profile</span>
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/change-password" data-nav-link="/change-password" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
+                            <i data-lucide="shield-check" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                            <span>Security Credentials</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
 
+            <!-- Administration Section -->
+            {% if user.role in ['admin', 'hr_admin'] %}
+            <div>
+                <div class="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Administration</div>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/employees" data-nav-link="/employees" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
+                            <i data-lucide="users-round" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                            <span>Employee Directory</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/company/profile" data-nav-link="/company/profile" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
+                            <i data-lucide="settings-2" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                            <span>Company Settings</span>
+                        </a>
+                    </li>
+                    {% if user.role == 'admin' %}
+                    <li>
+                        <a href="/audit" data-nav-link="/audit" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-150 group">
+                            <i data-lucide="scroll-text" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                            <span>Audit Logs</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
 
-                {% if user.role in ['admin', 'hr_admin'] %}
-                <li class="pt-4 pb-2 px-6">
-                    <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Administration</span>
-                </li>
-                <li>
-                    <a href="/employees" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                        <i data-lucide="users" class="w-5 h-5 mr-3"></i> Employees
-                    </a>
-                </li>
-                <li>
-                    <a href="/company/profile" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                        <i data-lucide="settings" class="w-5 h-5 mr-3"></i> Company Profile
-                    </a>
-                </li>
-                {% endif %}
-
-                {% if user.role == 'admin' %}
-                <li>
-                    <a href="/audit" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                        <i data-lucide="shield-alert" class="w-5 h-5 mr-3"></i> Audit Logs
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
         </nav>
         
-        <div class="p-4 border-t border-slate-700">
-            <div class="flex items-center mb-4 px-2">
-                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-sm">
-                    {{ user.name[0] if user.name else 'U' }}
+        <!-- Sidebar User Footer Card -->
+        <div class="p-3.5 border-t border-slate-800/90 bg-slate-950/50">
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900/90 border border-slate-800/60 mb-2">
+                <div class="flex items-center min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-white/10 shrink-0">
+                        {{ user.name[0] if user.name else 'U' }}
+                    </div>
+                    <div class="ml-2.5 min-w-0">
+                        <p class="text-xs font-semibold text-white truncate">{{ user.name }}</p>
+                        <span class="inline-block text-[10px] font-medium text-blue-300 capitalize truncate">
+                            {{ user.role.replace('_', ' ') }}
+                        </span>
+                    </div>
                 </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium">{{ user.name }}</p>
-                    <p class="text-xs text-slate-400 capitalize">{{ user.role.replace('_', ' ') }}</p>
-                </div>
+                <a href="/logout" title="Sign out" class="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors ml-1">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </a>
             </div>
-            <a href="/logout" class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">
-                <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Logout
-            </a>
         </div>
     </aside>
     {% endif %}
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50">
-        <!-- Top header -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
-            <h1 class="text-xl font-semibold text-gray-800">
-                {% block header_title %}HRMS Portal{% endblock %}
-            </h1>
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 min-w-0">
+        
+        <!-- Top Navigation Bar -->
+        <header class="h-16 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 z-10 shadow-sm">
+            <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
+                {% if user %}
+                <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg focus:outline-none">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                {% endif %}
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight truncate">
+                        {% block header_title %}HRMS Portal{% endblock %}
+                    </h1>
+                </div>
+            </div>
             
             {% if user %}
-            <div>
+            <div class="flex items-center space-x-3">
+                <!-- Check-in / Check-out Status Control -->
                 {% if request.state.is_checked_in %}
-                    <!-- Active Check In session: display Check Out button with current check-in time -->
                     <form action="/attendance/check-out" method="POST" class="inline-block">
-                        <button id="checkout-btn" data-checkin-time="{{ request.state.active_check_in.isoformat() }}" data-accumulated-seconds="{{ request.state.accumulated_seconds }}" type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 shadow-sm transition-all transform active:scale-95">
-                            <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Check Out (In: {{ request.state.active_check_in.strftime('%I:%M %p') }})
-                            <span id="active-timer" class="ml-2 px-1.5 py-0.5 rounded text-xs bg-red-800 text-red-100 font-mono"></span>
+                        <button id="checkout-btn" data-checkin-time="{{ request.state.active_check_in.isoformat() }}" data-accumulated-seconds="{{ request.state.accumulated_seconds }}" type="submit" class="inline-flex items-center px-3.5 py-1.5 sm:px-4 sm:py-2 border border-rose-600/30 text-xs sm:text-sm font-semibold rounded-lg text-white bg-rose-600 hover:bg-rose-700 shadow-sm hover:shadow transition-all active:scale-[0.98] group">
+                            <span class="w-2 h-2 rounded-full bg-rose-200 mr-2 animate-pulse-dot"></span>
+                            <i data-lucide="log-out" class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 text-rose-100"></i>
+                            <span>Check Out</span>
+                            <span class="hidden md:inline ml-1 text-rose-200 text-xs font-normal">({{ request.state.active_check_in.strftime('%I:%M %p') }})</span>
+                            <span id="active-timer" class="ml-2 px-1.5 py-0.5 rounded text-[11px] bg-rose-800/80 text-rose-100 font-mono tracking-wider"></span>
                         </button>
                     </form>
                 {% else %}
-                    <!-- All sessions checked out or start of day: display Check In button with last checkout time (if any) -->
                     <form action="/attendance/check-in" method="POST" class="inline-block">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all transform active:scale-95">
-                            <i data-lucide="log-in" class="w-4 h-4 mr-2"></i> Check In 
+                        <button type="submit" class="inline-flex items-center px-3.5 py-1.5 sm:px-4 sm:py-2 border border-blue-600/30 text-xs sm:text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow transition-all active:scale-[0.98] group">
+                            <i data-lucide="log-in" class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 text-blue-100"></i>
+                            <span>Check In</span>
                             {% if request.state.accumulated_seconds > 0 %}
-                                (Active Today: {{ request.state.accumulated_time_str }})
+                                <span class="hidden lg:inline ml-1.5 text-xs text-blue-200 font-normal">(Today: {{ request.state.accumulated_time_str }})</span>
                             {% elif request.state.last_check_out %}
-                                (Last Out: {{ request.state.last_check_out.strftime('%I:%M %p') }})
+                                <span class="hidden lg:inline ml-1.5 text-xs text-blue-200 font-normal">(Last: {{ request.state.last_check_out.strftime('%I:%M %p') }})</span>
                             {% endif %}
                         </button>
                     </form>
@@ -132,19 +223,61 @@
             {% endif %}
         </header>
 
-        <!-- Page content -->
-        <div class="flex-1 overflow-y-auto p-8">
-            <div class="max-w-7xl mx-auto">
+        <!-- Main Scrollable Body Content -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
                 {% block content %}{% endblock %}
             </div>
         </div>
     </main>
 
-    <!-- Initialize Lucide icons -->
+    <!-- Global Scripts -->
     <script>
+      // Initialize Lucide icons
       lucide.createIcons();
 
-      // Active check-in duration timer (continues from accumulated time)
+      // Mobile sidebar toggle helper
+      function toggleMobileSidebar() {
+          const sidebar = document.getElementById('sidebar-menu');
+          const backdrop = document.getElementById('sidebar-backdrop');
+          if (!sidebar || !backdrop) return;
+          
+          const isHidden = sidebar.classList.contains('-translate-x-full');
+          if (isHidden) {
+              sidebar.classList.remove('-translate-x-full');
+              backdrop.classList.remove('hidden');
+          } else {
+              sidebar.classList.add('-translate-x-full');
+              backdrop.classList.add('hidden');
+          }
+      }
+
+      // Active Navigation Link Highlighting
+      document.addEventListener('DOMContentLoaded', () => {
+          const currentPath = window.location.pathname;
+          const navLinks = document.querySelectorAll('.nav-item');
+          
+          navLinks.forEach(link => {
+              const target = link.getAttribute('data-nav-link');
+              if (!target) return;
+              
+              const isDashboard = (target === '/dashboard' && currentPath === '/dashboard');
+              const isExactOrChild = (target !== '/dashboard' && (currentPath === target || (target !== '/' && currentPath.startsWith(target))));
+              
+              if (isDashboard || isExactOrChild) {
+                  link.classList.remove('text-slate-300', 'hover:bg-slate-800/80', 'hover:text-white');
+                  link.classList.add('bg-blue-600', 'text-white', 'shadow-sm', 'shadow-blue-600/30');
+                  
+                  const icon = link.querySelector('i');
+                  if (icon) {
+                      icon.classList.remove('text-slate-400');
+                      icon.classList.add('text-white');
+                  }
+              }
+          });
+      });
+
+      // Active check-in duration timer
       function updateTimer() {
           const btn = document.getElementById('checkout-btn');
           if (!btn) return;
