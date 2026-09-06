@@ -3,6 +3,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from io import BytesIO
+from collections import defaultdict
+import datetime
 import openpyxl
 from typing import Optional
 
@@ -15,6 +17,8 @@ from app.models.employee import (
     SalaryStructure,
 )
 from app.models.department import Department, Designation
+from app.models.attendance import Attendance
+from app.models.payroll import Payslip
 from app.dependencies import require_auth, RoleChecker, get_password_hash
 from app.models.audit import AuditLog
 
@@ -211,15 +215,87 @@ async def view_employee(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role not in ["admin", "hr_admin"] and current_user.id != emp_id:
+    if current_user.role not in ["admin", "hr_admin", "manager"] and current_user.id != emp_id:
         raise HTTPException(status_code=403, detail="Operation not permitted")
         
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+
+    # 1. Fetch payslips for this employee
+    payslips = (
+        db.query(Payslip)
+        .filter(Payslip.employee_id == emp_id)
+        .order_by(Payslip.year.desc(), Payslip.month.desc())
+        .all()
+    )
+
+    # 2. Fetch and group attendance logs for this employee
+    raw_logs = (
+        db.query(Attendance)
+        .filter(Attendance.employee_id == emp_id)
+        .order_by(Attendance.date.desc(), Attendance.check_in.asc())
+        .all()
+    )
+    grouped = defaultdict(list)
+    for log in raw_logs:
+        grouped[log.date].append(log)
+
+    attendance_data = []
+    today = datetime.date.today()
+    for date, group_logs in grouped.items():
+        total_seconds = 0
+        sessions = []
+        is_overridden = False
+        override_reason = ""
+        is_missed = False
+        for log in group_logs:
+            if log.is_overridden:
+                is_overridden = True
+                override_reason = log.override_reason
+            start = log.check_in
+            if log.check_out:
+                end = log.check_out
+                out_str = log.check_out.strftime('%I:%M %p')
+            else:
+                if log.date < today:
+                    end = log.check_in
+                    out_str = "Missed"
+                    is_missed = True
+                else:
+                    end = datetime.datetime.now()
+                    out_str = "Active"
+            diff = (end - start).total_seconds()
+            total_seconds += max(0, diff)
+            in_str = log.check_in.strftime('%I:%M %p')
+            sessions.append(f"{in_str} - {out_str}")
+            
+        hrs = int(total_seconds // 3600)
+        mins = int((total_seconds % 3600) // 60)
+        secs = int(total_seconds % 60)
+        total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
+
+        attendance_data.append({
+            "id": group_logs[0].id,
+            "date": date,
+            "sessions": ", ".join(sessions),
+            "total_active": f"{total_active_str} (Missed)" if is_missed else total_active_str,
+            "is_overridden": is_overridden,
+            "override_reason": override_reason,
+            "is_missed": is_missed,
+            "check_in": group_logs[0].check_in,
+            "check_out": group_logs[-1].check_out
+        })
         
     return templates.TemplateResponse(
-        request=request, name="employees/view.html", context={"user": current_user, "employee": employee}
+        request=request,
+        name="employees/view.html",
+        context={
+            "user": current_user,
+            "employee": employee,
+            "payslips": payslips,
+            "attendance_logs": attendance_data,
+        },
     )
 
 

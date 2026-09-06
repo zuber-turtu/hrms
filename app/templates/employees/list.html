@@ -49,6 +49,13 @@
 
     <!-- Action Buttons -->
     <div class="flex items-center space-x-3 self-start sm:self-auto">
+        {% if user.role in ['admin', 'hr_admin'] %}
+        <!-- Generate Payslip Button -->
+        <button onclick="openGeneratePayslipModal()" class="inline-flex items-center px-3.5 py-2 border border-blue-200 rounded-xl text-xs sm:text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 shadow-sm transition-all active:scale-95">
+            <i data-lucide="calculator" class="w-4 h-4 mr-2 text-blue-600"></i> Generate Payslip
+        </button>
+        {% endif %}
+
         <!-- Import Excel Button -->
         <form action="/employees/import" method="POST" enctype="multipart/form-data" class="inline-flex">
             <label for="excel_file" class="inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm cursor-pointer transition-all active:scale-95 group">
@@ -147,9 +154,14 @@
                         <a href="/employees/{{ emp.id }}/view" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-blue-600 transition-colors" title="View Profile">
                             <i data-lucide="eye" class="w-3.5 h-3.5 mr-1"></i> View
                         </a>
+                        {% if user.role in ['admin', 'hr_admin'] %}
+                        <button onclick="openGeneratePayslipModal({{ emp.id }})" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/60 transition-colors" title="Generate Draft Payslip">
+                            <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1"></i> Payslip
+                        </button>
                         <button onclick="openPasswordResetModal({{ emp.id }}, '{{ emp.name }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/60 transition-colors" title="Reset Password">
                             <i data-lucide="key" class="w-3.5 h-3.5 mr-1"></i> Reset Key
                         </button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% else %}
@@ -179,8 +191,73 @@
     </div>
 </div>
 
-<!-- Admin Password Reset Modal -->
 {% if user.role in ['admin', 'hr_admin'] %}
+<!-- Generate Payslip Modal -->
+<div id="generatePayslipModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closeGeneratePayslipModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                            <i data-lucide="calculator" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Generate Draft Payslip</h3>
+                            <p class="text-xs text-slate-500">Pro-rata calculation from attendance</p>
+                        </div>
+                    </div>
+                    <button onclick="closeGeneratePayslipModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <form action="/payroll/generate-draft" method="POST" class="mt-4 space-y-4">
+                    <div>
+                        <label for="modal_employee_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Select Employee</label>
+                        <select name="employee_id" id="modal_employee_id" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.department or 'General' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="modal_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Month</label>
+                            <select name="month" id="modal_month" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}" {% if i == 9 %}selected{% endif %}>{{ i }} ({{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="modal_year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Year</label>
+                            <select name="year" id="modal_year" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                                <option value="2026" selected>2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="closeGeneratePayslipModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                            Generate Draft
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Password Reset Modal -->
 <div id="resetPasswordModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <!-- Backdrop -->
@@ -243,6 +320,19 @@
     }
     function closePasswordResetModal() {
         document.getElementById('resetPasswordModal').classList.add('hidden');
+    }
+
+    function openGeneratePayslipModal(empId) {
+        document.getElementById('generatePayslipModal').classList.remove('hidden');
+        if (empId) {
+            const selectEl = document.getElementById('modal_employee_id');
+            if (selectEl) {
+                selectEl.value = empId;
+            }
+        }
+    }
+    function closeGeneratePayslipModal() {
+        document.getElementById('generatePayslipModal').classList.add('hidden');
     }
 
     // Client-side search and role filter

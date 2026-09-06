@@ -206,10 +206,11 @@ def generate_payslip_pdf(payslip, company, employee):
     else:
         header_left = header_left_text
     
+    disbursement_str = payslip.generated_on.strftime('%b %d, %Y') if hasattr(payslip.generated_on, 'strftime') and payslip.generated_on else (str(payslip.generated_on) if payslip.generated_on else "End of Month")
     header_right = [
         Paragraph("<b>CONFIDENTIAL SALARY STATEMENT</b>", statement_title_style),
         Paragraph(f"<b>Slip No:</b> {slip_no}", statement_meta_style),
-        Paragraph(f"<b>Disbursement:</b> {payslip.generated_on or 'End of Month'}", statement_meta_style),
+        Paragraph(f"<b>Disbursement:</b> {disbursement_str}", statement_meta_style),
         Paragraph(f"<b>Status:</b> {payslip.status.upper()}", statement_meta_style)
     ]
     

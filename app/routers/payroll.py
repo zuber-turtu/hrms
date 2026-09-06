@@ -1,8 +1,9 @@
+from typing import Optional
+import datetime
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-import datetime
 
 from app.database import get_db
 from app.models.employee import Employee
@@ -26,10 +27,15 @@ async def list_payroll(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role == "employee":
-        payslips = db.query(Payslip).filter(Payslip.employee_id == current_user.id).all()
+    if current_user.role not in ["admin", "hr_admin"]:
+        payslips = (
+            db.query(Payslip)
+            .filter(Payslip.employee_id == current_user.id)
+            .order_by(Payslip.year.desc(), Payslip.month.desc())
+            .all()
+        )
     else:
-        payslips = db.query(Payslip).all()
+        payslips = db.query(Payslip).order_by(Payslip.year.desc(), Payslip.month.desc()).all()
 
     employees = db.query(Employee).all()
 
@@ -87,6 +93,7 @@ async def edit_payslip_form(
 async def update_payslip(
     payslip_id: int,
     request: Request,
+    generated_on: Optional[str] = Form(None),
     basic: float = Form(0.0),
     hra: float = Form(0.0),
     allowances: float = Form(0.0),
@@ -102,7 +109,13 @@ async def update_payslip(
 ):
     payslip = db.query(Payslip).filter(Payslip.id == payslip_id).first()
     if payslip:
-        old_val = f"Basic: {payslip.basic}, Days: {payslip.days_worked}/{payslip.payable_days}, Net: {payslip.net_salary}"
+        old_val = f"Date: {payslip.generated_on}, Basic: {payslip.basic}, Days: {payslip.days_worked}/{payslip.payable_days}, Net: {payslip.net_salary}, Status: {payslip.status}"
+
+        if generated_on and generated_on.strip():
+            try:
+                payslip.generated_on = datetime.datetime.strptime(generated_on.strip(), "%Y-%m-%d").date()
+            except ValueError:
+                pass
 
         payslip.payable_days = payable_days
         payslip.days_worked = days_worked
@@ -116,7 +129,7 @@ async def update_payslip(
         payslip.net_salary = (basic + hra + allowances + bonus) - (pf + tax + other_deductions)
         payslip.status = status
 
-        new_val = f"Basic: {payslip.basic}, Days: {payslip.days_worked}/{payslip.payable_days}, Net: {payslip.net_salary}"
+        new_val = f"Date: {payslip.generated_on}, Basic: {payslip.basic}, Days: {payslip.days_worked}/{payslip.payable_days}, Net: {payslip.net_salary}, Status: {payslip.status}"
 
         audit = AuditLog(
             actor_id=current_user.id,
@@ -144,7 +157,7 @@ async def view_payslip(
     if not payslip:
         raise HTTPException(status_code=404, detail="Payslip not found")
 
-    if current_user.role == "employee" and payslip.employee_id != current_user.id:
+    if current_user.role not in ["admin", "hr_admin"] and payslip.employee_id != current_user.id:
         raise HTTPException(status_code=403, detail="Unauthorized to view this payslip")
 
     company = db.query(Company).first()
@@ -180,7 +193,7 @@ async def download_payslip_pdf(
     if not payslip:
         return Response(status_code=404)
 
-    if current_user.role == "employee" and payslip.employee_id != current_user.id:
+    if current_user.role not in ["admin", "hr_admin"] and payslip.employee_id != current_user.id:
         return Response(status_code=403)
 
     company = db.query(Company).first()

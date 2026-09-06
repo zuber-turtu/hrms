@@ -101,7 +101,7 @@
                     Slip No: PAY-{{ payslip.year }}{{ "%02d" % payslip.month }}-{{ "%04d" % payslip.id }}
                 </div>
                 <div class="text-xs font-semibold text-slate-600 mt-0.5">
-                    Disbursement: {{ payslip.generated_on or 'End of Month' }}
+                    Disbursement: {{ payslip.generated_on.strftime('%B %d, %Y') if payslip.generated_on else 'End of Month' }}
                 </div>
             </div>
         </div>
