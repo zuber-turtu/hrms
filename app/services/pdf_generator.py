@@ -185,9 +185,9 @@ def generate_payslip_pdf(payslip, company, employee):
         Paragraph("Corporate HR & Payroll Division • payroll@hrms.local", company_sub_style)
     ]
 
-    logo_path = os.path.abspath("static/images/logo.png")
+    logo_path = os.path.abspath("static/images/icon.jpeg")
     if not os.path.exists(logo_path):
-        logo_path = os.path.abspath("logo.png")
+        logo_path = os.path.abspath("static/images/logo.png")
 
     if os.path.exists(logo_path):
         try:

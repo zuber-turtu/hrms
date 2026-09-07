@@ -66,7 +66,7 @@ async def lifespan(app: FastAPI):
     yield  # app runs
 
 
-app = FastAPI(title="Dynamic HRMS", lifespan=lifespan)
+app = FastAPI(title="TURTU HRMS", lifespan=lifespan)
 
 @app.middleware("http")
 async def add_attendance_state_middleware(request: Request, call_next):
