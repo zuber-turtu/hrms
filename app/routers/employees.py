@@ -101,6 +101,7 @@ async def create_employee_form(
             "employee": None,
             "departments": departments,
             "designations": designations,
+            "today": get_ist_today(),
         },
     )
 
@@ -114,6 +115,7 @@ async def create_employee(
     role: str = Form(...),
     department_id: Optional[int] = Form(None),
     designation_id: Optional[int] = Form(None),
+    joining_date: Optional[str] = Form(None),
     department: str = Form(""),
     designation: str = Form(""),
     base_salary: float = Form(0.0),
@@ -145,6 +147,13 @@ async def create_employee(
         db, department_id, designation_id, department, designation
     )
 
+    parsed_joining_date = get_ist_today()
+    if joining_date and joining_date.strip():
+        try:
+            parsed_joining_date = datetime.datetime.strptime(joining_date.strip(), "%Y-%m-%d").date()
+        except ValueError:
+            parsed_joining_date = get_ist_today()
+
     # 1. Create Core Employee
     emp = Employee(
         name=name,
@@ -153,6 +162,7 @@ async def create_employee(
         role=role,
         department_id=resolved_dept_id,
         designation_id=resolved_desig_id,
+        joining_date=parsed_joining_date,
     )
     db.add(emp)
     db.flush()
@@ -326,6 +336,7 @@ async def edit_employee_form(
             "employee": employee,
             "departments": departments,
             "designations": designations,
+            "today": get_ist_today(),
         },
     )
 
@@ -339,6 +350,7 @@ async def edit_employee(
     role: str = Form(None),
     department_id: Optional[int] = Form(None),
     designation_id: Optional[int] = Form(None),
+    joining_date: Optional[str] = Form(None),
     department: str = Form(""),
     designation: str = Form(""),
     base_salary: float = Form(0.0),
@@ -373,7 +385,7 @@ async def edit_employee(
         employee.name = name
         employee.email = email
         
-        # Only Admins can modify role, department, designation, and salary components
+        # Only Admins can modify role, department, designation, joining_date, and salary components
         if current_user.role in ["admin", "hr_admin"]:
             old_role = employee.role
             if role:
@@ -385,6 +397,26 @@ async def edit_employee(
             employee.department_id = resolved_dept_id
             employee.designation_id = resolved_desig_id
             
+            # Joining Date update
+            if joining_date and joining_date.strip():
+                try:
+                    new_joining_date = datetime.datetime.strptime(joining_date.strip(), "%Y-%m-%d").date()
+                    old_joining_date = employee.joining_date
+                    if old_joining_date != new_joining_date:
+                        employee.joining_date = new_joining_date
+                        audit = AuditLog(
+                            actor_id=current_user.id,
+                            actor_email=current_user.email,
+                            action="JOINING_DATE_CHANGE",
+                            entity="Employee",
+                            entity_id=emp_id,
+                            old_value=str(old_joining_date) if old_joining_date else "None",
+                            new_value=str(new_joining_date),
+                        )
+                        db.add(audit)
+                except ValueError:
+                    pass
+
             # Salary Structure update
             if not employee.salary_structure:
                 employee.salary_structure = SalaryStructure(employee_id=employee.id)

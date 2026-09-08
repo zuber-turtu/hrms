@@ -91,6 +91,7 @@
             <option value="hr_admin">HR Admin</option>
             <option value="manager">Manager</option>
             <option value="employee">Employee</option>
+            <option value="intern">Intern</option>
         </select>
     </div>
 </div>
@@ -133,6 +134,7 @@
                             {% if emp.role == 'admin' %} bg-rose-50 text-rose-700 border-rose-200/80
                             {% elif emp.role == 'hr_admin' %} bg-[#E0F4F4] text-[#006666] border-[#B3E3E3]
                             {% elif emp.role == 'manager' %} bg-amber-50 text-amber-700 border-amber-200/80
+                            {% elif emp.role == 'intern' %} bg-cyan-50 text-cyan-800 border-cyan-200/80
                             {% else %} bg-emerald-50 text-emerald-700 border-emerald-200/80 {% endif %}">
                             {{ emp.role.replace('_', ' ') | title }}
                         </span>

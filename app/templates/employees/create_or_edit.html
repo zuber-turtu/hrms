@@ -136,7 +136,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Department, Role & Experience</h3>
-                    <p class="text-xs text-[#6B7F7F]">Organizational hierarchy and background</p>
+                    <p class="text-xs text-[#6B7F7F]">Organizational hierarchy, joining date and background</p>
                 </div>
             </div>
 
@@ -182,6 +182,7 @@
                 <div>
                     <label for="role" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">System Access Role</label>
                     <select name="role" id="role" {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
+                        <option value="intern" {% if employee and employee.role == 'intern' %}selected{% endif %}>Intern (Learning & Basic Access)</option>
                         <option value="employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee (Standard Access)</option>
                         <option value="manager" {% if employee and employee.role == 'manager' %}selected{% endif %}>Manager (Team Oversight)</option>
                         <option value="hr_admin" {% if employee and employee.role == 'hr_admin' %}selected{% endif %}>HR Admin (Employee & Payroll Mgmt)</option>
@@ -191,8 +192,18 @@
                     </select>
                 </div>
 
+                <!-- Joining Date -->
+                <div>
+                    <label for="joining_date" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">
+                        Joining Date {% if user.role in ['admin', 'hr_admin'] %}<span class="text-[#008080] text-[11px] font-normal normal-case">(Admin Editable)</span>{% endif %}
+                    </label>
+                    <input type="date" name="joining_date" id="joining_date"
+                        value="{{ employee.joining_date.strftime('%Y-%m-%d') if (employee and employee.joining_date) else (today.strftime('%Y-%m-%d') if today else '') }}"
+                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
+                </div>
+
                 <!-- Qualification -->
-                <div class="lg:col-span-2">
+                <div>
                     <label for="qualification" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Educational Qualification</label>
                     <input type="text" name="qualification" id="qualification" value="{{ employee.qualification if employee else '' }}" placeholder="e.g. B.Tech Computer Science"
                         class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">

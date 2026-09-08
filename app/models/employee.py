@@ -10,7 +10,7 @@ class Employee(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     
-    # Roles: admin, hr_admin, manager, employee
+    # Roles: admin, hr_admin, manager, employee, intern
     role = Column(String, default="employee")
     is_active = Column(Boolean, default=True)
     

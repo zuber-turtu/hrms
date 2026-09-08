@@ -26,7 +26,7 @@ async def attendance_log(
 ):
     from collections import defaultdict
     
-    if current_user.role == "employee":
+    if current_user.role in ["employee", "intern"]:
         raw_logs = (
             db.query(Attendance)
             .filter(Attendance.employee_id == current_user.id)
