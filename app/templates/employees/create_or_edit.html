@@ -9,22 +9,22 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <div class="flex items-center space-x-2">
-                <a href="/employees" class="text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors flex items-center">
+                <a href="/employees" class="text-xs font-semibold text-[#6B7F7F] hover:text-[#008080] transition-colors flex items-center">
                     <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1"></i> Back to Directory
                 </a>
             </div>
-            <h2 class="text-xl font-bold text-slate-900 tracking-tight mt-1">
+            <h2 class="text-xl font-heading font-bold text-[#1C2B2B] tracking-tight mt-1">
                 {{ 'Edit Employee Record' if employee else 'New Employee Onboarding' }}
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">
+            <p class="text-xs text-[#6B7F7F] mt-0.5">
                 {{ 'Update details and salary components for ' ~ employee.name if employee else 'Provide comprehensive employee details, KYC, banking, and payroll structure' }}
             </p>
         </div>
 
         {% if employee %}
         <div class="flex items-center space-x-3">
-            <a href="/employees/{{ employee.id }}/view" class="inline-flex items-center px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm transition-colors">
-                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> View Profile
+            <a href="/employees/{{ employee.id }}/view" class="inline-flex items-center px-3.5 py-2 border border-[#B3E3E3] rounded-xl text-xs font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] shadow-sm transition-colors">
+                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1.5 text-[#6B7F7F]"></i> View Profile
             </a>
         </div>
         {% endif %}
@@ -34,29 +34,29 @@
     <form action="{{ '/employees/' ~ employee.id ~ '/edit' if employee else '/employees/create' }}" method="POST" class="space-y-6">
 
         <!-- Section 1: Personal & Contact Information -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
-                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex items-center space-x-3 pb-4 border-b border-[#B3E3E3]/30 mb-5">
+                <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                     <i data-lucide="user" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Personal & Contact Info</h3>
-                    <p class="text-xs text-slate-400">Core personal identity and communication details</p>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Personal & Contact Info</h3>
+                    <p class="text-xs text-[#6B7F7F]">Core personal identity and communication details</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <!-- Name -->
                 <div class="lg:col-span-2">
-                    <label for="name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Full Name <span class="text-rose-500">*</span></label>
+                    <label for="name" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Full Name <span class="text-rose-500">*</span></label>
                     <input type="text" name="name" id="name" value="{{ employee.name if employee else '' }}" required placeholder="e.g. John Doe"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
 
                 <!-- Gender -->
                 <div>
-                    <label for="gender" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Gender</label>
-                    <select name="gender" id="gender" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <label for="gender" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Gender</label>
+                    <select name="gender" id="gender" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                         <option value="" {% if not employee or not employee.gender %}selected{% endif %}>Select Gender</option>
                         <option value="Male" {% if employee and employee.gender == 'Male' %}selected{% endif %}>Male</option>
                         <option value="Female" {% if employee and employee.gender == 'Female' %}selected{% endif %}>Female</option>
@@ -66,77 +66,77 @@
 
                 <!-- Email -->
                 <div>
-                    <label for="email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Email Address <span class="text-rose-500">*</span></label>
+                    <label for="email" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Email Address <span class="text-rose-500">*</span></label>
                     <input type="email" name="email" id="email" value="{{ employee.email if employee else '' }}" required placeholder="name@company.com"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
 
                 <!-- Phone Number -->
                 <div>
-                    <label for="phone_number" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Phone Number</label>
+                    <label for="phone_number" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Phone Number</label>
                     <input type="text" name="phone_number" id="phone_number" value="{{ employee.phone_number if employee else '' }}" placeholder="e.g. +91 9876543210"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
 
                 <!-- Password (Only on Create) -->
                 {% if not employee %}
                 <div>
-                    <label for="password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Initial Password <span class="text-rose-500">*</span></label>
+                    <label for="password" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Initial Password <span class="text-rose-500">*</span></label>
                     <input type="password" name="password" id="password" required minlength="6" placeholder="Minimum 6 characters"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
                 {% endif %}
             </div>
         </div>
 
         <!-- Section 2: Residential Address & Location -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
-                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex items-center space-x-3 pb-4 border-b border-[#B3E3E3]/30 mb-5">
+                <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                     <i data-lucide="map-pin" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Address & Location</h3>
-                    <p class="text-xs text-slate-400">Residential address and geographic details</p>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Address & Location</h3>
+                    <p class="text-xs text-[#6B7F7F]">Residential address and geographic details</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div class="md:col-span-2 lg:col-span-4">
-                    <label for="home_address" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Home Address</label>
+                    <label for="home_address" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Home Address</label>
                     <input type="text" name="home_address" id="home_address" value="{{ employee.home_address if employee else '' }}" placeholder="Street address, flat / house number, area"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
 
                 <div class="lg:col-span-2">
-                    <label for="city" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">City</label>
+                    <label for="city" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">City</label>
                     <input type="text" name="city" id="city" value="{{ employee.city if employee else '' }}" placeholder="e.g. Mumbai"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
 
                 <div>
-                    <label for="state" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">State</label>
+                    <label for="state" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">State</label>
                     <input type="text" name="state" id="state" value="{{ employee.state if employee else '' }}" placeholder="e.g. Maharashtra"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
 
                 <div>
-                    <label for="country" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Country</label>
+                    <label for="country" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Country</label>
                     <input type="text" name="country" id="country" value="{{ employee.country if employee else '' }}" placeholder="e.g. India"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
             </div>
         </div>
 
         <!-- Section 3: Job, Role & Qualifications -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
-                <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex items-center space-x-3 pb-4 border-b border-[#B3E3E3]/30 mb-5">
+                <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                     <i data-lucide="briefcase" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Department, Role & Experience</h3>
-                    <p class="text-xs text-slate-400">Organizational hierarchy and background</p>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Department, Role & Experience</h3>
+                    <p class="text-xs text-[#6B7F7F]">Organizational hierarchy and background</p>
                 </div>
             </div>
 
@@ -144,15 +144,15 @@
                 <!-- Department Dropdown -->
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <label for="department_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Department</label>
+                        <label for="department_id" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider">Department</label>
                         {% if user.role in ['admin', 'hr_admin'] %}
-                        <a href="/departments" target="_blank" class="text-[11px] font-medium text-blue-600 hover:text-blue-700 inline-flex items-center" title="Manage Departments">
+                        <a href="/departments" target="_blank" class="text-[11px] font-medium text-[#008080] hover:text-[#006666] inline-flex items-center" title="Manage Departments">
                             <i data-lucide="external-link" class="w-3 h-3 mr-0.5"></i> Manage
                         </a>
                         {% endif %}
                     </div>
                     <select name="department_id" id="department_id" onchange="filterDesignations()"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3.5 py-2.5 cursor-not-allowed"{% else %}class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors"{% endif %}>
+                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
                         <option value="">-- Select Department --</option>
                         {% for dept in departments %}
                         <option value="{{ dept.id }}" {% if employee and employee.department_id == dept.id %}selected{% endif %}>
@@ -165,10 +165,10 @@
                 <!-- Designation Dropdown -->
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <label for="designation_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Job Designation / Title</label>
+                        <label for="designation_id" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider">Job Designation / Title</label>
                     </div>
                     <select name="designation_id" id="designation_id"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3.5 py-2.5 cursor-not-allowed"{% else %}class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors"{% endif %}>
+                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
                         <option value="">-- Select Designation --</option>
                         {% for des in designations %}
                         <option value="{{ des.id }}" data-dept="{{ des.department_id or '' }}" {% if employee and employee.designation_id == des.id %}selected{% endif %}>
@@ -180,8 +180,8 @@
 
                 <!-- Role -->
                 <div>
-                    <label for="role" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">System Access Role</label>
-                    <select name="role" id="role" {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3.5 py-2.5 cursor-not-allowed"{% else %}class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors"{% endif %}>
+                    <label for="role" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">System Access Role</label>
+                    <select name="role" id="role" {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
                         <option value="employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee (Standard Access)</option>
                         <option value="manager" {% if employee and employee.role == 'manager' %}selected{% endif %}>Manager (Team Oversight)</option>
                         <option value="hr_admin" {% if employee and employee.role == 'hr_admin' %}selected{% endif %}>HR Admin (Employee & Payroll Mgmt)</option>
@@ -193,155 +193,155 @@
 
                 <!-- Qualification -->
                 <div class="lg:col-span-2">
-                    <label for="qualification" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Educational Qualification</label>
+                    <label for="qualification" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Educational Qualification</label>
                     <input type="text" name="qualification" id="qualification" value="{{ employee.qualification if employee else '' }}" placeholder="e.g. B.Tech Computer Science"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
 
                 <!-- Experience -->
                 <div>
-                    <label for="experience" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Work Experience</label>
+                    <label for="experience" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Work Experience</label>
                     <input type="text" name="experience" id="experience" value="{{ employee.experience if employee else '' }}" placeholder="e.g. 5 Years"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
             </div>
         </div>
 
         <!-- Section 4: Government Identification & KYC -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
-                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex items-center space-x-3 pb-4 border-b border-[#B3E3E3]/30 mb-5">
+                <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                     <i data-lucide="id-card" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Identification & KYC</h3>
-                    <p class="text-xs text-slate-400">Statutory identity documents and verification numbers</p>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Identification & KYC</h3>
+                    <p class="text-xs text-[#6B7F7F]">Statutory identity documents and verification numbers</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label for="aadhar_number" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Aadhaar Card Number</label>
+                    <label for="aadhar_number" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Aadhaar Card Number</label>
                     <input type="text" name="aadhar_number" id="aadhar_number" value="{{ employee.aadhar_number if employee else '' }}" placeholder="12-digit Aadhaar number"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
                 <div>
-                    <label for="pan_number" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">PAN Card Number</label>
+                    <label for="pan_number" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">PAN Card Number</label>
                     <input type="text" name="pan_number" id="pan_number" value="{{ employee.pan_number if employee else '' }}" placeholder="10-digit alphanumeric PAN"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono uppercase focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
             </div>
         </div>
 
         <!-- Section 5: Emergency Contact -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex items-center space-x-3 pb-4 border-b border-[#B3E3E3]/30 mb-5">
                 <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
                     <i data-lucide="phone-call" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Emergency Contact</h3>
-                    <p class="text-xs text-slate-400">Designated contact person in case of urgent medical or emergency events</p>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Emergency Contact</h3>
+                    <p class="text-xs text-[#6B7F7F]">Designated contact person in case of urgent medical or emergency events</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                    <label for="emergency_contact_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Contact Person Name</label>
+                    <label for="emergency_contact_name" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Contact Person Name</label>
                     <input type="text" name="emergency_contact_name" id="emergency_contact_name" value="{{ employee.emergency_contact_name if employee else '' }}" placeholder="e.g. Jane Doe"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
                 <div>
-                    <label for="emergency_contact_relation" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Relationship</label>
+                    <label for="emergency_contact_relation" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Relationship</label>
                     <input type="text" name="emergency_contact_relation" id="emergency_contact_relation" value="{{ employee.emergency_contact_relation if employee else '' }}" placeholder="e.g. Spouse / Father"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
                 <div>
-                    <label for="emergency_contact" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Emergency Phone</label>
+                    <label for="emergency_contact" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Emergency Phone</label>
                     <input type="text" name="emergency_contact" id="emergency_contact" value="{{ employee.emergency_contact if employee else '' }}" placeholder="e.g. +91 9876543210"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
             </div>
         </div>
 
         <!-- Section 6: Bank Account & Remittance -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
-                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex items-center space-x-3 pb-4 border-b border-[#B3E3E3]/30 mb-5">
+                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200">
                     <i data-lucide="landmark" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Bank Details</h3>
-                    <p class="text-xs text-slate-400">Direct salary deposit and disbursement account</p>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Bank Details</h3>
+                    <p class="text-xs text-[#6B7F7F]">Direct salary deposit and disbursement account</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                    <label for="bank_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Bank Name</label>
+                    <label for="bank_name" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Bank Name</label>
                     <input type="text" name="bank_name" id="bank_name" value="{{ employee.bank_name if employee else '' }}" placeholder="e.g. HDFC Bank"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
                 <div>
-                    <label for="account_number" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Account Number</label>
+                    <label for="account_number" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Account Number</label>
                     <input type="text" name="account_number" id="account_number" value="{{ employee.account_number if employee else '' }}" placeholder="e.g. 50100012345678"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
                 <div>
-                    <label for="ifsc_code" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">IFSC Code</label>
+                    <label for="ifsc_code" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">IFSC Code</label>
                     <input type="text" name="ifsc_code" id="ifsc_code" value="{{ employee.ifsc_code if employee else '' }}" placeholder="e.g. HDFC0001234"
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                        class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono uppercase focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
             </div>
         </div>
 
         <!-- Section 7: Salary Components & Payroll Structure -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100 mb-5">
-                <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex items-center space-x-3 pb-4 border-b border-[#B3E3E3]/30 mb-5">
+                <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                     <i data-lucide="calculator" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Salary Components (Monthly)</h3>
-                    <p class="text-xs text-slate-400">Fixed earnings breakdown and statutory deductions</p>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Salary Components (Monthly)</h3>
+                    <p class="text-xs text-[#6B7F7F]">Fixed earnings breakdown and statutory deductions</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5">
                 <div>
-                    <label for="base_salary" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Basic Pay</label>
+                    <label for="base_salary" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Basic Pay</label>
                     <input type="number" step="0.01" name="base_salary" id="base_salary" value="{{ employee.base_salary if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors"{% endif %}>
+                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
                 </div>
                 <div>
-                    <label for="hra" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">HRA</label>
+                    <label for="hra" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">HRA</label>
                     <input type="number" step="0.01" name="hra" id="hra" value="{{ employee.hra if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors"{% endif %}>
+                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
                 </div>
                 <div>
-                    <label for="custom_allowances" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Allowances</label>
+                    <label for="custom_allowances" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Allowances</label>
                     <input type="number" step="0.01" name="custom_allowances" id="custom_allowances" value="{{ employee.custom_allowances if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors"{% endif %}>
+                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
                 </div>
                 <div>
                     <label for="pf_deduction" class="block text-xs font-semibold text-rose-700 uppercase tracking-wider mb-1.5">PF Deduction</label>
                     <input type="number" step="0.01" name="pf_deduction" id="pf_deduction" value="{{ employee.pf_deduction if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors"{% endif %}>
+                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-rose-700 font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
                 </div>
                 <div>
                     <label for="tax_deduction" class="block text-xs font-semibold text-rose-700 uppercase tracking-wider mb-1.5">Tax Deduction</label>
                     <input type="number" step="0.01" name="tax_deduction" id="tax_deduction" value="{{ employee.tax_deduction if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors"{% endif %}>
+                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed font-mono"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-rose-700 font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
                 </div>
             </div>
         </div>
 
         <!-- Sticky / Anchored Submit Bar -->
         <div class="flex items-center justify-end space-x-4 pt-4 pb-12">
-            <a href="/employees" class="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+            <a href="/employees" class="px-5 py-2.5 border border-[#B3E3E3] rounded-xl text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] transition-colors">
                 Cancel
             </a>
-            <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95 flex items-center">
+            <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all active:scale-95 flex items-center">
                 <i data-lucide="check" class="w-4 h-4 mr-2"></i>
                 {{ 'Update Employee Details' if employee else 'Save & Onboard Employee' }}
             </button>

@@ -21,70 +21,70 @@
 <div class="max-w-6xl mx-auto space-y-6">
     
     <!-- Executive Profile Hero Banner -->
-    <div class="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-slate-900/10 border border-slate-700/50">
+    <div class="relative overflow-hidden bg-gradient-to-r from-[#004444] via-[#005050] to-[#003333] rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-[#004444]/20 border border-[#B3E3E3]/20">
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="flex items-center space-x-4 sm:space-x-5">
-                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center font-extrabold text-2xl sm:text-3xl shadow-lg shadow-blue-500/30 ring-4 ring-white/10 shrink-0">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-[#008080] to-[#004444] text-white flex items-center justify-center font-heading font-extrabold text-2xl sm:text-3xl shadow-lg ring-4 ring-white/10 shrink-0">
                     {{ employee.name[0] if employee.name else 'E' }}
                 </div>
                 <div>
                     <div class="flex items-center space-x-2">
-                        <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                        <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#008080]/40 text-[#B3E3E3] border border-[#008080]/50">
                             {{ employee.role.replace('_', ' ') | title }}
                         </span>
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> Active
                         </span>
                     </div>
-                    <h2 class="text-2xl font-extrabold text-white tracking-tight mt-1">
+                    <h2 class="text-2xl font-heading font-extrabold text-white tracking-tight mt-1">
                         {{ employee.name }}
                     </h2>
-                    <p class="text-xs sm:text-sm text-slate-300 mt-0.5">
-                        {{ employee.designation or 'No Designation Set' }} • <span class="text-slate-400">{{ employee.department or 'No Department' }}</span>
+                    <p class="text-xs sm:text-sm text-[#B3E3E3] mt-0.5">
+                        {{ employee.designation or 'No Designation Set' }} • <span class="text-[#E0F4F4]/80">{{ employee.department or 'No Department' }}</span>
                     </p>
                 </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
                 {% if user.role in ['admin', 'hr_admin'] %}
-                <a href="/employees" class="inline-flex items-center px-3.5 py-2 border border-slate-700/80 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700 transition-colors shadow-sm">
-                    <i data-lucide="users" class="w-4 h-4 mr-1.5 text-slate-400"></i> Directory
+                <a href="/employees" class="inline-flex items-center px-3.5 py-2 border border-white/20 rounded-xl text-xs sm:text-sm font-semibold text-white bg-white/10 hover:bg-white/20 transition-colors shadow-sm">
+                    <i data-lucide="users" class="w-4 h-4 mr-1.5 text-[#B3E3E3]"></i> Directory
                 </a>
-                <button onclick="openGeneratePayslipModal()" class="inline-flex items-center px-3.5 py-2 border border-blue-400/40 rounded-xl text-xs sm:text-sm font-semibold text-blue-200 bg-blue-900/50 hover:bg-blue-800/70 shadow-sm transition-colors">
-                    <i data-lucide="calculator" class="w-4 h-4 mr-1.5 text-blue-300"></i> Generate Payslip
+                <button onclick="openGeneratePayslipModal()" class="inline-flex items-center px-3.5 py-2 border border-[#B3E3E3]/40 rounded-xl text-xs sm:text-sm font-semibold text-[#E0F4F4] bg-[#008080]/40 hover:bg-[#008080]/70 shadow-sm transition-colors">
+                    <i data-lucide="calculator" class="w-4 h-4 mr-1.5 text-[#B3E3E3]"></i> Generate Payslip
                 </button>
                 <button onclick="openPasswordResetModal({{ employee.id }}, '{{ employee.name }}')" class="inline-flex items-center px-3.5 py-2 border border-amber-500/40 rounded-xl text-xs sm:text-sm font-semibold text-amber-300 bg-amber-950/40 hover:bg-amber-900/60 shadow-sm transition-colors">
                     <i data-lucide="key" class="w-4 h-4 mr-1.5 text-amber-400"></i> Reset Password
                 </button>
                 {% endif %}
-                <a href="/employees/{{ employee.id }}/edit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-600/30 transition-all">
+                <a href="/employees/{{ employee.id }}/edit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/30 transition-all">
                     <i data-lucide="edit-3" class="w-4 h-4 mr-1.5"></i> Edit Profile
                 </a>
             </div>
         </div>
 
         <!-- Decorative blur effects -->
-        <div class="absolute -right-10 -bottom-10 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -right-10 -bottom-10 w-60 h-60 bg-[#008080]/20 rounded-full blur-3xl pointer-events-none"></div>
     </div>
 
     <!-- Navigation Tabs Bar -->
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-2">
+    <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-2">
         <nav class="flex space-x-2 overflow-x-auto" aria-label="Tabs" id="employeeTabsNav">
-            <button onclick="switchTab('profile')" id="tab-btn-profile" class="tab-btn inline-flex items-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all border text-blue-600 bg-blue-50 border-blue-200/80">
-                <i data-lucide="user" class="w-4 h-4 mr-2 text-blue-600"></i>
+            <button onclick="switchTab('profile')" id="tab-btn-profile" class="tab-btn inline-flex items-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all border text-[#008080] bg-[#E0F4F4] border-[#008080]/30">
+                <i data-lucide="user" class="w-4 h-4 mr-2 text-[#008080]"></i>
                 <span>Profile & Personal</span>
             </button>
-            <button onclick="switchTab('attendance')" id="tab-btn-attendance" class="tab-btn inline-flex items-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all border border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50">
-                <i data-lucide="calendar-clock" class="w-4 h-4 mr-2 text-slate-400"></i>
+            <button onclick="switchTab('attendance')" id="tab-btn-attendance" class="tab-btn inline-flex items-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all border border-transparent text-[#6B7F7F] hover:text-[#1C2B2B] hover:bg-[#F4F7F7]">
+                <i data-lucide="calendar-clock" class="w-4 h-4 mr-2 text-[#6B7F7F]"></i>
                 <span>Attendance Logs</span>
-                <span class="ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 tab-badge">
+                <span class="ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#E0F4F4] text-[#006666] tab-badge">
                     {{ attendance_logs|length }}
                 </span>
             </button>
-            <button onclick="switchTab('payroll')" id="tab-btn-payroll" class="tab-btn inline-flex items-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all border border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50">
-                <i data-lucide="wallet-cards" class="w-4 h-4 mr-2 text-slate-400"></i>
+            <button onclick="switchTab('payroll')" id="tab-btn-payroll" class="tab-btn inline-flex items-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all border border-transparent text-[#6B7F7F] hover:text-[#1C2B2B] hover:bg-[#F4F7F7]">
+                <i data-lucide="wallet-cards" class="w-4 h-4 mr-2 text-[#6B7F7F]"></i>
                 <span>Payroll & Payslips</span>
-                <span class="ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 tab-badge">
+                <span class="ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#E0F4F4] text-[#006666] tab-badge">
                     {{ payslips|length }}
                 </span>
             </button>
@@ -96,153 +96,153 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             <!-- Card 1: Contact & Personal -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-                <div class="flex items-center space-x-3 pb-3 border-b border-slate-100 mb-4">
-                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+            <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+                <div class="flex items-center space-x-3 pb-3 border-b border-[#B3E3E3]/30 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                         <i data-lucide="user" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Contact & Personal</h3>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Contact & Personal</h3>
                 </div>
                 <dl class="space-y-3.5 text-sm">
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Email Address</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.email }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Email Address</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.email }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Phone Number</dt>
-                        <dd class="font-medium font-mono text-slate-900">{{ employee.phone_number or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Phone Number</dt>
+                        <dd class="font-medium font-mono text-[#1C2B2B]">{{ employee.phone_number or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Gender</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.gender or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Gender</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.gender or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Joining Date</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.joining_date }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Joining Date</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.joining_date }}</dd>
                     </div>
                 </dl>
             </div>
 
             <!-- Card 2: Address & Location -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-                <div class="flex items-center space-x-3 pb-3 border-b border-slate-100 mb-4">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+            <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+                <div class="flex items-center space-x-3 pb-3 border-b border-[#B3E3E3]/30 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                         <i data-lucide="map-pin" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Address & Location</h3>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Address & Location</h3>
                 </div>
                 <dl class="space-y-3.5 text-sm">
                     <div class="flex justify-between items-start">
-                        <dt class="text-xs font-semibold text-slate-500">Home Address</dt>
-                        <dd class="font-medium text-slate-900 text-right max-w-xs">{{ employee.home_address or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Home Address</dt>
+                        <dd class="font-medium text-[#1C2B2B] text-right max-w-xs">{{ employee.home_address or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">City</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.city or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">City</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.city or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">State</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.state or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">State</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.state or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Country</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.country or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Country</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.country or '—' }}</dd>
                     </div>
                 </dl>
             </div>
 
             <!-- Card 3: Qualifications & Background -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-                <div class="flex items-center space-x-3 pb-3 border-b border-slate-100 mb-4">
-                    <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+            <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+                <div class="flex items-center space-x-3 pb-3 border-b border-[#B3E3E3]/30 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                         <i data-lucide="graduation-cap" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Qualifications & Career</h3>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Qualifications & Career</h3>
                 </div>
                 <dl class="space-y-3.5 text-sm">
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Highest Qualification</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.qualification or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Highest Qualification</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.qualification or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Prior Experience</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.experience or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Prior Experience</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.experience or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Department</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.department or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Department</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.department or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Designation</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.designation or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Designation</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.designation or '—' }}</dd>
                     </div>
                 </dl>
             </div>
 
             <!-- Card 4: Government Identification & KYC -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-                <div class="flex items-center space-x-3 pb-3 border-b border-slate-100 mb-4">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+            <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+                <div class="flex items-center space-x-3 pb-3 border-b border-[#B3E3E3]/30 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200">
                         <i data-lucide="id-card" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Identification & KYC</h3>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Identification & KYC</h3>
                 </div>
                 <dl class="space-y-3.5 text-sm">
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Aadhaar Card Number</dt>
-                        <dd class="font-medium font-mono text-slate-900">{{ employee.aadhar_number or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Aadhaar Card Number</dt>
+                        <dd class="font-medium font-mono text-[#1C2B2B]">{{ employee.aadhar_number or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">PAN Card Number</dt>
-                        <dd class="font-medium font-mono uppercase text-slate-900">{{ employee.pan_number or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">PAN Card Number</dt>
+                        <dd class="font-medium font-mono uppercase text-[#1C2B2B]">{{ employee.pan_number or '—' }}</dd>
                     </div>
                 </dl>
             </div>
 
             <!-- Card 5: Emergency Contacts -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-                <div class="flex items-center space-x-3 pb-3 border-b border-slate-100 mb-4">
+            <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+                <div class="flex items-center space-x-3 pb-3 border-b border-[#B3E3E3]/30 mb-4">
                     <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
                         <i data-lucide="phone-call" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Emergency Contact</h3>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Emergency Contact</h3>
                 </div>
                 <dl class="space-y-3.5 text-sm">
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Contact Person</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.emergency_contact_name or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Contact Person</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.emergency_contact_name or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Relationship</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.emergency_contact_relation or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Relationship</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.emergency_contact_relation or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Emergency Phone</dt>
-                        <dd class="font-medium font-mono text-slate-900">{{ employee.emergency_contact or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Emergency Phone</dt>
+                        <dd class="font-medium font-mono text-[#1C2B2B]">{{ employee.emergency_contact or '—' }}</dd>
                     </div>
                 </dl>
             </div>
 
             <!-- Card 6: Bank & Remittance Details -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-                <div class="flex items-center space-x-3 pb-3 border-b border-slate-100 mb-4">
-                    <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+            <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+                <div class="flex items-center space-x-3 pb-3 border-b border-[#B3E3E3]/30 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200">
                         <i data-lucide="landmark" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Bank Account</h3>
+                    <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Bank Account</h3>
                 </div>
                 <dl class="space-y-3.5 text-sm">
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Bank Name</dt>
-                        <dd class="font-medium text-slate-900">{{ employee.bank_name or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Bank Name</dt>
+                        <dd class="font-medium text-[#1C2B2B]">{{ employee.bank_name or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">Account Number</dt>
-                        <dd class="font-medium font-mono text-slate-900">{{ employee.account_number or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">Account Number</dt>
+                        <dd class="font-medium font-mono text-[#1C2B2B]">{{ employee.account_number or '—' }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-xs font-semibold text-slate-500">IFSC Code</dt>
-                        <dd class="font-medium font-mono uppercase text-slate-900">{{ employee.ifsc_code or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-[#6B7F7F]">IFSC Code</dt>
+                        <dd class="font-medium font-mono uppercase text-[#1C2B2B]">{{ employee.ifsc_code or '—' }}</dd>
                     </div>
                 </dl>
             </div>
@@ -254,20 +254,20 @@
         
         <!-- Attendance Stats Header -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+            <div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Recorded Days</p>
-                    <h4 class="text-xl font-bold text-slate-800 mt-0.5">{{ attendance_logs|length }}</h4>
+                    <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Total Recorded Days</p>
+                    <h4 class="text-xl font-heading font-bold text-[#1C2B2B] mt-0.5">{{ attendance_logs|length }}</h4>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                     <i data-lucide="calendar-days" class="w-5 h-5"></i>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+            <div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Normal Punches</p>
-                    <h4 class="text-xl font-bold text-emerald-600 mt-0.5">
+                    <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Normal Punches</p>
+                    <h4 class="text-xl font-heading font-bold text-emerald-600 mt-0.5">
                         {{ attendance_logs | selectattr("is_missed", "equalto", False) | selectattr("is_overridden", "equalto", False) | list | length }}
                     </h4>
                 </div>
@@ -276,10 +276,10 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+            <div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Exceptions / Overridden</p>
-                    <h4 class="text-xl font-bold text-amber-600 mt-0.5">
+                    <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Exceptions / Overridden</p>
+                    <h4 class="text-xl font-heading font-bold text-amber-600 mt-0.5">
                         {{ attendance_logs | selectattr("is_missed", "equalto", True) | list | length + attendance_logs | selectattr("is_overridden", "equalto", True) | list | length }}
                     </h4>
                 </div>
@@ -290,26 +290,26 @@
         </div>
 
         <!-- Attendance Table Card -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-5 gap-3">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#B3E3E3]/30 mb-5 gap-3">
                 <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shrink-0">
+                    <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3] shrink-0">
                         <i data-lucide="calendar-clock" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Daily Attendance & Work Sessions</h3>
-                        <p class="text-xs text-slate-400">Punch timestamps, active durations & exception adjustments</p>
+                        <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Daily Attendance & Work Sessions</h3>
+                        <p class="text-xs text-[#6B7F7F]">Punch timestamps, active durations & exception adjustments</p>
                     </div>
                 </div>
-                <span class="self-start sm:self-auto px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span class="self-start sm:self-auto px-2.5 py-1 rounded-full text-xs font-semibold bg-[#E0F4F4] text-[#006666] border border-[#B3E3E3]">
                     {{ attendance_logs|length }} Sessions Logged
                 </span>
             </div>
 
             {% if attendance_logs and attendance_logs|length > 0 %}
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-100 text-xs">
-                    <thead class="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider">
+                <table class="min-w-full divide-y divide-[#B3E3E3]/30 text-xs">
+                    <thead class="bg-[#F4F7F7] text-[#6B7F7F] font-bold uppercase tracking-wider">
                         <tr>
                             <th class="px-4 py-3.5 text-left">Date</th>
                             <th class="px-4 py-3.5 text-left">Punch Timestamps</th>
@@ -320,19 +320,19 @@
                             {% endif %}
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 bg-white">
+                    <tbody class="divide-y divide-[#B3E3E3]/20 bg-white">
                         {% for log in attendance_logs %}
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="px-4 py-3.5 whitespace-nowrap font-semibold text-slate-900">
+                        <tr class="hover:bg-[#F4F7F7]/70 transition-colors">
+                            <td class="px-4 py-3.5 whitespace-nowrap font-semibold text-[#1C2B2B]">
                                 <div class="flex items-center space-x-2">
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-[#6B7F7F]"></i>
                                     <span>{{ log.date }}</span>
                                 </div>
                             </td>
-                            <td class="px-4 py-3.5 text-slate-600 font-mono">
-                                <span class="bg-slate-100 px-2.5 py-1 rounded-md text-[11px] text-slate-700">{{ log.sessions }}</span>
+                            <td class="px-4 py-3.5 text-[#1C2B2B] font-mono">
+                                <span class="bg-[#F4F7F7] border border-[#B3E3E3]/60 px-2.5 py-1 rounded-md text-[11px] text-[#1C2B2B]">{{ log.sessions }}</span>
                             </td>
-                            <td class="px-4 py-3.5 whitespace-nowrap font-mono font-bold text-slate-800">
+                            <td class="px-4 py-3.5 whitespace-nowrap font-mono font-bold text-[#1C2B2B]">
                                 {{ log.total_active }}
                             </td>
                             <td class="px-4 py-3.5 whitespace-nowrap">
@@ -352,7 +352,7 @@
                             </td>
                             {% if user.role in ['admin', 'hr_admin'] %}
                             <td class="px-4 py-3.5 whitespace-nowrap text-right">
-                                <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                                <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#008080] bg-[#E0F4F4]/70 hover:bg-[#E0F4F4] transition-colors border border-[#008080]/30">
                                     <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Override
                                 </button>
                             </td>
@@ -363,12 +363,12 @@
                 </table>
             </div>
             {% else %}
-            <div class="py-12 text-center text-slate-500 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+            <div class="py-12 text-center text-[#6B7F7F] bg-[#F4F7F7]/50 rounded-xl border border-dashed border-[#B3E3E3]">
+                <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
                     <i data-lucide="calendar-x" class="w-6 h-6"></i>
                 </div>
-                <p class="text-sm font-semibold text-slate-700">No attendance logs recorded yet for this employee</p>
-                <p class="text-xs text-slate-400 mt-1">Records will appear as soon as daily check-in sessions are registered.</p>
+                <p class="text-sm font-semibold text-[#1C2B2B]">No attendance logs recorded yet for this employee</p>
+                <p class="text-xs text-[#6B7F7F] mt-1">Records will appear as soon as daily check-in sessions are registered.</p>
             </div>
             {% endif %}
         </div>
@@ -378,40 +378,40 @@
     <div id="tab-content-payroll" class="tab-content hidden space-y-6">
         
         <!-- Card: Salary Structure -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex items-center justify-between pb-4 border-b border-[#B3E3E3]/30 mb-5">
                 <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
+                    <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                         <i data-lucide="wallet-cards" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Salary Structure & Payroll Matrix</h3>
-                        <p class="text-xs text-slate-400">Monthly compensation components and deductions</p>
+                        <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Salary Structure & Payroll Matrix</h3>
+                        <p class="text-xs text-[#6B7F7F]">Monthly compensation components and deductions</p>
                     </div>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#E0F4F4] text-[#006666] border border-[#B3E3E3]">
                     Monthly Breakdown
                 </span>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60">
-                    <p class="text-xs font-semibold text-slate-500">Basic Salary</p>
-                    <p class="text-lg font-bold font-mono text-slate-900 mt-1">{{ employee.base_salary }}</p>
+                <div class="p-4 rounded-xl bg-[#F4F7F7] border border-[#B3E3E3]/60">
+                    <p class="text-xs font-semibold text-[#6B7F7F]">Basic Salary</p>
+                    <p class="text-lg font-bold font-mono text-[#1C2B2B] mt-1">{{ employee.base_salary }}</p>
                 </div>
-                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60">
-                    <p class="text-xs font-semibold text-slate-500">HRA</p>
-                    <p class="text-lg font-bold font-mono text-slate-900 mt-1">{{ employee.hra }}</p>
+                <div class="p-4 rounded-xl bg-[#F4F7F7] border border-[#B3E3E3]/60">
+                    <p class="text-xs font-semibold text-[#6B7F7F]">HRA</p>
+                    <p class="text-lg font-bold font-mono text-[#1C2B2B] mt-1">{{ employee.hra }}</p>
                 </div>
-                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60">
-                    <p class="text-xs font-semibold text-slate-500">Allowances</p>
-                    <p class="text-lg font-bold font-mono text-slate-900 mt-1">{{ employee.custom_allowances }}</p>
+                <div class="p-4 rounded-xl bg-[#F4F7F7] border border-[#B3E3E3]/60">
+                    <p class="text-xs font-semibold text-[#6B7F7F]">Allowances</p>
+                    <p class="text-lg font-bold font-mono text-[#1C2B2B] mt-1">{{ employee.custom_allowances }}</p>
                 </div>
-                <div class="p-4 rounded-xl bg-rose-50/50 border border-rose-100">
+                <div class="p-4 rounded-xl bg-rose-50/60 border border-rose-200/60">
                     <p class="text-xs font-semibold text-rose-600">PF Deduction</p>
                     <p class="text-lg font-bold font-mono text-rose-700 mt-1">-{{ employee.pf_deduction }}</p>
                 </div>
-                <div class="p-4 rounded-xl bg-rose-50/50 border border-rose-100">
+                <div class="p-4 rounded-xl bg-rose-50/60 border border-rose-200/60">
                     <p class="text-xs font-semibold text-rose-600">Tax Deduction</p>
                     <p class="text-lg font-bold font-mono text-rose-700 mt-1">-{{ employee.tax_deduction }}</p>
                 </div>
@@ -419,19 +419,19 @@
         </div>
 
         <!-- Card: Payslip History -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-5 gap-3">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#B3E3E3]/30 mb-5 gap-3">
                 <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                    <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3] shrink-0">
                         <i data-lucide="banknote" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Payroll & Payslip History</h3>
-                        <p class="text-xs text-slate-400">Monthly compensation statements, disbursement records & take-home pay</p>
+                        <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Payroll & Payslip History</h3>
+                        <p class="text-xs text-[#6B7F7F]">Monthly compensation statements, disbursement records & take-home pay</p>
                     </div>
                 </div>
                 {% if user.role in ['admin', 'hr_admin'] %}
-                <button onclick="openGeneratePayslipModal()" class="self-start sm:self-auto inline-flex items-center px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95">
+                <button onclick="openGeneratePayslipModal()" class="self-start sm:self-auto inline-flex items-center px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all active:scale-95">
                     <i data-lucide="calculator" class="w-4 h-4 mr-1.5"></i> Generate Draft Payslip
                 </button>
                 {% endif %}
@@ -439,8 +439,8 @@
 
             {% if payslips and payslips|length > 0 %}
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-100 text-xs">
-                    <thead class="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider">
+                <table class="min-w-full divide-y divide-[#B3E3E3]/30 text-xs">
+                    <thead class="bg-[#F4F7F7] text-[#6B7F7F] font-bold uppercase tracking-wider">
                         <tr>
                             <th class="px-4 py-3.5 text-left">Period</th>
                             <th class="px-4 py-3.5 text-left">Disbursement Date</th>
@@ -450,19 +450,19 @@
                             <th class="px-4 py-3.5 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 bg-white">
+                    <tbody class="divide-y divide-[#B3E3E3]/20 bg-white">
                         {% for p in payslips %}
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="px-4 py-3.5 whitespace-nowrap font-mono font-bold text-slate-800">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-mono">
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                        <tr class="hover:bg-[#F4F7F7]/70 transition-colors">
+                            <td class="px-4 py-3.5 whitespace-nowrap font-mono font-bold text-[#1C2B2B]">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#1C2B2B] font-mono">
+                                    <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-[#6B7F7F]"></i>
                                     {{ "%02d" % p.month }}/{{ p.year }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3.5 whitespace-nowrap text-slate-600 font-medium">
+                            <td class="px-4 py-3.5 whitespace-nowrap text-[#1C2B2B] font-medium">
                                 {{ p.generated_on.strftime('%b %d, %Y') if p.generated_on else '—' }}
                             </td>
-                            <td class="px-4 py-3.5 whitespace-nowrap font-mono text-slate-700">
+                            <td class="px-4 py-3.5 whitespace-nowrap font-mono text-[#1C2B2B]">
                                 {{ p.days_worked }} / {{ p.payable_days }}
                             </td>
                             <td class="px-4 py-3.5 whitespace-nowrap font-mono font-bold text-emerald-700 text-sm">
@@ -471,27 +471,27 @@
                             <td class="px-4 py-3.5 whitespace-nowrap">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border
                                     {% if p.status == 'draft' %} bg-amber-50 text-amber-700 border-amber-200
-                                    {% elif p.status == 'finalized' %} bg-blue-50 text-blue-700 border-blue-200
+                                    {% elif p.status == 'finalized' %} bg-[#E0F4F4] text-[#006666] border-[#B3E3E3]
                                     {% elif p.status == 'paid' %} bg-emerald-50 text-emerald-700 border-emerald-200
-                                    {% else %} bg-slate-100 text-slate-700 {% endif %}">
+                                    {% else %} bg-[#F4F7F7] text-[#1C2B2B] {% endif %}">
                                     <span class="w-1.5 h-1.5 rounded-full mr-1.5
                                         {% if p.status == 'draft' %} bg-amber-500
-                                        {% elif p.status == 'finalized' %} bg-blue-500
+                                        {% elif p.status == 'finalized' %} bg-[#008080]
                                         {% elif p.status == 'paid' %} bg-emerald-500
-                                        {% else %} bg-slate-400 {% endif %}"></span>
+                                        {% else %} bg-[#6B7F7F] {% endif %}"></span>
                                     {{ p.status | title }}
                                 </span>
                             </td>
                             <td class="px-4 py-3.5 whitespace-nowrap text-right space-x-1.5 font-medium">
-                                <a href="/payroll/{{ p.id }}/view" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm" title="View Payslip">
-                                    <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> View
+                                <a href="/payroll/{{ p.id }}/view" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#1C2B2B] bg-white border border-[#B3E3E3] hover:bg-[#F4F7F7] hover:text-[#008080] transition-colors shadow-sm" title="View Payslip">
+                                    <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-[#6B7F7F]"></i> View
                                 </a>
                                 {% if user.role in ['admin', 'hr_admin'] %}
-                                <a href="/payroll/{{ p.id }}/edit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-blue-600 transition-colors" title="Edit Line Items">
+                                <a href="/payroll/{{ p.id }}/edit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#1C2B2B] bg-[#F4F7F7] border border-[#B3E3E3]/60 hover:bg-[#E0F4F4] hover:text-[#008080] transition-colors" title="Edit Line Items">
                                     <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Edit
                                 </a>
                                 {% endif %}
-                                <a href="/payroll/{{ p.id }}/pdf" target="_blank" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors" title="Download PDF">
+                                <a href="/payroll/{{ p.id }}/pdf" target="_blank" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#008080] bg-[#E0F4F4]/70 hover:bg-[#E0F4F4] border border-[#008080]/30 transition-colors" title="Download PDF">
                                     <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> PDF
                                 </a>
                             </td>
@@ -501,14 +501,14 @@
                 </table>
             </div>
             {% else %}
-            <div class="py-12 text-center text-slate-500 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+            <div class="py-12 text-center text-[#6B7F7F] bg-[#F4F7F7]/50 rounded-xl border border-dashed border-[#B3E3E3]">
+                <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
                     <i data-lucide="banknote" class="w-6 h-6"></i>
                 </div>
-                <p class="text-sm font-semibold text-slate-700">No payslips generated for this employee yet</p>
+                <p class="text-sm font-semibold text-[#1C2B2B]">No payslips generated for this employee yet</p>
                 {% if user.role in ['admin', 'hr_admin'] %}
-                <p class="text-xs text-slate-400 mt-1">Click "Generate Draft Payslip" to create this employee's salary slip.</p>
-                <button onclick="openGeneratePayslipModal()" class="mt-4 inline-flex items-center px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                <p class="text-xs text-[#6B7F7F] mt-1">Click "Generate Draft Payslip" to create this employee's salary slip.</p>
+                <button onclick="openGeneratePayslipModal()" class="mt-4 inline-flex items-center px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all">
                     <i data-lucide="calculator" class="w-4 h-4 mr-1.5"></i> Generate First Payslip
                 </button>
                 {% endif %}
@@ -525,22 +525,22 @@
 <!-- Generate Payslip Modal for Employee -->
 <div id="generatePayslipModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closeGeneratePayslipModal()"></div>
+        <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" onclick="closeGeneratePayslipModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-[#B3E3E3]/80">
             <div class="p-6">
-                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                <div class="flex justify-between items-start pb-4 border-b border-[#B3E3E3]/30">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center shrink-0 border border-[#B3E3E3]">
                             <i data-lucide="calculator" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-base font-bold text-slate-900">Generate Draft Payslip</h3>
-                            <p class="text-xs text-slate-500">For {{ employee.name }}</p>
+                            <h3 class="text-base font-heading font-bold text-[#1C2B2B]">Generate Draft Payslip</h3>
+                            <p class="text-xs text-[#6B7F7F]">For {{ employee.name }}</p>
                         </div>
                     </div>
-                    <button onclick="closeGeneratePayslipModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                    <button onclick="closeGeneratePayslipModal()" class="text-[#6B7F7F] hover:text-[#1C2B2B] p-1 rounded-lg hover:bg-[#F4F7F7]">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -548,33 +548,33 @@
                 <form action="/payroll/generate-draft" method="POST" class="mt-4 space-y-4">
                     <input type="hidden" name="employee_id" value="{{ employee.id }}">
                     
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                        <span class="font-bold text-slate-800">Target Employee:</span> {{ employee.name }} ({{ employee.email }})
+                    <div class="p-3 bg-[#F4F7F7] rounded-xl border border-[#B3E3E3]/60 text-xs">
+                        <span class="font-bold text-[#1C2B2B]">Target Employee:</span> {{ employee.name }} ({{ employee.email }})
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="modal_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Month</label>
-                            <select name="month" id="modal_month" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            <label for="modal_month" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Month</label>
+                            <select name="month" id="modal_month" required class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                                 {% for i in range(1, 13) %}
                                 <option value="{{ i }}" {% if i == 9 %}selected{% endif %}>{{ i }} ({{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }})</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div>
-                            <label for="modal_year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Year</label>
-                            <select name="year" id="modal_year" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            <label for="modal_year" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Year</label>
+                            <select name="year" id="modal_year" required class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                                 <option value="2026" selected>2026</option>
                                 <option value="2027">2027</option>
                             </select>
                         </div>
                     </div>
                     
-                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closeGeneratePayslipModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-[#B3E3E3]/30">
+                        <button type="button" onclick="closeGeneratePayslipModal()" class="px-4 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all">
                             Generate Draft
                         </button>
                     </div>
@@ -587,22 +587,22 @@
 <!-- Attendance Override Modal -->
 <div id="overrideModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closeOverrideModal()"></div>
+        <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" onclick="closeOverrideModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-[#B3E3E3]/80">
             <div class="p-6">
-                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                <div class="flex justify-between items-start pb-4 border-b border-[#B3E3E3]/30">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center shrink-0 border border-[#B3E3E3]">
                             <i data-lucide="clock-4" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-base font-bold text-slate-900">Override Attendance</h3>
-                            <p class="text-xs text-slate-500">Adjust in/out timestamps</p>
+                            <h3 class="text-base font-heading font-bold text-[#1C2B2B]">Override Attendance</h3>
+                            <p class="text-xs text-[#6B7F7F]">Adjust in/out timestamps</p>
                         </div>
                     </div>
-                    <button onclick="closeOverrideModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                    <button onclick="closeOverrideModal()" class="text-[#6B7F7F] hover:text-[#1C2B2B] p-1 rounded-lg hover:bg-[#F4F7F7]">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -610,26 +610,26 @@
                 <form id="overrideForm" method="POST" class="mt-4 space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="modal_check_in" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Check In Time</label>
-                            <input type="time" name="check_in_time" id="modal_check_in" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            <label for="modal_check_in" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Check In Time</label>
+                            <input type="time" name="check_in_time" id="modal_check_in" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                         </div>
                         
                         <div>
-                            <label for="modal_check_out" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Check Out Time</label>
-                            <input type="time" name="check_out_time" id="modal_check_out" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            <label for="modal_check_out" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Check Out Time</label>
+                            <input type="time" name="check_out_time" id="modal_check_out" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                         </div>
                     </div>
                     
                     <div>
-                        <label for="modal_reason" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Reason for Override <span class="text-rose-500">*</span></label>
-                        <input type="text" name="reason" id="modal_reason" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500" placeholder="e.g. System punch failure / approved regularisation">
+                        <label for="modal_reason" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Reason for Override <span class="text-rose-500">*</span></label>
+                        <input type="text" name="reason" id="modal_reason" required class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]" placeholder="e.g. System punch failure / approved regularisation">
                     </div>
                     
-                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closeOverrideModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-[#B3E3E3]/30">
+                        <button type="button" onclick="closeOverrideModal()" class="px-4 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all">
                             Save Override
                         </button>
                     </div>
@@ -642,39 +642,39 @@
 <!-- Admin Password Reset Modal -->
 <div id="resetPasswordModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closePasswordResetModal()"></div>
+        <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" onclick="closePasswordResetModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-[#B3E3E3]/80">
             <div class="p-6">
-                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                <div class="flex justify-between items-start pb-4 border-b border-[#B3E3E3]/30">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
                             <i data-lucide="key-round" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-base font-bold text-slate-900">Reset Employee Password</h3>
-                            <p class="text-xs text-slate-500">Admin security override</p>
+                            <h3 class="text-base font-heading font-bold text-[#1C2B2B]">Reset Employee Password</h3>
+                            <p class="text-xs text-[#6B7F7F]">Admin security override</p>
                         </div>
                     </div>
-                    <button onclick="closePasswordResetModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                    <button onclick="closePasswordResetModal()" class="text-[#6B7F7F] hover:text-[#1C2B2B] p-1 rounded-lg hover:bg-[#F4F7F7]">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
                 
-                <p class="text-xs sm:text-sm text-slate-600 mt-4">
-                    Enter a new password for <span id="resetModalEmployeeName" class="font-bold text-slate-900"></span>.
+                <p class="text-xs sm:text-sm text-[#6B7F7F] mt-4">
+                    Enter a new password for <span id="resetModalEmployeeName" class="font-bold text-[#1C2B2B]"></span>.
                 </p>
 
                 <form id="resetPasswordForm" method="POST" class="mt-4 space-y-4">
                     <div>
-                        <label for="new_password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">New Password</label>
-                        <input type="password" name="new_password" id="new_password" required minlength="6" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500" placeholder="Minimum 6 characters">
-                        <p class="text-[11px] text-slate-400 mt-1">Must be at least 6 characters long.</p>
+                        <label for="new_password" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">New Password</label>
+                        <input type="password" name="new_password" id="new_password" required minlength="6" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]" placeholder="Minimum 6 characters">
+                        <p class="text-[11px] text-[#6B7F7F] mt-1">Must be at least 6 characters long.</p>
                     </div>
                     
-                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closePasswordResetModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-[#B3E3E3]/30">
+                        <button type="button" onclick="closePasswordResetModal()" class="px-4 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] transition-colors">
                             Cancel
                         </button>
                         <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/20 transition-all">
@@ -700,23 +700,23 @@
             if (t === tabId) {
                 if (content) content.classList.remove('hidden');
                 if (btn) {
-                    btn.classList.add('text-blue-600', 'bg-blue-50', 'border-blue-200/80');
-                    btn.classList.remove('text-slate-600', 'hover:bg-slate-50');
+                    btn.classList.add('text-[#008080]', 'bg-[#E0F4F4]', 'border-[#008080]/30');
+                    btn.classList.remove('text-[#6B7F7F]', 'hover:bg-[#F4F7F7]', 'border-transparent');
                     const icon = btn.querySelector('svg, i');
                     if (icon) {
-                        icon.classList.add('text-blue-600');
-                        icon.classList.remove('text-slate-400');
+                        icon.classList.add('text-[#008080]');
+                        icon.classList.remove('text-[#6B7F7F]');
                     }
                 }
             } else {
                 if (content) content.classList.add('hidden');
                 if (btn) {
-                    btn.classList.remove('text-blue-600', 'bg-blue-50', 'border-blue-200/80');
-                    btn.classList.add('text-slate-600', 'hover:bg-slate-50');
+                    btn.classList.remove('text-[#008080]', 'bg-[#E0F4F4]', 'border-[#008080]/30');
+                    btn.classList.add('text-[#6B7F7F]', 'hover:bg-[#F4F7F7]', 'border-transparent');
                     const icon = btn.querySelector('svg, i');
                     if (icon) {
-                        icon.classList.remove('text-blue-600');
-                        icon.classList.add('text-slate-400');
+                        icon.classList.remove('text-[#008080]');
+                        icon.classList.add('text-[#6B7F7F]');
                     }
                 }
             }

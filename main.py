@@ -68,10 +68,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="TURTU HRMS", lifespan=lifespan)
 
+from app.utils.timezone import get_ist_today, get_ist_now
+
 @app.middleware("http")
 async def add_attendance_state_middleware(request: Request, call_next):
     request.state.is_checked_in = False
     request.state.active_check_in = None
+    request.state.active_check_in_iso = ""
     request.state.last_check_out = None
     request.state.accumulated_seconds = 0
     request.state.accumulated_time_str = "00:00:00"
@@ -85,8 +88,8 @@ async def add_attendance_state_middleware(request: Request, call_next):
             if email:
                 user = db.query(Employee).filter(Employee.email == email).first()
                 if user:
-                    today = datetime.date.today()
-                    # Query all logs today
+                    today = get_ist_today()
+                    # Query all logs today in Indian Standard Time
                     today_logs = db.query(Attendance).filter(
                         Attendance.employee_id == user.id,
                         Attendance.date == today
@@ -108,6 +111,7 @@ async def add_attendance_state_middleware(request: Request, call_next):
                     if active_checkin:
                         request.state.is_checked_in = True
                         request.state.active_check_in = active_checkin
+                        request.state.active_check_in_iso = f"{active_checkin.strftime('%Y-%m-%dT%H:%M:%S')}+05:30"
                         request.state.accumulated_seconds = int(accumulated)
                     else:
                         request.state.is_checked_in = False

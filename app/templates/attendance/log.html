@@ -7,31 +7,31 @@
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
         <div class="flex items-center space-x-2.5">
-            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Time & Attendance Records</h2>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700" id="log-count-badge">
+            <h2 class="text-xl font-heading font-bold text-[#1C2B2B] tracking-tight">Time & Attendance Records</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E0F4F4] text-[#006666] border border-[#B3E3E3]" id="log-count-badge">
                 {{ logs|length }}
             </span>
         </div>
-        <p class="text-xs text-slate-500 mt-0.5">Chronological daily work sessions, punch timestamps & active durations</p>
+        <p class="text-xs text-[#6B7F7F] mt-0.5">Chronological daily work sessions, punch timestamps & active durations</p>
     </div>
 </div>
 
 <!-- Quick Stat Summary Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+    <div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between">
         <div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Recorded Days</p>
-            <h4 class="text-xl font-bold text-slate-800 mt-0.5">{{ logs|length }}</h4>
+            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Total Recorded Days</p>
+            <h4 class="text-xl font-heading font-bold text-[#1C2B2B] mt-0.5">{{ logs|length }}</h4>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
             <i data-lucide="calendar-days" class="w-5 h-5"></i>
         </div>
     </div>
 
-    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+    <div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between">
         <div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Normal Punches</p>
-            <h4 class="text-xl font-bold text-emerald-600 mt-0.5">
+            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Normal Punches</p>
+            <h4 class="text-xl font-heading font-bold text-emerald-600 mt-0.5">
                 {{ logs | selectattr("is_missed", "equalto", False) | selectattr("is_overridden", "equalto", False) | list | length }}
             </h4>
         </div>
@@ -40,10 +40,10 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+    <div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between">
         <div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Exceptions / Overridden</p>
-            <h4 class="text-xl font-bold text-amber-600 mt-0.5">
+            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Exceptions / Overridden</p>
+            <h4 class="text-xl font-heading font-bold text-amber-600 mt-0.5">
                 {{ logs | selectattr("is_missed", "equalto", True) | list | length + logs | selectattr("is_overridden", "equalto", True) | list | length }}
             </h4>
         </div>
@@ -54,17 +54,17 @@
 </div>
 
 <!-- Search & Filter Controls -->
-<div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+<div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
     <div class="relative flex-1">
-        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
             <i data-lucide="search" class="w-4 h-4"></i>
         </div>
-        <input type="text" id="attendanceSearch" onkeyup="filterAttendance()" placeholder="Search by employee name or date (YYYY-MM-DD)..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition-all">
+        <input type="text" id="attendanceSearch" onkeyup="filterAttendance()" placeholder="Search by employee name or date (YYYY-MM-DD)..." class="w-full pl-10 pr-4 py-2 text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg text-[#1C2B2B] placeholder-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-all">
     </div>
 
     <div class="flex items-center space-x-2">
-        <label for="statusFilter" class="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">Status:</label>
-        <select id="statusFilter" onchange="filterAttendance()" class="py-2 px-3 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:bg-white focus:outline-none focus:border-blue-500">
+        <label for="statusFilter" class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider shrink-0">Status:</label>
+        <select id="statusFilter" onchange="filterAttendance()" class="py-2 px-3 text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg text-[#1C2B2B] font-medium focus:bg-white focus:outline-none focus:border-[#008080]">
             <option value="all">All Records</option>
             <option value="normal">Normal</option>
             <option value="missed">Missed Punch</option>
@@ -74,32 +74,32 @@
 </div>
 
 <!-- Attendance Log Table Card -->
-<div class="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+<div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-100" id="attendanceTable">
-            <thead class="bg-slate-50/80">
+        <table class="min-w-full divide-y divide-[#B3E3E3]/30" id="attendanceTable">
+            <thead class="bg-[#F4F7F7]">
                 <tr>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Session(s) / Timestamps</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Active Time</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Date</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Employee</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Session(s) / Timestamps</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Total Active Time</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Status</th>
                     {% if user.role in ['admin', 'hr_admin'] %}
-                    <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                    <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Actions</th>
                     {% endif %}
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 bg-white">
+            <tbody class="divide-y divide-[#B3E3E3]/20 bg-white">
                 {% for log in logs %}
-                <tr class="hover:bg-slate-50/80 transition-colors att-row" 
+                <tr class="hover:bg-[#F4F7F7]/70 transition-colors att-row" 
                     data-date="{{ log.date|string|lower }}" 
                     data-emp="{{ log.employee.name|lower }}" 
                     data-status="{% if log.is_missed %}missed{% elif log.is_overridden %}overridden{% else %}normal{% endif %}">
                     
                     <!-- Date -->
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center space-x-2 text-sm font-semibold text-slate-900">
-                            <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+                        <div class="flex items-center space-x-2 text-sm font-semibold text-[#1C2B2B]">
+                            <i data-lucide="calendar" class="w-4 h-4 text-[#6B7F7F]"></i>
                             <span>{{ log.date }}</span>
                         </div>
                     </td>
@@ -107,24 +107,24 @@
                     <!-- Employee Name -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center space-x-2.5">
-                            <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                            <div class="w-7 h-7 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center font-bold text-xs shrink-0 border border-[#B3E3E3]">
                                 {{ log.employee.name[0] if log.employee.name else 'E' }}
                             </div>
-                            <span class="text-sm font-medium text-slate-800">{{ log.employee.name }}</span>
+                            <span class="text-sm font-medium text-[#1C2B2B]">{{ log.employee.name }}</span>
                         </div>
                     </td>
 
                     <!-- Session Timestamps -->
-                    <td class="px-6 py-4 text-xs text-slate-600 max-w-sm">
-                        <span class="inline-block px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-mono truncate max-w-xs" title="{{ log.sessions }}">
+                    <td class="px-6 py-4 text-xs text-[#1C2B2B] max-w-sm">
+                        <span class="inline-block px-2.5 py-1 rounded-md bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#1C2B2B] font-mono truncate max-w-xs" title="{{ log.sessions }}">
                             {{ log.sessions }}
                         </span>
                     </td>
 
                     <!-- Total Active Duration -->
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs font-bold font-mono text-slate-900">
-                            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-[#F4F7F7] border border-[#B3E3E3]/60 text-xs font-bold font-mono text-[#1C2B2B]">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1.5 text-[#6B7F7F]"></i>
                             {{ log.total_active }}
                         </span>
                     </td>
@@ -149,7 +149,7 @@
                     <!-- Admin Edit Action -->
                     {% if user.role in ['admin', 'hr_admin'] %}
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                        <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#008080] bg-[#E0F4F4]/70 hover:bg-[#E0F4F4] transition-colors border border-[#008080]/30">
                             <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Override
                         </button>
                     </td>
@@ -157,24 +157,24 @@
                 </tr>
                 {% else %}
                 <tr id="server-empty-row">
-                    <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <td colspan="6" class="px-6 py-12 text-center text-[#6B7F7F]">
+                        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
                             <i data-lucide="calendar-x" class="w-6 h-6"></i>
                         </div>
-                        <p class="text-sm font-semibold text-slate-700">No attendance logs found</p>
-                        <p class="text-xs text-slate-400 mt-1">Attendance records will show here once employees check in.</p>
+                        <p class="text-sm font-semibold text-[#1C2B2B]">No attendance logs found</p>
+                        <p class="text-xs text-[#6B7F7F] mt-1">Attendance records will show here once employees check in.</p>
                     </td>
                 </tr>
                 {% endfor %}
 
                 <!-- Dynamic Client-side Empty Row -->
                 <tr id="noResultsRow" class="hidden">
-                    <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <td colspan="6" class="px-6 py-12 text-center text-[#6B7F7F]">
+                        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
                             <i data-lucide="search-x" class="w-6 h-6"></i>
                         </div>
-                        <p class="text-sm font-semibold text-slate-700">No matching records found</p>
-                        <p class="text-xs text-slate-400 mt-1">Try adjusting your search query or status filter.</p>
+                        <p class="text-sm font-semibold text-[#1C2B2B]">No matching records found</p>
+                        <p class="text-xs text-[#6B7F7F] mt-1">Try adjusting your search query or status filter.</p>
                     </td>
                 </tr>
             </tbody>
@@ -187,23 +187,23 @@
 <div id="overrideModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <!-- Backdrop -->
-        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closeOverrideModal()"></div>
+        <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" onclick="closeOverrideModal()"></div>
         
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-[#B3E3E3]/80">
             <div class="p-6">
-                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                <div class="flex justify-between items-start pb-4 border-b border-[#B3E3E3]/30">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center shrink-0 border border-[#B3E3E3]">
                             <i data-lucide="clock-4" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-base font-bold text-slate-900">Override Attendance</h3>
-                            <p class="text-xs text-slate-500">Adjust in/out timestamps</p>
+                            <h3 class="text-base font-heading font-bold text-[#1C2B2B]">Override Attendance</h3>
+                            <p class="text-xs text-[#6B7F7F]">Adjust in/out timestamps</p>
                         </div>
                     </div>
-                    <button onclick="closeOverrideModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                    <button onclick="closeOverrideModal()" class="text-[#6B7F7F] hover:text-[#1C2B2B] p-1 rounded-lg hover:bg-[#F4F7F7]">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -211,26 +211,26 @@
                 <form id="overrideForm" method="POST" class="mt-4 space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="modal_check_in" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Check In Time</label>
-                            <input type="time" name="check_in_time" id="modal_check_in" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            <label for="modal_check_in" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Check In Time</label>
+                            <input type="time" name="check_in_time" id="modal_check_in" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                         </div>
                         
                         <div>
-                            <label for="modal_check_out" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Check Out Time</label>
-                            <input type="time" name="check_out_time" id="modal_check_out" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            <label for="modal_check_out" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Check Out Time</label>
+                            <input type="time" name="check_out_time" id="modal_check_out" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                         </div>
                     </div>
                     
                     <div>
-                        <label for="modal_reason" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Reason for Override <span class="text-rose-500">*</span></label>
-                        <input type="text" name="reason" id="modal_reason" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500" placeholder="e.g. System punch failure / approved regularisation">
+                        <label for="modal_reason" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Reason for Override <span class="text-rose-500">*</span></label>
+                        <input type="text" name="reason" id="modal_reason" required class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]" placeholder="e.g. System punch failure / approved regularisation">
                     </div>
                     
-                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closeOverrideModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-[#B3E3E3]/30">
+                        <button type="button" onclick="closeOverrideModal()" class="px-4 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all">
                             Save Override
                         </button>
                     </div>

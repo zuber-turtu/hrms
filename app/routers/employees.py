@@ -22,6 +22,7 @@ from app.models.payroll import Payslip
 from app.dependencies import require_auth, RoleChecker, get_password_hash, create_access_token
 from app.models.audit import AuditLog
 from app.config import settings
+from app.utils.timezone import get_ist_today, get_ist_now
 
 router = APIRouter(prefix="/employees")
 templates = Jinja2Templates(directory="app/templates")
@@ -243,7 +244,8 @@ async def view_employee(
         grouped[log.date].append(log)
 
     attendance_data = []
-    today = datetime.date.today()
+    today = get_ist_today()
+    now_ist = get_ist_now()
     for date, group_logs in grouped.items():
         total_seconds = 0
         sessions = []
@@ -264,7 +266,7 @@ async def view_employee(
                     out_str = "Missed"
                     is_missed = True
                 else:
-                    end = datetime.datetime.now()
+                    end = now_ist
                     out_str = "Active"
             diff = (end - start).total_seconds()
             total_seconds += max(0, diff)

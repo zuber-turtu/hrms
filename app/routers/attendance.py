@@ -10,6 +10,8 @@ from app.models.attendance import Attendance
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 
+from app.utils.timezone import get_ist_today, get_ist_now
+
 router = APIRouter(prefix="/attendance")
 templates = Jinja2Templates(directory="app/templates")
 
@@ -40,7 +42,8 @@ async def attendance_log(
         grouped[(log.date, log.employee_id)].append(log)
 
     logs_data = []
-    today = datetime.date.today()
+    today = get_ist_today()
+    now_ist = get_ist_now()
     for (date, emp_id), group_logs in grouped.items():
         employee = group_logs[0].employee
         
@@ -65,7 +68,7 @@ async def attendance_log(
                     out_str = "Missed"
                     is_missed = True
                 else:
-                    end = datetime.datetime.now()
+                    end = now_ist
                     out_str = "Active"
             
             diff = (end - start).total_seconds()
@@ -103,7 +106,7 @@ async def check_in(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    today = datetime.date.today()
+    today = get_ist_today()
     # Check if there is an active check-in (check_out is None)
     active_log = db.query(Attendance).filter(
         Attendance.employee_id == current_user.id,
@@ -115,7 +118,7 @@ async def check_in(
         log = Attendance(
             employee_id=current_user.id,
             date=today,
-            check_in=datetime.datetime.now(),
+            check_in=get_ist_now(),
         )
         db.add(log)
         db.commit()
@@ -130,7 +133,7 @@ async def check_out(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    today = datetime.date.today()
+    today = get_ist_today()
     # Find the active check-in log to checkout
     log = db.query(Attendance).filter(
         Attendance.employee_id == current_user.id,
@@ -139,7 +142,7 @@ async def check_out(
     ).order_by(Attendance.check_in.desc()).first()
 
     if log:
-        log.check_out = datetime.datetime.now()
+        log.check_out = get_ist_now()
         db.commit()
 
     referer = request.headers.get("referer", "/dashboard")

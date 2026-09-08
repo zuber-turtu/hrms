@@ -9,6 +9,8 @@ from app.dependencies import require_auth
 from app.models.employee import Employee
 from app.models.attendance import Attendance
 
+from app.utils.timezone import get_ist_today
+
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
@@ -19,7 +21,7 @@ async def dashboard(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    today = datetime.date.today()
+    today = get_ist_today()
     attendance_today = db.query(Attendance).filter(
         Attendance.employee_id == current_user.id,
         Attendance.date == today

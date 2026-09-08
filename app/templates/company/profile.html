@@ -7,25 +7,25 @@
     
     <!-- Header -->
     <div>
-        <h2 class="text-xl font-bold text-slate-900 tracking-tight">Organization Profile & Settings</h2>
-        <p class="text-xs text-slate-500 mt-0.5">Configure global enterprise parameters, default currency, and working day baselines</p>
+        <h2 class="text-xl font-bold font-heading text-[#1C2B2B] tracking-tight">Organization Profile & Settings</h2>
+        <p class="text-xs text-[#6B7F7F] mt-0.5">Configure global enterprise parameters, default currency, and working day baselines</p>
     </div>
 
     <!-- Company Settings Card -->
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6 sm:p-8">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+    <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6 sm:p-8">
+        <div class="flex items-center justify-between pb-4 border-b border-[#B3E3E3]/40 mb-6">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
                     <i data-lucide="building" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-slate-900">Corporate Details</h3>
-                    <p class="text-xs text-slate-500">Parameters utilized in payslip headers and payroll formulas</p>
+                    <h3 class="text-base font-bold font-heading text-[#1C2B2B]">Corporate Details</h3>
+                    <p class="text-xs text-[#6B7F7F]">Parameters utilized in payslip headers and payroll formulas</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5">
+            <div class="flex items-center space-x-2 bg-[#F4F7F7] border border-[#B3E3E3] rounded-xl px-3 py-1.5">
                 <img src="/static/images/icon.jpeg" alt="Brand Logo" class="w-7 h-7 object-contain rounded-lg">
-                <span class="text-xs font-semibold text-slate-700">Active Logo</span>
+                <span class="text-xs font-semibold text-[#1C2B2B]">Active Logo</span>
             </div>
         </div>
         
@@ -33,29 +33,29 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label for="name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Company Legal Name <span class="text-rose-500">*</span></label>
-                    <input type="text" name="name" id="name" value="{{ company.name }}" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <label for="name" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Company Legal Name <span class="text-rose-500">*</span></label>
+                    <input type="text" name="name" id="name" value="{{ company.name }}" required class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
                 
                 <div>
-                    <label for="currency_symbol" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Currency Symbol <span class="text-rose-500">*</span></label>
-                    <input type="text" name="currency_symbol" id="currency_symbol" value="{{ company.currency_symbol }}" required placeholder="e.g. ₹ or $" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <label for="currency_symbol" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Currency Symbol <span class="text-rose-500">*</span></label>
+                    <input type="text" name="currency_symbol" id="currency_symbol" value="{{ company.currency_symbol }}" required placeholder="e.g. ₹ or $" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
                 </div>
             </div>
             
             <div>
-                <label for="address" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Registered Office Address</label>
-                <textarea id="address" name="address" rows="3" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Full registered corporate address printed on documents">{{ company.address }}</textarea>
+                <label for="address" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Registered Office Address</label>
+                <textarea id="address" name="address" rows="3" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors" placeholder="Full registered corporate address printed on documents">{{ company.address }}</textarea>
             </div>
             
             <div>
-                <label for="working_days_per_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Standard Working Days Per Month <span class="text-rose-500">*</span></label>
-                <input type="number" name="working_days_per_month" id="working_days_per_month" value="{{ company.working_days_per_month }}" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-blue-500 transition-colors">
-                <p class="text-[11px] text-slate-400 mt-1.5">Baseline denominator for daily pro-rata wage calculation across attendance records.</p>
+                <label for="working_days_per_month" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Standard Working Days Per Month <span class="text-rose-500">*</span></label>
+                <input type="number" name="working_days_per_month" id="working_days_per_month" value="{{ company.working_days_per_month }}" required class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors">
+                <p class="text-[11px] text-[#6B7F7F] mt-1.5">Baseline denominator for daily pro-rata wage calculation across attendance records.</p>
             </div>
             
-            <div class="flex justify-end pt-4 border-t border-slate-100">
-                <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95 flex items-center">
+            <div class="flex justify-end pt-4 border-t border-[#B3E3E3]/40">
+                <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all active:scale-95 flex items-center">
                     <i data-lucide="check" class="w-4 h-4 mr-2"></i> Save Changes
                 </button>
             </div>

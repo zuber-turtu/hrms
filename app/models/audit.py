@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from app.database import Base
-import datetime
+from app.utils.timezone import get_ist_now
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -13,4 +13,4 @@ class AuditLog(Base):
     entity_id = Column(Integer)
     old_value = Column(String) # Stored as JSON string or text
     new_value = Column(String) # Stored as JSON string or text
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=get_ist_now)

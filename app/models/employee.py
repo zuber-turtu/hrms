@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, Date, Float, ForeignKey
 from sqlalchemy.orm import relationship as orm_relationship
 from app.database import Base
-import datetime
+from app.utils.timezone import get_ist_today
 
 class Employee(Base):
     __tablename__ = "employees"
@@ -15,7 +15,7 @@ class Employee(Base):
     is_active = Column(Boolean, default=True)
     
     name = Column(String, nullable=False)
-    joining_date = Column(Date, default=datetime.date.today)
+    joining_date = Column(Date, default=get_ist_today)
     
     # Foreign Keys to Department & Designation (3NF Normalization)
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
@@ -185,6 +185,6 @@ class SalaryStructure(Base):
     custom_allowances = Column(Float, default=0.0)
     pf_deduction = Column(Float, default=0.0)
     tax_deduction = Column(Float, default=0.0)
-    effective_date = Column(Date, default=datetime.date.today)
+    effective_date = Column(Date, default=get_ist_today)
 
     employee = orm_relationship("Employee", back_populates="salary_structure")

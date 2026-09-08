@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from app.database import Base
-import datetime
+from app.utils.timezone import get_ist_today
 
 class Payslip(Base):
     __tablename__ = "payslips"
@@ -13,7 +13,7 @@ class Payslip(Base):
     year = Column(Integer)
     
     # Generated Dates
-    generated_on = Column(Date, default=datetime.date.today)
+    generated_on = Column(Date, default=get_ist_today)
     
     # Actual paid days vs payable days
     payable_days = Column(Integer)

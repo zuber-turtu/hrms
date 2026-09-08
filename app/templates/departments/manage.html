@@ -36,20 +36,20 @@
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
         <div class="flex items-center space-x-2.5">
-            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Organizational Structure</h2>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700">
+            <h2 class="text-xl font-heading font-bold text-[#1C2B2B] tracking-tight">Organizational Structure</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E0F4F4] text-[#006666] border border-[#B3E3E3]">
                 {{ departments|length }} Departments
             </span>
         </div>
-        <p class="text-xs text-slate-500 mt-0.5">Define corporate divisions, hierarchy, and assigned job designations</p>
+        <p class="text-xs text-[#6B7F7F] mt-0.5">Define corporate divisions, hierarchy, and assigned job designations</p>
     </div>
 
     <!-- Action Buttons -->
     <div class="flex items-center space-x-3 self-start sm:self-auto">
-        <button onclick="openDesignationModal()" class="inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm transition-all active:scale-95">
-            <i data-lucide="briefcase" class="w-4 h-4 mr-1.5 text-blue-600"></i> Add Designation
+        <button onclick="openDesignationModal()" class="inline-flex items-center px-3.5 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] shadow-sm transition-all active:scale-95">
+            <i data-lucide="briefcase" class="w-4 h-4 mr-1.5 text-[#008080]"></i> Add Designation
         </button>
-        <button onclick="openDepartmentModal()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95">
+        <button onclick="openDepartmentModal()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all active:scale-95">
             <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Add Department
         </button>
     </div>
@@ -57,30 +57,30 @@
 
 <!-- Key Stat Counters -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+    <div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between">
         <div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Departments</p>
-            <h4 class="text-xl font-bold text-slate-800 mt-0.5">{{ departments|length }}</h4>
+            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Total Departments</p>
+            <h4 class="text-xl font-heading font-bold text-[#1C2B2B] mt-0.5">{{ departments|length }}</h4>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
             <i data-lucide="building" class="w-5 h-5"></i>
         </div>
     </div>
 
-    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+    <div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between">
         <div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Job Designations</p>
-            <h4 class="text-xl font-bold text-indigo-600 mt-0.5">{{ designations|length }}</h4>
+            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Job Designations</p>
+            <h4 class="text-xl font-heading font-bold text-[#008080] mt-0.5">{{ designations|length }}</h4>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center border border-[#B3E3E3]">
             <i data-lucide="award" class="w-5 h-5"></i>
         </div>
     </div>
 
-    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex items-center justify-between">
+    <div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between">
         <div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assigned Positions</p>
-            <h4 class="text-xl font-bold text-emerald-600 mt-0.5">
+            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Assigned Positions</p>
+            <h4 class="text-xl font-heading font-bold text-emerald-600 mt-0.5">
                 {{ departments | map(attribute='employees') | map('length') | sum }}
             </h4>
         </div>
@@ -93,38 +93,38 @@
 <!-- Departments List Grid -->
 <div class="space-y-4">
     <div class="flex items-center justify-between">
-        <h3 class="text-base font-bold text-slate-900">Departments & Job Hierarchy</h3>
+        <h3 class="text-base font-heading font-bold text-[#1C2B2B]">Departments & Job Hierarchy</h3>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {% for dept in departments %}
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6 flex flex-col justify-between hover:shadow-card-hover transition-all">
+        <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-all">
             <div>
                 <!-- Dept Header -->
-                <div class="flex items-start justify-between pb-3 border-b border-slate-100 mb-4">
+                <div class="flex items-start justify-between pb-3 border-b border-[#B3E3E3]/30 mb-4">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm border border-blue-100 shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center font-bold text-sm border border-[#B3E3E3] shrink-0 font-heading">
                             {{ dept.code or dept.name[:3]|upper }}
                         </div>
                         <div>
                             <div class="flex items-center space-x-2">
-                                <h4 class="text-base font-bold text-slate-900">{{ dept.name }}</h4>
+                                <h4 class="text-base font-heading font-bold text-[#1C2B2B]">{{ dept.name }}</h4>
                                 {% if dept.code %}
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-slate-100 text-slate-600 border border-slate-200">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-[#E0F4F4] text-[#006666] border border-[#B3E3E3]">
                                     {{ dept.code }}
                                 </span>
                                 {% endif %}
                             </div>
-                            <p class="text-xs text-slate-400 mt-0.5">{{ dept.description or 'No description provided' }}</p>
+                            <p class="text-xs text-[#6B7F7F] mt-0.5">{{ dept.description or 'No description provided' }}</p>
                         </div>
                     </div>
 
                     <!-- Actions -->
                     <div class="flex items-center space-x-1.5">
-                        <button onclick="openDepartmentModal({{ dept.id }}, '{{ dept.name }}', '{{ dept.code or '' }}', '{{ dept.description or '' }}')" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors" title="Edit Department">
+                        <button onclick="openDepartmentModal({{ dept.id }}, '{{ dept.name }}', '{{ dept.code or '' }}', '{{ dept.description or '' }}')" class="p-1.5 text-[#6B7F7F] hover:text-[#008080] hover:bg-[#F4F7F7] rounded-lg transition-colors" title="Edit Department">
                             <i data-lucide="edit-3" class="w-4 h-4"></i>
                         </button>
-                        <button onclick="confirmDeleteDepartment({{ dept.id }}, '{{ dept.name }}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Delete Department">
+                        <button onclick="confirmDeleteDepartment({{ dept.id }}, '{{ dept.name }}')" class="p-1.5 text-[#6B7F7F] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Delete Department">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -132,72 +132,72 @@
 
                 <!-- Designations under this Department -->
                 <div class="mb-4">
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Job Designations:</span>
+                    <span class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider block mb-2">Job Designations:</span>
                     <div class="flex flex-wrap gap-1.5">
                         {% for des in dept.designations %}
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 border border-slate-200/70 text-slate-700 group hover:border-slate-300 transition-colors">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-[#F4F7F7] border border-[#B3E3E3]/70 text-[#1C2B2B] group hover:border-[#008080]/50 transition-colors">
                             <span>{{ des.title }}</span>
-                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', {{ dept.id }}, '{{ des.description or '' }}')" class="ml-1.5 text-slate-400 hover:text-blue-600 transition-colors" title="Edit Designation">
+                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', {{ dept.id }}, '{{ des.description or '' }}')" class="ml-1.5 text-[#6B7F7F] hover:text-[#008080] transition-colors" title="Edit Designation">
                                 <i data-lucide="edit" class="w-3 h-3"></i>
                             </button>
-                            <button type="button" onclick="confirmDeleteDesignation({{ des.id }}, '{{ des.title }}')" class="ml-1 text-slate-400 hover:text-rose-600 transition-colors" title="Delete Designation">
+                            <button type="button" onclick="confirmDeleteDesignation({{ des.id }}, '{{ des.title }}')" class="ml-1 text-[#6B7F7F] hover:text-rose-600 transition-colors" title="Delete Designation">
                                 <i data-lucide="trash-2" class="w-3 h-3"></i>
                             </button>
                         </span>
                         {% else %}
-                        <span class="text-xs text-slate-400 italic">No designations assigned yet.</span>
+                        <span class="text-xs text-[#6B7F7F] italic">No designations assigned yet.</span>
                         {% endfor %}
                     </div>
                 </div>
             </div>
 
             <!-- Footer stats -->
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span class="inline-flex items-center font-medium text-slate-700">
-                    <i data-lucide="users" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+            <div class="pt-3 border-t border-[#B3E3E3]/30 flex items-center justify-between text-xs text-[#6B7F7F]">
+                <span class="inline-flex items-center font-medium text-[#1C2B2B]">
+                    <i data-lucide="users" class="w-3.5 h-3.5 mr-1 text-[#6B7F7F]"></i>
                     {{ dept.employees|length }} Assigned Staff
                 </span>
-                <button onclick="openDesignationModal(null, '', {{ dept.id }})" class="text-xs font-semibold text-blue-600 hover:text-blue-700 inline-flex items-center">
+                <button onclick="openDesignationModal(null, '', {{ dept.id }})" class="text-xs font-semibold text-[#008080] hover:text-[#006666] inline-flex items-center">
                     <i data-lucide="plus" class="w-3 h-3 mr-1"></i> Add Title
                 </button>
             </div>
         </div>
         {% else %}
-        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-500">
-            <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-[#B3E3E3]/60 p-12 text-center text-[#6B7F7F]">
+            <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
                 <i data-lucide="building" class="w-6 h-6"></i>
             </div>
-            <p class="text-sm font-semibold text-slate-700">No departments configured yet.</p>
-            <p class="text-xs text-slate-400 mt-1">Click "Add Department" to start building your organizational hierarchy.</p>
+            <p class="text-sm font-semibold text-[#1C2B2B]">No departments configured yet.</p>
+            <p class="text-xs text-[#6B7F7F] mt-1">Click "Add Department" to start building your organizational hierarchy.</p>
         </div>
         {% endfor %}
 
         {% set unassigned_desigs = designations | selectattr('department_id', 'none') | list %}
         {% if unassigned_desigs %}
-        <div class="bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm p-6 flex flex-col justify-between hover:shadow-card transition-all">
+        <div class="bg-white rounded-2xl border border-dashed border-[#B3E3E3] shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-all">
             <div>
-                <div class="flex items-start justify-between pb-3 border-b border-slate-100 mb-4">
+                <div class="flex items-start justify-between pb-3 border-b border-[#B3E3E3]/30 mb-4">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-sm border border-purple-100 shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center font-bold text-sm border border-[#B3E3E3] shrink-0 font-heading">
                             GEN
                         </div>
                         <div>
-                            <h4 class="text-base font-bold text-slate-900">General / Cross-Department Roles</h4>
-                            <p class="text-xs text-slate-400 mt-0.5">Designations available across all departments</p>
+                            <h4 class="text-base font-heading font-bold text-[#1C2B2B]">General / Cross-Department Roles</h4>
+                            <p class="text-xs text-[#6B7F7F] mt-0.5">Designations available across all departments</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Job Designations:</span>
+                    <span class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider block mb-2">Job Designations:</span>
                     <div class="flex flex-wrap gap-1.5">
                         {% for des in unassigned_desigs %}
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 border border-slate-200/70 text-slate-700 group hover:border-slate-300 transition-colors">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-[#F4F7F7] border border-[#B3E3E3]/70 text-[#1C2B2B] group hover:border-[#008080]/50 transition-colors">
                             <span>{{ des.title }}</span>
-                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', '', '{{ des.description or '' }}')" class="ml-1.5 text-slate-400 hover:text-blue-600 transition-colors" title="Edit Designation">
+                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', '', '{{ des.description or '' }}')" class="ml-1.5 text-[#6B7F7F] hover:text-[#008080] transition-colors" title="Edit Designation">
                                 <i data-lucide="edit" class="w-3 h-3"></i>
                             </button>
-                            <button type="button" onclick="confirmDeleteDesignation({{ des.id }}, '{{ des.title }}')" class="ml-1 text-slate-400 hover:text-rose-600 transition-colors" title="Delete Designation">
+                            <button type="button" onclick="confirmDeleteDesignation({{ des.id }}, '{{ des.title }}')" class="ml-1 text-[#6B7F7F] hover:text-rose-600 transition-colors" title="Delete Designation">
                                 <i data-lucide="trash-2" class="w-3 h-3"></i>
                             </button>
                         </span>
@@ -206,12 +206,12 @@
                 </div>
             </div>
 
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span class="inline-flex items-center font-medium text-slate-700">
-                    <i data-lucide="award" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+            <div class="pt-3 border-t border-[#B3E3E3]/30 flex items-center justify-between text-xs text-[#6B7F7F]">
+                <span class="inline-flex items-center font-medium text-[#1C2B2B]">
+                    <i data-lucide="award" class="w-3.5 h-3.5 mr-1 text-[#6B7F7F]"></i>
                     {{ unassigned_desigs|length }} General Roles
                 </span>
-                <button onclick="openDesignationModal(null, '', '')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 inline-flex items-center">
+                <button onclick="openDesignationModal(null, '', '')" class="text-xs font-semibold text-[#008080] hover:text-[#006666] inline-flex items-center">
                     <i data-lucide="plus" class="w-3 h-3 mr-1"></i> Add Title
                 </button>
             </div>
@@ -225,47 +225,47 @@
 <!-- 1. Department Modal (Add/Edit) -->
 <div id="departmentModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closeDepartmentModal()"></div>
+        <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" onclick="closeDepartmentModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-[#B3E3E3]/80">
             <div class="p-6">
-                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                <div class="flex justify-between items-start pb-4 border-b border-[#B3E3E3]/30">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center shrink-0 border border-[#B3E3E3]">
                             <i data-lucide="building" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-base font-bold text-slate-900" id="deptModalTitle">Add Department</h3>
-                            <p class="text-xs text-slate-500">Department parameters</p>
+                            <h3 class="text-base font-heading font-bold text-[#1C2B2B]" id="deptModalTitle">Add Department</h3>
+                            <p class="text-xs text-[#6B7F7F]">Department parameters</p>
                         </div>
                     </div>
-                    <button onclick="closeDepartmentModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                    <button onclick="closeDepartmentModal()" class="text-[#6B7F7F] hover:text-[#1C2B2B] p-1 rounded-lg hover:bg-[#F4F7F7]">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
                 
                 <form id="departmentForm" method="POST" action="/departments/create" class="mt-4 space-y-4">
                     <div>
-                        <label for="dept_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Department Name <span class="text-rose-500">*</span></label>
-                        <input type="text" name="name" id="dept_name" required placeholder="e.g. Engineering" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                        <label for="dept_name" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Department Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="name" id="dept_name" required placeholder="e.g. Engineering" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                     </div>
 
                     <div>
-                        <label for="dept_code" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Short Code</label>
-                        <input type="text" name="code" id="dept_code" placeholder="e.g. ENG" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 uppercase font-mono focus:bg-white focus:outline-none focus:border-blue-500">
+                        <label for="dept_code" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Short Code</label>
+                        <input type="text" name="code" id="dept_code" placeholder="e.g. ENG" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] uppercase font-mono focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                     </div>
 
                     <div>
-                        <label for="dept_description" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Description</label>
-                        <textarea name="description" id="dept_description" rows="2" placeholder="Brief function or role of department" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"></textarea>
+                        <label for="dept_description" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Description</label>
+                        <textarea name="description" id="dept_description" rows="2" placeholder="Brief function or role of department" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]"></textarea>
                     </div>
                     
-                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closeDepartmentModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-[#B3E3E3]/30">
+                        <button type="button" onclick="closeDepartmentModal()" class="px-4 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all">
                             Save Department
                         </button>
                     </div>
@@ -278,35 +278,35 @@
 <!-- 2. Designation Modal (Add/Edit) -->
 <div id="designationModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="closeDesignationModal()"></div>
+        <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" onclick="closeDesignationModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-[#B3E3E3]/80">
             <div class="p-6">
-                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                <div class="flex justify-between items-start pb-4 border-b border-[#B3E3E3]/30">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+                        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center shrink-0 border border-[#B3E3E3]">
                             <i data-lucide="award" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-base font-bold text-slate-900" id="desigModalTitle">Add Job Designation</h3>
-                            <p class="text-xs text-slate-500">Assign title to department</p>
+                            <h3 class="text-base font-heading font-bold text-[#1C2B2B]" id="desigModalTitle">Add Job Designation</h3>
+                            <p class="text-xs text-[#6B7F7F]">Assign title to department</p>
                         </div>
                     </div>
-                    <button onclick="closeDesignationModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                    <button onclick="closeDesignationModal()" class="text-[#6B7F7F] hover:text-[#1C2B2B] p-1 rounded-lg hover:bg-[#F4F7F7]">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
                 
                 <form id="designationForm" method="POST" action="/departments/designations/create" class="mt-4 space-y-4">
                     <div>
-                        <label for="desig_title" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Job Title <span class="text-rose-500">*</span></label>
-                        <input type="text" name="title" id="desig_title" required placeholder="e.g. Senior Software Engineer" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                        <label for="desig_title" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Job Title <span class="text-rose-500">*</span></label>
+                        <input type="text" name="title" id="desig_title" required placeholder="e.g. Senior Software Engineer" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                     </div>
 
                     <div>
-                        <label for="desig_dept_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Parent Department</label>
-                        <select name="department_id" id="desig_dept_id" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                        <label for="desig_dept_id" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Parent Department</label>
+                        <select name="department_id" id="desig_dept_id" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                             <option value="">-- No Specific Department --</option>
                             {% for d in departments %}
                             <option value="{{ d.id }}">{{ d.name }}</option>
@@ -315,15 +315,15 @@
                     </div>
 
                     <div>
-                        <label for="desig_description" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Job Responsibilities</label>
-                        <textarea name="description" id="desig_description" rows="2" placeholder="Brief job scope" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500"></textarea>
+                        <label for="desig_description" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Job Responsibilities</label>
+                        <textarea name="description" id="desig_description" rows="2" placeholder="Brief job scope" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]"></textarea>
                     </div>
                     
-                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closeDesignationModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-[#B3E3E3]/30">
+                        <button type="button" onclick="closeDesignationModal()" class="px-4 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all">
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all">
                             Save Designation
                         </button>
                     </div>

@@ -7,49 +7,49 @@
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
         <div class="flex items-center space-x-2.5">
-            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Security & Activity Audit Trail</h2>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700" id="audit-count-badge">
+            <h2 class="text-xl font-bold font-heading text-[#1C2B2B] tracking-tight">Security & Activity Audit Trail</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-[#E0F4F4] text-[#008080] border border-[#B3E3E3]" id="audit-count-badge">
                 {{ logs|length }}
             </span>
         </div>
-        <p class="text-xs text-slate-500 mt-0.5">Immutable administrative activity records and permission modification history</p>
+        <p class="text-xs text-[#6B7F7F] mt-0.5">Immutable administrative activity records and permission modification history</p>
     </div>
 </div>
 
 <!-- Search Filter -->
-<div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card">
+<div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm">
     <div class="relative">
-        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
             <i data-lucide="search" class="w-4 h-4"></i>
         </div>
-        <input type="text" id="auditSearch" onkeyup="filterAuditLogs()" placeholder="Search by actor email, action type, or entity..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition-all">
+        <input type="text" id="auditSearch" onkeyup="filterAuditLogs()" placeholder="Search by actor email, action type, or entity..." class="w-full pl-10 pr-4 py-2 text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg text-[#1C2B2B] placeholder-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-all">
     </div>
 </div>
 
 <!-- Audit Log Table Card -->
-<div class="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+<div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-100" id="auditTable">
-            <thead class="bg-slate-50/80">
+        <table class="min-w-full divide-y divide-[#B3E3E3]/40" id="auditTable">
+            <thead class="bg-[#F4F7F7]">
                 <tr>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Timestamp</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Actor</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action Type</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Entity</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Modification Diff</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold font-heading text-[#6B7F7F] uppercase tracking-wider">Timestamp</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold font-heading text-[#6B7F7F] uppercase tracking-wider">Actor</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold font-heading text-[#6B7F7F] uppercase tracking-wider">Action Type</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold font-heading text-[#6B7F7F] uppercase tracking-wider">Entity</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold font-heading text-[#6B7F7F] uppercase tracking-wider">Modification Diff</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 bg-white">
+            <tbody class="divide-y divide-[#B3E3E3]/30 bg-white">
                 {% for log in logs %}
-                <tr class="hover:bg-slate-50/80 transition-colors audit-row"
+                <tr class="hover:bg-[#F4F7F7]/80 transition-colors audit-row"
                     data-actor="{{ log.actor_email|lower }}"
                     data-action="{{ log.action|lower }}"
                     data-entity="{{ log.entity|lower }} #{{ log.entity_id }}">
                     
                     <!-- Timestamp -->
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center space-x-2 text-xs font-mono text-slate-600">
-                            <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <div class="flex items-center space-x-2 text-xs font-mono text-[#6B7F7F]">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 text-[#6B7F7F]"></i>
                             <span>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</span>
                         </div>
                     </td>
@@ -57,10 +57,10 @@
                     <!-- Actor Email -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center space-x-2">
-                            <div class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[10px]">
+                            <div class="w-6 h-6 rounded-full bg-[#E0F4F4] text-[#008080] border border-[#B3E3E3] flex items-center justify-center font-bold text-[10px]">
                                 {{ log.actor_email[0]|upper }}
                             </div>
-                            <span class="text-sm font-semibold text-slate-900">{{ log.actor_email }}</span>
+                            <span class="text-sm font-semibold text-[#1C2B2B]">{{ log.actor_email }}</span>
                         </div>
                     </td>
 
@@ -70,25 +70,25 @@
                             {% if 'PASSWORD' in log.action %} bg-amber-50 text-amber-700 border-amber-200/80
                             {% elif 'ROLE' in log.action %} bg-purple-50 text-purple-700 border-purple-200/80
                             {% elif 'DELETE' in log.action %} bg-rose-50 text-rose-700 border-rose-200/80
-                            {% else %} bg-blue-50 text-blue-700 border-blue-200/80 {% endif %}">
+                            {% else %} bg-[#E0F4F4] text-[#008080] border-[#B3E3E3] {% endif %}">
                             {{ log.action.replace('_', ' ') }}
                         </span>
                     </td>
 
                     <!-- Entity -->
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-mono font-medium">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#1C2B2B] text-xs font-mono font-medium">
                             {{ log.entity }} #{{ log.entity_id }}
                         </span>
                     </td>
 
                     <!-- Changes Diff -->
-                    <td class="px-6 py-4 text-xs text-slate-600 max-w-sm">
-                        <div class="flex items-center space-x-2 truncate">
+                    <td class="px-6 py-4 text-xs text-[#1C2B2B] max-w-sm">
+                        <div class="flex items-center space-x-2 truncate font-mono">
                             <span class="px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200/60 line-through truncate max-w-[150px]" title="Before: {{ log.old_value }}">
                                 {{ log.old_value }}
                             </span>
-                            <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                            <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-[#6B7F7F] shrink-0"></i>
                             <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold truncate max-w-[150px]" title="After: {{ log.new_value }}">
                                 {{ log.new_value }}
                             </span>
@@ -97,23 +97,23 @@
                 </tr>
                 {% else %}
                 <tr id="server-empty-row">
-                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <td colspan="5" class="px-6 py-12 text-center text-[#6B7F7F]">
+                        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] border border-[#B3E3E3] flex items-center justify-center mx-auto mb-3">
                             <i data-lucide="scroll" class="w-6 h-6"></i>
                         </div>
-                        <p class="text-sm font-semibold text-slate-700">No audit trail records found</p>
-                        <p class="text-xs text-slate-400 mt-1">Administrative security actions will be recorded here.</p>
+                        <p class="text-sm font-semibold font-heading text-[#1C2B2B]">No audit trail records found</p>
+                        <p class="text-xs text-[#6B7F7F] mt-1">Administrative security actions will be recorded here.</p>
                     </td>
                 </tr>
                 {% endfor %}
 
                 <tr id="noResultsRow" class="hidden">
-                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <td colspan="5" class="px-6 py-12 text-center text-[#6B7F7F]">
+                        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] border border-[#B3E3E3] flex items-center justify-center mx-auto mb-3">
                             <i data-lucide="search-x" class="w-6 h-6"></i>
                         </div>
-                        <p class="text-sm font-semibold text-slate-700">No matching audit logs found</p>
-                        <p class="text-xs text-slate-400 mt-1">Try searching with a different term.</p>
+                        <p class="text-sm font-semibold font-heading text-[#1C2B2B]">No matching audit logs found</p>
+                        <p class="text-xs text-[#6B7F7F] mt-1">Try searching with a different term.</p>
                     </td>
                 </tr>
             </tbody>

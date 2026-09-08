@@ -1,14 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Kannada:wght@400;700&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@500;600;700;800&display=swap');
 
 :root {
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* TURTU Typography System */
+  --font-sans: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: 'Poppins', 'Nunito', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  --font-kannada: 'Noto Sans Kannada', 'Nunito', sans-serif;
+
+  /* TURTU Primary Teal Family */
+  --turtu-teal: #008080;
+  --turtu-dark: #004444;
+  --turtu-forest: #005050;
+  --turtu-mist: #E0F4F4;
+  --turtu-light: #B3E3E3;
+  --turtu-wash: #F4F7F7;
+  --turtu-mint: #EAF7F5;
+
+  /* TURTU Neutral / Text Palette */
+  --text-primary: #1C2B2B;   /* Deep Forest */
+  --text-secondary: #6B7F7F; /* Teal Slate */
+
+  /* TURTU Accents & Semantics */
+  --turtu-saffron: #FF8C42;
+  --turtu-turmeric: #F2C94C;
+  --turtu-foam: #E8F7F7;
+  --turtu-alert: #E53E3E;
 }
 
 body {
   font-family: var(--font-sans);
+  color: var(--text-primary);
+  background-color: var(--turtu-wash);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, .font-heading, .brand-title {
+  font-family: var(--font-heading);
 }
 
 /* Custom Scrollbars */
@@ -22,28 +50,28 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #B3E3E3;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #80C7C7;
 }
 
 /* Dark mode / Sidebar scrollbar */
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #005050;
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #006666;
 }
 
-/* Focus and input enhancements */
+/* Focus and input enhancements (TURTU Teal glow) */
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+  border-color: #008080 !important;
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.18) !important;
 }
 
 /* Smooth transitions */
@@ -53,12 +81,12 @@ input:focus, select:focus, textarea:focus {
 
 .transition-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  box-shadow: 0 10px 25px -5px rgba(0, 68, 68, 0.08), 0 8px 10px -6px rgba(0, 68, 68, 0.03);
 }
 
 /* Glassmorphism utility */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.90);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -93,4 +121,9 @@ input:focus, select:focus, textarea:focus {
 /* Monospace font class */
 .font-code {
   font-family: var(--font-mono);
+}
+
+/* Kannada font class */
+.font-kannada {
+  font-family: var(--font-kannada);
 }

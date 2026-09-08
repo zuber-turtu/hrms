@@ -7,33 +7,33 @@
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
         <div class="flex items-center space-x-2.5">
-            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Payroll & Salary Slips</h2>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700" id="payslip-count-badge">
+            <h2 class="text-xl font-heading font-bold text-[#1C2B2B] tracking-tight">Payroll & Salary Slips</h2>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E0F4F4] text-[#006666] border border-[#B3E3E3]" id="payslip-count-badge">
                 {{ payslips|length }}
             </span>
         </div>
-        <p class="text-xs text-slate-500 mt-0.5">Generate, audit, and disburse monthly compensation payslips</p>
+        <p class="text-xs text-[#6B7F7F] mt-0.5">Generate, audit, and disburse monthly compensation payslips</p>
     </div>
     
     {% if user.role in ['admin', 'hr_admin'] %}
-    <button onclick="document.getElementById('generateModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95 self-start sm:self-auto">
+    <button onclick="document.getElementById('generateModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all active:scale-95 self-start sm:self-auto">
         <i data-lucide="calculator" class="w-4 h-4 mr-2"></i> Generate Draft Payslip
     </button>
     {% endif %}
 </div>
 
 <!-- Search & Status Filter Bar -->
-<div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-card flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+<div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
     <div class="relative flex-1">
-        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
             <i data-lucide="search" class="w-4 h-4"></i>
         </div>
-        <input type="text" id="payslipSearch" onkeyup="filterPayslips()" placeholder="Search by employee name or period (MM/YYYY)..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition-all">
+        <input type="text" id="payslipSearch" onkeyup="filterPayslips()" placeholder="Search by employee name or period (MM/YYYY)..." class="w-full pl-10 pr-4 py-2 text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg text-[#1C2B2B] placeholder-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-all">
     </div>
 
     <div class="flex items-center space-x-2">
-        <label for="payrollStatusFilter" class="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">Status:</label>
-        <select id="payrollStatusFilter" onchange="filterPayslips()" class="py-2 px-3 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:bg-white focus:outline-none focus:border-blue-500">
+        <label for="payrollStatusFilter" class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider shrink-0">Status:</label>
+        <select id="payrollStatusFilter" onchange="filterPayslips()" class="py-2 px-3 text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg text-[#1C2B2B] font-medium focus:bg-white focus:outline-none focus:border-[#008080]">
             <option value="all">All Statuses</option>
             <option value="draft">Draft</option>
             <option value="finalized">Finalized</option>
@@ -43,21 +43,21 @@
 </div>
 
 <!-- Payslips Table Card -->
-<div class="bg-white rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+<div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-100" id="payslipsTable">
-            <thead class="bg-slate-50/80">
+        <table class="min-w-full divide-y divide-[#B3E3E3]/30" id="payslipsTable">
+            <thead class="bg-[#F4F7F7]">
                 <tr>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Payroll Period</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Net Payable</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Employee</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Payroll Period</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Net Payable</th>
+                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 bg-white">
+            <tbody class="divide-y divide-[#B3E3E3]/20 bg-white">
                 {% for payslip in payslips %}
-                <tr class="hover:bg-slate-50/80 transition-colors payslip-row"
+                <tr class="hover:bg-[#F4F7F7]/70 transition-colors payslip-row"
                     data-emp="{{ payslip.employee.name|lower }}"
                     data-period="{{ payslip.month }}/{{ payslip.year }}"
                     data-status="{{ payslip.status|lower }}">
@@ -65,36 +65,36 @@
                     <!-- Employee -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                            <div class="w-8 h-8 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center font-bold text-xs shrink-0 border border-[#B3E3E3]">
                                 {{ payslip.employee.name[0] if payslip.employee.name else 'E' }}
                             </div>
-                            <div class="text-sm font-bold text-slate-900">{{ payslip.employee.name }}</div>
+                            <div class="text-sm font-bold text-[#1C2B2B]">{{ payslip.employee.name }}</div>
                         </div>
                     </td>
 
                     <!-- Period -->
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-semibold font-mono">
-                            <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#1C2B2B] text-xs font-semibold font-mono">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-[#6B7F7F]"></i>
                             {{ "%02d" % payslip.month }}/{{ payslip.year }}
                         </span>
                     </td>
 
                     <!-- Net Salary -->
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm font-bold font-mono text-slate-900">{{ payslip.net_salary }}</span>
+                        <span class="text-sm font-bold font-mono text-emerald-700">{{ payslip.net_salary }}</span>
                     </td>
 
                     <!-- Status -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border
                             {% if payslip.status == 'draft' %} bg-amber-50 text-amber-700 border-amber-200/80
-                            {% elif payslip.status == 'finalized' %} bg-blue-50 text-blue-700 border-blue-200/80
+                            {% elif payslip.status == 'finalized' %} bg-[#E0F4F4] text-[#006666] border-[#B3E3E3]
                             {% elif payslip.status == 'paid' %} bg-emerald-50 text-emerald-700 border-emerald-200/80
                             {% endif %}">
                             <span class="w-1.5 h-1.5 rounded-full mr-1.5 
                                 {% if payslip.status == 'draft' %} bg-amber-500
-                                {% elif payslip.status == 'finalized' %} bg-blue-500
+                                {% elif payslip.status == 'finalized' %} bg-[#008080]
                                 {% elif payslip.status == 'paid' %} bg-emerald-500
                                 {% endif %}"></span>
                             {{ payslip.status | title }}
@@ -103,38 +103,38 @@
 
                     <!-- Actions -->
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <a href="/payroll/{{ payslip.id }}/view" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm" title="View / Print Salary Slip">
-                            <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-500"></i> View
+                        <a href="/payroll/{{ payslip.id }}/view" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#1C2B2B] bg-white border border-[#B3E3E3] hover:bg-[#F4F7F7] hover:text-[#008080] transition-colors shadow-sm" title="View / Print Salary Slip">
+                            <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-[#6B7F7F]"></i> View
                         </a>
                         {% if user.role in ['admin', 'hr_admin'] %}
-                        <a href="/payroll/{{ payslip.id }}/edit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-blue-600 transition-colors" title="Edit Line Items">
+                        <a href="/payroll/{{ payslip.id }}/edit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#1C2B2B] bg-[#F4F7F7] border border-[#B3E3E3]/60 hover:bg-[#E0F4F4] hover:text-[#008080] transition-colors" title="Edit Line Items">
                             <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Edit
                         </a>
                         {% endif %}
-                        <a href="/payroll/{{ payslip.id }}/pdf" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors" target="_blank" title="Download Salary Slip PDF">
+                        <a href="/payroll/{{ payslip.id }}/pdf" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#008080] bg-[#E0F4F4]/70 hover:bg-[#E0F4F4] border border-[#008080]/30 transition-colors" target="_blank" title="Download Salary Slip PDF">
                             <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> PDF
                         </a>
                     </td>
                 </tr>
                 {% else %}
                 <tr id="server-empty-row">
-                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <td colspan="5" class="px-6 py-12 text-center text-[#6B7F7F]">
+                        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
                             <i data-lucide="banknote" class="w-6 h-6"></i>
                         </div>
-                        <p class="text-sm font-semibold text-slate-700">No payslips found</p>
-                        <p class="text-xs text-slate-400 mt-1">Generate a draft payslip to begin monthly payroll calculation.</p>
+                        <p class="text-sm font-semibold text-[#1C2B2B]">No payslips found</p>
+                        <p class="text-xs text-[#6B7F7F] mt-1">Generate a draft payslip to begin monthly payroll calculation.</p>
                     </td>
                 </tr>
                 {% endfor %}
 
                 <tr id="noResultsRow" class="hidden">
-                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <td colspan="5" class="px-6 py-12 text-center text-[#6B7F7F]">
+                        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
                             <i data-lucide="search-x" class="w-6 h-6"></i>
                         </div>
-                        <p class="text-sm font-semibold text-slate-700">No matching payslips found</p>
-                        <p class="text-xs text-slate-400 mt-1">Try adjusting your search query or status filter.</p>
+                        <p class="text-sm font-semibold text-[#1C2B2B]">No matching payslips found</p>
+                        <p class="text-xs text-[#6B7F7F] mt-1">Try adjusting your search query or status filter.</p>
                     </td>
                 </tr>
             </tbody>
@@ -147,31 +147,31 @@
 <div id="generateModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <!-- Backdrop -->
-        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" onclick="document.getElementById('generateModal').classList.add('hidden')"></div>
+        <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" onclick="document.getElementById('generateModal').classList.add('hidden')"></div>
         
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-[#B3E3E3]/80">
             <div class="p-6">
-                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                <div class="flex justify-between items-start pb-4 border-b border-[#B3E3E3]/30">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                        <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center shrink-0 border border-[#B3E3E3]">
                             <i data-lucide="calculator" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-base font-bold text-slate-900">Generate Draft Payslip</h3>
-                            <p class="text-xs text-slate-500">Pro-rata calculation from attendance</p>
+                            <h3 class="text-base font-heading font-bold text-[#1C2B2B]">Generate Draft Payslip</h3>
+                            <p class="text-xs text-[#6B7F7F]">Pro-rata calculation from attendance</p>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('generateModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                    <button onclick="document.getElementById('generateModal').classList.add('hidden')" class="text-[#6B7F7F] hover:text-[#1C2B2B] p-1 rounded-lg hover:bg-[#F4F7F7]">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
                 
                 <form action="/payroll/generate-draft" method="POST" class="mt-4 space-y-4">
                     <div>
-                        <label for="employee_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Select Employee</label>
-                        <select name="employee_id" id="employee_id" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                        <label for="employee_id" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Select Employee</label>
+                        <select name="employee_id" id="employee_id" required class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                             {% for emp in employees %}
                             <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.department or 'General' }})</option>
                             {% endfor %}
@@ -180,27 +180,27 @@
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Month</label>
-                            <select name="month" id="month" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            <label for="month" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Month</label>
+                            <select name="month" id="month" required class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                                 {% for i in range(1, 13) %}
                                 <option value="{{ i }}" {% if i == 9 %}selected{% endif %}>{{ i }} ({{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }})</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div>
-                            <label for="year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Year</label>
-                            <select name="year" id="year" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500">
+                            <label for="year" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1">Year</label>
+                            <select name="year" id="year" required class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080]">
                                 <option value="2026" selected>2026</option>
                                 <option value="2027">2027</option>
                             </select>
                         </div>
                     </div>
                     
-                    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="document.getElementById('generateModal').classList.add('hidden')" class="px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-3 pt-3 border-t border-[#B3E3E3]/30">
+                        <button type="button" onclick="document.getElementById('generateModal').classList.add('hidden')" class="px-4 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all">
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all">
                             Generate Draft
                         </button>
                     </div>

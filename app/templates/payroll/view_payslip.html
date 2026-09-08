@@ -33,149 +33,149 @@
 <div class="max-w-4xl mx-auto space-y-5">
 
     <!-- Top Action Toolbar (Hidden on Print) -->
-    <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
+    <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl border border-[#B3E3E3]/60 p-4 shadow-sm">
         <div class="flex items-center space-x-3">
-            <a href="/payroll" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors" title="Back to Payroll Directory">
+            <a href="/payroll" class="p-2 text-[#6B7F7F] hover:text-[#1C2B2B] hover:bg-[#F4F7F7] rounded-xl transition-colors" title="Back to Payroll Directory">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
             <div>
                 <div class="flex items-center space-x-2.5">
-                    <h2 class="text-base font-bold text-slate-900">Official Payslip Statement</h2>
+                    <h2 class="text-base font-heading font-bold text-[#1C2B2B]">Official Payslip Statement</h2>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider
                         {% if payslip.status == 'draft' %} bg-amber-50 text-amber-700 border border-amber-200
-                        {% elif payslip.status == 'finalized' %} bg-blue-50 text-blue-700 border border-blue-200
+                        {% elif payslip.status == 'finalized' %} bg-[#E0F4F4] text-[#006666] border border-[#B3E3E3]
                         {% elif payslip.status == 'paid' %} bg-emerald-50 text-emerald-700 border border-emerald-200
-                        {% else %} bg-slate-100 text-slate-700 {% endif %}">
+                        {% else %} bg-[#F4F7F7] text-[#1C2B2B] {% endif %}">
                         <span class="w-1.5 h-1.5 rounded-full mr-1.5
                             {% if payslip.status == 'draft' %} bg-amber-500
-                            {% elif payslip.status == 'finalized' %} bg-blue-500
+                            {% elif payslip.status == 'finalized' %} bg-[#008080]
                             {% elif payslip.status == 'paid' %} bg-emerald-500
-                            {% else %} bg-slate-400 {% endif %}"></span>
+                            {% else %} bg-[#6B7F7F] {% endif %}"></span>
                         {{ payslip.status | title }}
                     </span>
                 </div>
-                <p class="text-xs text-slate-500">{{ payslip.employee.name }} • {{ month_name }} {{ payslip.year }}</p>
+                <p class="text-xs text-[#6B7F7F]">{{ payslip.employee.name }} • {{ month_name }} {{ payslip.year }}</p>
             </div>
         </div>
 
         <div class="flex items-center space-x-2.5">
             {% if user.role in ['admin', 'hr_admin'] %}
-            <a href="/payroll/{{ payslip.id }}/edit" class="inline-flex items-center px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm transition-all active:scale-95">
-                <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Edit Breakdown
+            <a href="/payroll/{{ payslip.id }}/edit" class="inline-flex items-center px-3.5 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] shadow-sm transition-all active:scale-95">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1.5 text-[#6B7F7F]"></i> Edit Breakdown
             </a>
             {% endif %}
-            <button onclick="window.print()" class="inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm transition-all active:scale-95">
-                <i data-lucide="printer" class="w-3.5 h-3.5 mr-1.5 text-blue-600"></i> Print Payslip
+            <button onclick="window.print()" class="inline-flex items-center px-3.5 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] shadow-sm transition-all active:scale-95">
+                <i data-lucide="printer" class="w-3.5 h-3.5 mr-1.5 text-[#008080]"></i> Print Payslip
             </button>
-            <a href="/payroll/{{ payslip.id }}/pdf" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95">
+            <a href="/payroll/{{ payslip.id }}/pdf" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/20 transition-all active:scale-95">
                 <i data-lucide="download" class="w-3.5 h-3.5 mr-1.5"></i> Download PDF
             </a>
         </div>
     </div>
 
     <!-- ================= AUTHENTIC CORPORATE PAYSLIP DOCUMENT ================= -->
-    <div class="payslip-sheet bg-white rounded-2xl border border-slate-300 shadow-xl overflow-hidden p-6 sm:p-10 text-slate-900 font-sans">
+    <div class="payslip-sheet bg-white rounded-2xl border border-[#B3E3E3] shadow-lg overflow-hidden p-6 sm:p-10 text-[#1C2B2B]">
         
         <!-- 1. Corporate Letterhead Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start pb-5 border-b-2 border-slate-800 gap-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start pb-5 border-b-2 border-[#004444] gap-4">
             <div class="flex items-center space-x-4">
-                <img src="/static/images/icon.jpeg" alt="Company Logo" class="w-16 h-16 object-contain rounded-xl bg-slate-900 p-1 shadow-sm border border-slate-200 shrink-0">
+                <img src="/static/images/icon.jpeg" alt="Company Logo" class="w-16 h-16 object-contain rounded-xl bg-white p-1 shadow-sm border border-[#B3E3E3] shrink-0">
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight uppercase leading-tight">
-                        {{ company.name if company and company.name else 'ACME CORPORATION INC.' }}
+                    <h1 class="text-xl sm:text-2xl font-heading font-extrabold text-[#1C2B2B] tracking-tight uppercase leading-tight">
+                        {{ company.name if company and company.name else 'TURTU HRMS' }}
                     </h1>
-                    <p class="text-xs text-slate-600 mt-0.5">
-                        {{ company.address if company and company.address else '100 Innovation Boulevard, Tech Park, Suite 400' }}
+                    <p class="text-xs text-[#6B7F7F] mt-0.5">
+                        {{ company.address if company and company.address else 'Karnataka, India' }}
                     </p>
-                    <p class="text-[11px] text-slate-500 mt-0.5 font-mono">
-                        CIN: U72200CA2022PTC123456 • GSTIN/TAX: 29ABCDE1234F1Z5 • PAN: ABCDE1234F
+                    <p class="text-[11px] text-[#6B7F7F] mt-0.5 font-mono">
+                        CIN: U72200KA2024PTC123456 • GSTIN/TAX: 29TURTU1234F1Z5 • PAN: TURTU1234F
                     </p>
-                    <p class="text-[11px] text-slate-500">Corporate HR & Payroll Division • payroll@hrms.local</p>
+                    <p class="text-[11px] text-[#6B7F7F]">Corporate HR & Payroll Division • support@turtu.in</p>
                 </div>
             </div>
 
             <!-- Statement Title & Reference Block -->
             <div class="text-left sm:text-right shrink-0">
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Confidential Salary Statement</div>
-                <div class="text-sm font-extrabold text-slate-900 font-mono mt-0.5">
+                <div class="text-xs font-bold text-[#6B7F7F] uppercase tracking-widest">Confidential Salary Statement</div>
+                <div class="text-sm font-extrabold text-[#1C2B2B] font-mono mt-0.5">
                     Slip No: PAY-{{ payslip.year }}{{ "%02d" % payslip.month }}-{{ "%04d" % payslip.id }}
                 </div>
-                <div class="text-xs font-semibold text-slate-600 mt-0.5">
+                <div class="text-xs font-semibold text-[#6B7F7F] mt-0.5">
                     Disbursement: {{ payslip.generated_on.strftime('%B %d, %Y') if payslip.generated_on else 'End of Month' }}
                 </div>
             </div>
         </div>
 
         <!-- 2. Payslip Period Title Ribbon -->
-        <div class="mt-4 bg-slate-900 text-white text-center py-2 px-4 rounded-lg font-bold text-xs sm:text-sm uppercase tracking-wider">
+        <div class="mt-4 bg-gradient-to-r from-[#004444] to-[#005050] text-white text-center py-2 px-4 rounded-lg font-heading font-bold text-xs sm:text-sm uppercase tracking-wider shadow-sm">
             Payslip for the Month of {{ month_name }} {{ payslip.year }}
         </div>
 
         <!-- 3. Employee & Bank Information Grid -->
-        <div class="mt-4 border border-slate-300 rounded-xl overflow-hidden bg-slate-50/50">
-            <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-300 text-xs">
+        <div class="mt-4 border border-[#B3E3E3] rounded-xl overflow-hidden bg-[#F4F7F7]/60">
+            <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#B3E3E3] text-xs">
                 
                 <!-- Left: Employee Details -->
                 <div class="p-3.5 space-y-1.5">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-200">
+                    <div class="text-[11px] font-bold text-[#008080] uppercase tracking-wider pb-1 border-b border-[#B3E3E3]/60">
                         Employee Identification
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">Employee Name:</span>
-                        <span class="font-bold text-slate-900 text-right">{{ payslip.employee.name }}</span>
+                        <span class="font-semibold text-[#6B7F7F]">Employee Name:</span>
+                        <span class="font-bold text-[#1C2B2B] text-right">{{ payslip.employee.name }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">Employee ID:</span>
-                        <span class="font-mono font-bold text-slate-900 text-right">EMP-{{ "%04d" % payslip.employee.id }}</span>
+                        <span class="font-semibold text-[#6B7F7F]">Employee ID:</span>
+                        <span class="font-mono font-bold text-[#1C2B2B] text-right">EMP-{{ "%04d" % payslip.employee.id }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">Department:</span>
-                        <span class="font-medium text-slate-900 text-right">
+                        <span class="font-semibold text-[#6B7F7F]">Department:</span>
+                        <span class="font-medium text-[#1C2B2B] text-right">
                             {{ payslip.employee.department.name if payslip.employee.department else (payslip.employee.department or 'Operations') }}
                         </span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">Designation:</span>
-                        <span class="font-medium text-slate-900 text-right">
+                        <span class="font-semibold text-[#6B7F7F]">Designation:</span>
+                        <span class="font-medium text-[#1C2B2B] text-right">
                             {{ payslip.employee.designation.title if payslip.employee.designation else (payslip.employee.designation or 'Staff') }}
                         </span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">Date of Joining:</span>
-                        <span class="font-medium text-slate-900 text-right">{{ payslip.employee.joining_date or 'N/A' }}</span>
+                        <span class="font-semibold text-[#6B7F7F]">Date of Joining:</span>
+                        <span class="font-medium text-[#1C2B2B] text-right">{{ payslip.employee.joining_date or 'N/A' }}</span>
                     </div>
                 </div>
 
                 <!-- Right: Bank & Statutory Details -->
                 <div class="p-3.5 space-y-1.5">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-200">
+                    <div class="text-[11px] font-bold text-[#008080] uppercase tracking-wider pb-1 border-b border-[#B3E3E3]/60">
                         Payment & Statutory Details
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">Bank Name:</span>
-                        <span class="font-medium text-slate-900 text-right">
-                            {{ payslip.employee.bank_account.bank_name if payslip.employee.bank_account and payslip.employee.bank_account.bank_name else 'Standard Chartered Bank' }}
+                        <span class="font-semibold text-[#6B7F7F]">Bank Name:</span>
+                        <span class="font-medium text-[#1C2B2B] text-right">
+                            {{ payslip.employee.bank_account.bank_name if payslip.employee.bank_account and payslip.employee.bank_account.bank_name else 'HDFC Bank' }}
                         </span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">Bank Account No:</span>
-                        <span class="font-mono font-bold text-slate-900 text-right">{{ masked_account }}</span>
+                        <span class="font-semibold text-[#6B7F7F]">Bank Account No:</span>
+                        <span class="font-mono font-bold text-[#1C2B2B] text-right">{{ masked_account }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">IFSC / Branch Code:</span>
-                        <span class="font-mono font-medium text-slate-900 text-right">
-                            {{ payslip.employee.bank_account.ifsc_code if payslip.employee.bank_account and payslip.employee.bank_account.ifsc_code else 'SCBL0001092' }}
+                        <span class="font-semibold text-[#6B7F7F]">IFSC / Branch Code:</span>
+                        <span class="font-mono font-medium text-[#1C2B2B] text-right">
+                            {{ payslip.employee.bank_account.ifsc_code if payslip.employee.bank_account and payslip.employee.bank_account.ifsc_code else 'HDFC0001092' }}
                         </span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">PAN / Tax ID:</span>
-                        <span class="font-mono font-medium text-slate-900 text-right">
+                        <span class="font-semibold text-[#6B7F7F]">PAN / Tax ID:</span>
+                        <span class="font-mono font-medium text-[#1C2B2B] text-right">
                             {{ payslip.employee.profile.pan_number if payslip.employee.profile and payslip.employee.profile.pan_number else 'ABCDE1234F' }}
                         </span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="font-semibold text-slate-600">PF / UAN No:</span>
-                        <span class="font-mono font-medium text-slate-900 text-right">100982348123</span>
+                        <span class="font-semibold text-[#6B7F7F]">PF / UAN No:</span>
+                        <span class="font-mono font-medium text-[#1C2B2B] text-right">100982348123</span>
                     </div>
                 </div>
 
@@ -183,11 +183,11 @@
         </div>
 
         <!-- 4. Attendance Summary Ribbon -->
-        <div class="mt-3 border border-slate-300 rounded-xl overflow-hidden bg-slate-100/70 p-2.5">
+        <div class="mt-3 border border-[#B3E3E3] rounded-xl overflow-hidden bg-[#E0F4F4]/50 p-2.5">
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                 <div>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Standard Working Days</span>
-                    <span class="font-mono font-bold text-slate-900 text-sm">{{ payslip.payable_days }}</span>
+                    <span class="text-[10px] font-bold text-[#6B7F7F] uppercase tracking-wider block">Standard Working Days</span>
+                    <span class="font-mono font-bold text-[#1C2B2B] text-sm">{{ payslip.payable_days }}</span>
                 </div>
                 <div>
                     <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">Days Worked / Present</span>
@@ -198,56 +198,56 @@
                     <span class="font-mono font-bold text-rose-800 text-sm">{{ "%.1f"|format(payslip.payable_days - payslip.days_worked) }}</span>
                 </div>
                 <div>
-                    <span class="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">Payment Mode</span>
-                    <span class="font-bold text-blue-900 text-xs">Direct Bank Transfer</span>
+                    <span class="text-[10px] font-bold text-[#008080] uppercase tracking-wider block">Payment Mode</span>
+                    <span class="font-bold text-[#006666] text-xs">Direct Bank Transfer</span>
                 </div>
             </div>
         </div>
 
         <!-- 5. Comparative Earnings & Deductions Statement -->
-        <div class="mt-4 border border-slate-300 rounded-xl overflow-hidden">
-            <table class="w-full text-xs divide-y divide-slate-300">
+        <div class="mt-4 border border-[#B3E3E3] rounded-xl overflow-hidden">
+            <table class="w-full text-xs divide-y divide-[#B3E3E3]">
                 <thead>
-                    <tr class="bg-slate-900 text-white font-bold uppercase tracking-wider text-[11px]">
-                        <th class="px-4 py-2.5 text-left w-5/12 border-r border-slate-700">Earnings</th>
-                        <th class="px-4 py-2.5 text-right w-2/12 border-r border-slate-700">Amount ({{ currency }})</th>
-                        <th class="px-4 py-2.5 text-left w-5/12 border-r border-slate-700">Deductions</th>
+                    <tr class="bg-[#004444] text-white font-heading font-bold uppercase tracking-wider text-[11px]">
+                        <th class="px-4 py-2.5 text-left w-5/12 border-r border-[#005050]">Earnings</th>
+                        <th class="px-4 py-2.5 text-right w-2/12 border-r border-[#005050]">Amount ({{ currency }})</th>
+                        <th class="px-4 py-2.5 text-left w-5/12 border-r border-[#005050]">Deductions</th>
                         <th class="px-4 py-2.5 text-right w-2/12">Amount ({{ currency }})</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200">
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-4 py-2 text-slate-800 font-medium border-r border-slate-200">Basic Salary</td>
-                        <td class="px-4 py-2 text-right font-mono font-bold text-slate-900 border-r border-slate-200">{{ "%.2f"|format(payslip.basic) }}</td>
-                        <td class="px-4 py-2 text-slate-800 font-medium border-r border-slate-200">Employee Provident Fund (PF)</td>
-                        <td class="px-4 py-2 text-right font-mono font-bold text-slate-900">{{ "%.2f"|format(payslip.pf) }}</td>
+                <tbody class="divide-y divide-[#B3E3E3]/40">
+                    <tr class="hover:bg-[#F4F7F7]">
+                        <td class="px-4 py-2 text-[#1C2B2B] font-medium border-r border-[#B3E3E3]/40">Basic Salary</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-[#1C2B2B] border-r border-[#B3E3E3]/40">{{ "%.2f"|format(payslip.basic) }}</td>
+                        <td class="px-4 py-2 text-[#1C2B2B] font-medium border-r border-[#B3E3E3]/40">Employee Provident Fund (PF)</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-[#1C2B2B]">{{ "%.2f"|format(payslip.pf) }}</td>
                     </tr>
-                    <tr class="hover:bg-slate-50 bg-slate-50/40">
-                        <td class="px-4 py-2 text-slate-800 font-medium border-r border-slate-200">House Rent Allowance (HRA)</td>
-                        <td class="px-4 py-2 text-right font-mono font-bold text-slate-900 border-r border-slate-200">{{ "%.2f"|format(payslip.hra) }}</td>
-                        <td class="px-4 py-2 text-slate-800 font-medium border-r border-slate-200">Professional Tax (PT) / TDS</td>
-                        <td class="px-4 py-2 text-right font-mono font-bold text-slate-900">{{ "%.2f"|format(payslip.tax) }}</td>
+                    <tr class="hover:bg-[#F4F7F7] bg-[#F4F7F7]/50">
+                        <td class="px-4 py-2 text-[#1C2B2B] font-medium border-r border-[#B3E3E3]/40">House Rent Allowance (HRA)</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-[#1C2B2B] border-r border-[#B3E3E3]/40">{{ "%.2f"|format(payslip.hra) }}</td>
+                        <td class="px-4 py-2 text-[#1C2B2B] font-medium border-r border-[#B3E3E3]/40">Professional Tax (PT) / TDS</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-[#1C2B2B]">{{ "%.2f"|format(payslip.tax) }}</td>
                     </tr>
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-4 py-2 text-slate-800 font-medium border-r border-slate-200">Special & Conveyance Allowance</td>
-                        <td class="px-4 py-2 text-right font-mono font-bold text-slate-900 border-r border-slate-200">{{ "%.2f"|format(payslip.allowances) }}</td>
-                        <td class="px-4 py-2 text-slate-800 font-medium border-r border-slate-200">Other Recoveries / Advance</td>
-                        <td class="px-4 py-2 text-right font-mono font-bold text-slate-900">{{ "%.2f"|format(payslip.other_deductions) }}</td>
+                    <tr class="hover:bg-[#F4F7F7]">
+                        <td class="px-4 py-2 text-[#1C2B2B] font-medium border-r border-[#B3E3E3]/40">Special & Conveyance Allowance</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-[#1C2B2B] border-r border-[#B3E3E3]/40">{{ "%.2f"|format(payslip.allowances) }}</td>
+                        <td class="px-4 py-2 text-[#1C2B2B] font-medium border-r border-[#B3E3E3]/40">Other Recoveries / Advance</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-[#1C2B2B]">{{ "%.2f"|format(payslip.other_deductions) }}</td>
                     </tr>
-                    <tr class="hover:bg-slate-50 bg-slate-50/40">
-                        <td class="px-4 py-2 text-slate-800 font-medium border-r border-slate-200">Performance Incentive / Bonus</td>
-                        <td class="px-4 py-2 text-right font-mono font-bold text-slate-900 border-r border-slate-200">{{ "%.2f"|format(payslip.bonus) }}</td>
-                        <td class="px-4 py-2 text-slate-400 italic border-r border-slate-200">—</td>
-                        <td class="px-4 py-2 text-right font-mono text-slate-400">0.00</td>
+                    <tr class="hover:bg-[#F4F7F7] bg-[#F4F7F7]/50">
+                        <td class="px-4 py-2 text-[#1C2B2B] font-medium border-r border-[#B3E3E3]/40">Performance Incentive / Bonus</td>
+                        <td class="px-4 py-2 text-right font-mono font-bold text-[#1C2B2B] border-r border-[#B3E3E3]/40">{{ "%.2f"|format(payslip.bonus) }}</td>
+                        <td class="px-4 py-2 text-[#6B7F7F] italic border-r border-[#B3E3E3]/40">—</td>
+                        <td class="px-4 py-2 text-right font-mono text-[#6B7F7F]">0.00</td>
                     </tr>
                 </tbody>
                 <tfoot>
-                    <tr class="bg-slate-100 font-bold border-t-2 border-slate-300 text-slate-900">
-                        <td class="px-4 py-2.5 uppercase text-[11px] border-r border-slate-300">Total Gross Earnings (A)</td>
-                        <td class="px-4 py-2.5 text-right font-mono text-sm border-r border-slate-300">
+                    <tr class="bg-[#F4F7F7] font-bold border-t-2 border-[#B3E3E3] text-[#1C2B2B]">
+                        <td class="px-4 py-2.5 uppercase text-[11px] border-r border-[#B3E3E3]">Total Gross Earnings (A)</td>
+                        <td class="px-4 py-2.5 text-right font-mono text-sm border-r border-[#B3E3E3] text-[#008080]">
                             {{ currency }}{{ "%.2f"|format(payslip.basic + payslip.hra + payslip.allowances + payslip.bonus) }}
                         </td>
-                        <td class="px-4 py-2.5 uppercase text-[11px] text-rose-800 border-r border-slate-300">Total Deductions (B)</td>
+                        <td class="px-4 py-2.5 uppercase text-[11px] text-rose-800 border-r border-[#B3E3E3]">Total Deductions (B)</td>
                         <td class="px-4 py-2.5 text-right font-mono text-sm text-rose-700">
                             {{ currency }}{{ "%.2f"|format(payslip.pf + payslip.tax + payslip.other_deductions) }}
                         </td>
@@ -257,47 +257,47 @@
         </div>
 
         <!-- 6. Net Take-Home Salary Highlight Box -->
-        <div class="mt-4 border-2 border-slate-900 rounded-xl overflow-hidden bg-slate-50 p-4">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-300">
+        <div class="mt-4 border-2 border-[#008080] rounded-xl overflow-hidden bg-[#E0F4F4]/30 p-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-[#B3E3E3]">
                 <div>
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest block">Net Take-Home Salary (A - B)</span>
-                    <span class="text-xs text-slate-700 mt-0.5 block">
+                    <span class="text-xs font-bold text-[#008080] uppercase tracking-widest block">Net Take-Home Salary (A - B)</span>
+                    <span class="text-xs text-[#6B7F7F] mt-0.5 block">
                         Disbursed via Electronic Bank Transfer (NEFT/RTGS)
                     </span>
                 </div>
                 <div class="text-left sm:text-right">
-                    <span class="text-2xl sm:text-3xl font-black font-mono text-slate-900 tracking-tight">
+                    <span class="text-2xl sm:text-3xl font-black font-mono text-[#008080] tracking-tight">
                         {{ currency }}{{ "%.2f"|format(payslip.net_salary) }}
                     </span>
                 </div>
             </div>
             
-            <div class="pt-2 text-xs text-slate-800">
-                <span class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Amount in Words:</span>
-                <span class="font-semibold italic text-slate-900 ml-1">{{ amount_in_words }}</span>
+            <div class="pt-2 text-xs text-[#1C2B2B]">
+                <span class="font-bold text-[#6B7F7F] uppercase tracking-wider text-[10px]">Amount in Words:</span>
+                <span class="font-semibold italic text-[#1C2B2B] ml-1">{{ amount_in_words }}</span>
             </div>
         </div>
 
         <!-- 7. Official Sign-Off & Verification Footer -->
-        <div class="mt-8 pt-4 border-t border-slate-300 flex flex-col sm:flex-row justify-between items-end gap-6 text-xs text-slate-600">
+        <div class="mt-8 pt-4 border-t border-[#B3E3E3] flex flex-col sm:flex-row justify-between items-end gap-6 text-xs text-[#6B7F7F]">
             <div class="space-y-1 max-w-md">
-                <div class="flex items-center space-x-1.5 font-bold text-slate-800">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+                <div class="flex items-center space-x-1.5 font-bold text-[#008080]">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-[#008080]"></i>
                     <span>Official Verified Document</span>
                 </div>
-                <p class="text-[11px] text-slate-500 leading-relaxed">
-                    *This is a computer-generated official salary certificate issued by the Enterprise HRMS platform. It does not require a physical handwritten signature.
+                <p class="text-[11px] text-[#6B7F7F] leading-relaxed">
+                    *This is a computer-generated official salary certificate issued by the TURTU HRMS platform. It does not require a physical handwritten signature.
                 </p>
-                <p class="text-[10px] text-slate-400 font-mono mt-1">SECURITY HASH: AUTH-PAY-{{ payslip.year }}{{ "%02d" % payslip.month }}-{{ "%04d" % payslip.id }}-VERIFIED</p>
+                <p class="text-[10px] text-[#6B7F7F] font-mono mt-1">SECURITY HASH: AUTH-PAY-{{ payslip.year }}{{ "%02d" % payslip.month }}-{{ "%04d" % payslip.id }}-VERIFIED</p>
             </div>
 
             <!-- Authorized Signatory Stamp Box -->
             <div class="text-center sm:text-right min-w-[200px]">
-                <div class="border-b border-slate-400 pb-10 mb-1.5">
-                    <span class="inline-block text-[11px] font-serif italic text-slate-400">Authorized Signature</span>
+                <div class="border-b border-[#B3E3E3] pb-10 mb-1.5">
+                    <span class="inline-block text-[11px] font-serif italic text-[#6B7F7F]">Authorized Signature</span>
                 </div>
-                <p class="text-xs font-bold text-slate-900">Authorized Signatory</p>
-                <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">For {{ company.name if company and company.name else 'Acme Corporation Inc.' }}</p>
+                <p class="text-xs font-bold text-[#1C2B2B]">Authorized Signatory</p>
+                <p class="text-[10px] text-[#6B7F7F] uppercase tracking-wider font-semibold">For {{ company.name if company and company.name else 'TURTU HRMS' }}</p>
             </div>
         </div>
 
