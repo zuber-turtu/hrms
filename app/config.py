@@ -10,7 +10,9 @@ class Settings:
     _raw_db_url: str = os.getenv("DATABASE_URL", "sqlite:///./hrms.db")
     DATABASE_URL: str = _raw_db_url.replace("postgres://", "postgresql://", 1) if _raw_db_url.startswith("postgres://") else _raw_db_url
     
-    # Session cookie name
+    # Session cookie settings
     COOKIE_NAME: str = "access_token"
+    COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax")
+    COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() in ("true", "1", "yes")
 
 settings = Settings()

@@ -42,6 +42,8 @@ async def login(
         key=settings.COOKIE_NAME,
         value=access_token,
         httponly=True,
+        samesite=settings.COOKIE_SAMESITE,
+        secure=settings.COOKIE_SECURE,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )

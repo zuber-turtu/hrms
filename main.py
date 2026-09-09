@@ -129,10 +129,20 @@ async def add_attendance_state_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
+@app.middleware("http")
+async def add_security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
+
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
-import urllib.parse
+from app.utils.security import get_safe_redirect, append_query_param
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -171,18 +181,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
     error_message = ". ".join(parts) if parts else "Please provide all required form inputs."
 
-    referer = request.headers.get("referer")
-    if referer:
-        parsed = urllib.parse.urlparse(referer)
-        query_dict = dict(urllib.parse.parse_qsl(parsed.query))
-        query_dict["error"] = error_message
-        new_query = urllib.parse.urlencode(query_dict)
-        redirect_url = urllib.parse.urlunparse(
-            (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
-        )
-        return RedirectResponse(url=redirect_url, status_code=303)
-
-    return RedirectResponse(url=f"/dashboard?error={urllib.parse.quote(error_message)}", status_code=303)
+    safe_target = get_safe_redirect(request, default="/dashboard")
+    redirect_url = append_query_param(safe_target, "error", error_message)
+    return RedirectResponse(url=redirect_url, status_code=303)
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -201,35 +202,17 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         return RedirectResponse(url="/login?error=Please+log+in+to+continue", status_code=303)
 
     if exc.status_code == 403:
-        referer = request.headers.get("referer", "/dashboard")
-        parsed = urllib.parse.urlparse(referer)
-        query_dict = dict(urllib.parse.parse_qsl(parsed.query))
-        query_dict["error"] = "Access Denied: You do not have permission for this action."
-        new_query = urllib.parse.urlencode(query_dict)
-        redirect_url = urllib.parse.urlunparse(
-            (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
-        )
+        safe_target = get_safe_redirect(request, default="/dashboard")
+        redirect_url = append_query_param(safe_target, "error", "Access Denied: You do not have permission for this action.")
         return RedirectResponse(url=redirect_url, status_code=303)
 
     if exc.status_code == 404:
-        referer = request.headers.get("referer", "/dashboard")
-        parsed = urllib.parse.urlparse(referer)
-        query_dict = dict(urllib.parse.parse_qsl(parsed.query))
-        query_dict["error"] = "The requested resource or page was not found."
-        new_query = urllib.parse.urlencode(query_dict)
-        redirect_url = urllib.parse.urlunparse(
-            (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
-        )
+        safe_target = get_safe_redirect(request, default="/dashboard")
+        redirect_url = append_query_param(safe_target, "error", "The requested resource or page was not found.")
         return RedirectResponse(url=redirect_url, status_code=303)
 
-    referer = request.headers.get("referer", "/dashboard")
-    parsed = urllib.parse.urlparse(referer)
-    query_dict = dict(urllib.parse.parse_qsl(parsed.query))
-    query_dict["error"] = str(exc.detail)
-    new_query = urllib.parse.urlencode(query_dict)
-    redirect_url = urllib.parse.urlunparse(
-        (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
-    )
+    safe_target = get_safe_redirect(request, default="/dashboard")
+    redirect_url = append_query_param(safe_target, "error", str(exc.detail))
     return RedirectResponse(url=redirect_url, status_code=303)
 
 

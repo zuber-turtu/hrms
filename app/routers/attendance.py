@@ -11,6 +11,7 @@ from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 
 from app.utils.timezone import get_ist_today, get_ist_now
+from app.utils.security import get_safe_redirect
 
 router = APIRouter(prefix="/attendance")
 templates = Jinja2Templates(directory="app/templates")
@@ -123,8 +124,8 @@ async def check_in(
         db.add(log)
         db.commit()
 
-    referer = request.headers.get("referer", "/dashboard")
-    return RedirectResponse(url=referer, status_code=302)
+    safe_target = get_safe_redirect(request, default="/dashboard")
+    return RedirectResponse(url=safe_target, status_code=302)
 
 
 @router.post("/check-out")
@@ -145,8 +146,8 @@ async def check_out(
         log.check_out = get_ist_now()
         db.commit()
 
-    referer = request.headers.get("referer", "/dashboard")
-    return RedirectResponse(url=referer, status_code=302)
+    safe_target = get_safe_redirect(request, default="/dashboard")
+    return RedirectResponse(url=safe_target, status_code=302)
 
 
 @router.post("/{log_id}/override")

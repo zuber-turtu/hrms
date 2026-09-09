@@ -23,6 +23,7 @@ from app.dependencies import require_auth, RoleChecker, get_password_hash, creat
 from app.models.audit import AuditLog
 from app.config import settings
 from app.utils.timezone import get_ist_today, get_ist_now
+from app.utils.security import get_safe_redirect
 
 router = APIRouter(prefix="/employees")
 templates = Jinja2Templates(directory="app/templates")
@@ -483,11 +484,16 @@ async def edit_employee(
             key=settings.COOKIE_NAME,
             value=new_token,
             httponly=True,
+            samesite=settings.COOKIE_SAMESITE,
+            secure=settings.COOKIE_SECURE,
             max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
     return response
 
+
+
+MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
 @router.post("/import")
@@ -497,9 +503,27 @@ async def import_employees(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin)
 ):
-    contents = await file.read()
-    wb = openpyxl.load_workbook(BytesIO(contents))
-    sheet = wb.active
+    if not file.filename or not file.filename.lower().endswith(".xlsx"):
+        return RedirectResponse(
+            url="/employees?error=Invalid+file+format.+Only+.xlsx+spreadsheets+are+allowed.",
+            status_code=302
+        )
+
+    contents = await file.read(MAX_IMPORT_FILE_SIZE + 1)
+    if len(contents) > MAX_IMPORT_FILE_SIZE:
+        return RedirectResponse(
+            url="/employees?error=File+exceeds+the+maximum+allowed+size+of+5MB.",
+            status_code=302
+        )
+
+    try:
+        wb = openpyxl.load_workbook(BytesIO(contents), data_only=True)
+        sheet = wb.active
+    except Exception:
+        return RedirectResponse(
+            url="/employees?error=Could+not+parse+the+uploaded+Excel+file.+Please+ensure+it+is+a+valid+.xlsx+spreadsheet.",
+            status_code=302
+        )
     
     imported_count = 0
     skipped_count = 0
@@ -610,8 +634,10 @@ async def admin_reset_password(
     db.add(audit)
     db.commit()
 
-    referer = request.headers.get("referer", f"/employees/{emp_id}/view")
-    separator = "&" if "?" in referer else "?"
-    if "reset_success=1" not in referer:
-        referer = f"{referer}{separator}reset_success=1"
-    return RedirectResponse(url=referer, status_code=302)
+    safe_target = get_safe_redirect(request, default=f"/employees/{emp_id}/view")
+    separator = "&" if "?" in safe_target else "?"
+    if "reset_success=1" not in safe_target:
+        redirect_url = f"{safe_target}{separator}reset_success=1"
+    else:
+        redirect_url = safe_target
+    return RedirectResponse(url=redirect_url, status_code=302)
