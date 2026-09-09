@@ -228,12 +228,24 @@ async def view_employee(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role not in ["admin", "hr_admin", "manager"] and current_user.id != emp_id:
-        raise HTTPException(status_code=403, detail="Operation not permitted")
-        
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+
+    # Authorization Check:
+    # 1. Self access is permitted
+    # 2. Admins and HR Admins can view any employee record
+    # 3. Managers can only view subordinate employees/interns within their own department
+    if current_user.id != emp_id and current_user.role not in ["admin", "hr_admin"]:
+        if current_user.role == "manager":
+            if (
+                not current_user.department_id
+                or employee.department_id != current_user.department_id
+                or employee.role in ["admin", "hr_admin"]
+            ):
+                raise HTTPException(status_code=403, detail="Operation not permitted")
+        else:
+            raise HTTPException(status_code=403, detail="Operation not permitted")
 
     # 1. Fetch payslips for this employee
     payslips = (
@@ -382,69 +394,80 @@ async def edit_employee(
         raise HTTPException(status_code=403, detail="Operation not permitted")
         
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
-    if employee:
-        employee.name = name
-        employee.email = email
-        
-        # Only Admins can modify role, department, designation, joining_date, and salary components
-        if current_user.role in ["admin", "hr_admin"]:
-            old_role = employee.role
-            if role:
-                employee.role = role
-                
-            resolved_dept_id, resolved_desig_id = resolve_dept_and_desig(
-                db, department_id, designation_id, department, designation
-            )
-            employee.department_id = resolved_dept_id
-            employee.designation_id = resolved_desig_id
-            
-            # Joining Date update
-            if joining_date and joining_date.strip():
-                try:
-                    new_joining_date = datetime.datetime.strptime(joining_date.strip(), "%Y-%m-%d").date()
-                    old_joining_date = employee.joining_date
-                    if old_joining_date != new_joining_date:
-                        employee.joining_date = new_joining_date
-                        audit = AuditLog(
-                            actor_id=current_user.id,
-                            actor_email=current_user.email,
-                            action="JOINING_DATE_CHANGE",
-                            entity="Employee",
-                            entity_id=emp_id,
-                            old_value=str(old_joining_date) if old_joining_date else "None",
-                            new_value=str(new_joining_date),
-                        )
-                        db.add(audit)
-                except ValueError:
-                    pass
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
 
-            # Salary Structure update
-            if not employee.salary_structure:
-                employee.salary_structure = SalaryStructure(employee_id=employee.id)
-                db.add(employee.salary_structure)
-            employee.salary_structure.base_salary = base_salary
-            employee.salary_structure.hra = hra
-            employee.salary_structure.custom_allowances = custom_allowances
-            employee.salary_structure.pf_deduction = pf_deduction
-            employee.salary_structure.tax_deduction = tax_deduction
+    # Check for email collision with other accounts
+    clean_email = email.strip().lower()
+    existing_email = db.query(Employee).filter(Employee.email == clean_email, Employee.id != emp_id).first()
+    if existing_email:
+        return RedirectResponse(
+            url=f"/employees/{emp_id}/edit?error=Email+already+in+use+by+another+account.",
+            status_code=302
+        )
+
+    employee.name = name.strip()
+    employee.email = clean_email
+    
+    # Only Admins can modify role, department, designation, joining_date, and salary components
+    if current_user.role in ["admin", "hr_admin"]:
+        old_role = employee.role
+        if role:
+            employee.role = role
             
-            # Audit if role changed
-            if role and old_role != role:
-                audit = AuditLog(
-                    actor_id=current_user.id,
-                    actor_email=current_user.email,
-                    action="ROLE_CHANGE",
-                    entity="Employee",
-                    entity_id=emp_id,
-                    old_value=old_role,
-                    new_value=role,
-                )
-                db.add(audit)
-                
-        # Profile Update
-        if not employee.profile:
-            employee.profile = EmployeeProfile(employee_id=employee.id)
-            db.add(employee.profile)
+        resolved_dept_id, resolved_desig_id = resolve_dept_and_desig(
+            db, department_id, designation_id, department, designation
+        )
+        employee.department_id = resolved_dept_id
+        employee.designation_id = resolved_desig_id
+        
+        # Joining Date update
+        if joining_date and joining_date.strip():
+            try:
+                new_joining_date = datetime.datetime.strptime(joining_date.strip(), "%Y-%m-%d").date()
+                old_joining_date = employee.joining_date
+                if old_joining_date != new_joining_date:
+                    employee.joining_date = new_joining_date
+                    audit = AuditLog(
+                        actor_id=current_user.id,
+                        actor_email=current_user.email,
+                        action="JOINING_DATE_CHANGE",
+                        entity="Employee",
+                        entity_id=emp_id,
+                        old_value=str(old_joining_date) if old_joining_date else "None",
+                        new_value=str(new_joining_date),
+                    )
+                    db.add(audit)
+            except ValueError:
+                pass
+
+        # Salary Structure update
+        if not employee.salary_structure:
+            employee.salary_structure = SalaryStructure(employee_id=employee.id)
+            db.add(employee.salary_structure)
+        employee.salary_structure.base_salary = base_salary
+        employee.salary_structure.hra = hra
+        employee.salary_structure.custom_allowances = custom_allowances
+        employee.salary_structure.pf_deduction = pf_deduction
+        employee.salary_structure.tax_deduction = tax_deduction
+        
+        # Audit if role changed
+        if role and old_role != role:
+            audit = AuditLog(
+                actor_id=current_user.id,
+                actor_email=current_user.email,
+                action="ROLE_CHANGE",
+                entity="Employee",
+                entity_id=emp_id,
+                old_value=old_role,
+                new_value=role,
+            )
+            db.add(audit)
+            
+    # Profile Update
+    if not employee.profile:
+        employee.profile = EmployeeProfile(employee_id=employee.id)
+        db.add(employee.profile)
         employee.profile.phone_number = phone_number
         employee.profile.home_address = home_address
         employee.profile.city = city
@@ -618,6 +641,13 @@ async def admin_reset_password(
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+
+    # Privilege Escalation Defense: Only a Super Admin can reset credentials for an Administrator account
+    if employee.role == "admin" and current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Operation not permitted: Only Admins can reset credentials for an Administrator account."
+        )
 
     employee.hashed_password = get_password_hash(new_password)
     

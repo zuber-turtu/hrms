@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Form
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -161,32 +161,46 @@ async def override_attendance(
     current_user: Employee = Depends(allow_hr_admin),
 ):
     log = db.query(Attendance).filter(Attendance.id == log_id).first()
-    if log:
-        old_val = f"In: {log.check_in}, Out: {log.check_out}"
+    if not log:
+        raise HTTPException(status_code=404, detail="Attendance record not found")
 
-        if check_in_time:
-            h, m = map(int, check_in_time.split(":"))
-            log.check_in = datetime.datetime.combine(log.date, datetime.time(h, m))
+    # Scope verification: Managers can only override records of subordinates in their own department
+    if current_user.role == "manager":
+        if (
+            not current_user.department_id
+            or log.employee.department_id != current_user.department_id
+            or log.employee.role in ["admin", "hr_admin"]
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Operation not permitted: Managers can only adjust attendance for subordinates in their department."
+            )
 
-        if check_out_time:
-            h, m = map(int, check_out_time.split(":"))
-            log.check_out = datetime.datetime.combine(log.date, datetime.time(h, m))
+    old_val = f"In: {log.check_in}, Out: {log.check_out}"
 
-        log.is_overridden = True
-        log.override_reason = reason
+    if check_in_time:
+        h, m = map(int, check_in_time.split(":"))
+        log.check_in = datetime.datetime.combine(log.date, datetime.time(h, m))
 
-        new_val = f"In: {log.check_in}, Out: {log.check_out}"
+    if check_out_time:
+        h, m = map(int, check_out_time.split(":"))
+        log.check_out = datetime.datetime.combine(log.date, datetime.time(h, m))
 
-        audit = AuditLog(
-            actor_id=current_user.id,
-            actor_email=current_user.email,
-            action="ATTENDANCE_OVERRIDE",
-            entity="Attendance",
-            entity_id=log.id,
-            old_value=old_val,
-            new_value=new_val,
-        )
-        db.add(audit)
-        db.commit()
+    log.is_overridden = True
+    log.override_reason = reason
+
+    new_val = f"In: {log.check_in}, Out: {log.check_out}"
+
+    audit = AuditLog(
+        actor_id=current_user.id,
+        actor_email=current_user.email,
+        action="ATTENDANCE_OVERRIDE",
+        entity="Attendance",
+        entity_id=log.id,
+        old_value=old_val,
+        new_value=new_val,
+    )
+    db.add(audit)
+    db.commit()
 
     return RedirectResponse(url="/attendance", status_code=302)
