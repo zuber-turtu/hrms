@@ -141,18 +141,32 @@ async def add_security_headers_middleware(request: Request, call_next):
 
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from app.utils.security import get_safe_redirect, append_query_param
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Browser Probe Endpoints (Chrome DevTools, favicon)
+@app.get("/favicon.ico", include_in_schema=False)
+@app.get("/.well-known/{rest_of_path:path}", include_in_schema=False)
+async def browser_probe_handler():
+    return Response(status_code=204)
 
 # Global Exception Handlers to Prevent Raw JSON Errors on Web Forms
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     accept = request.headers.get("accept", "")
     path = request.url.path
-    is_api = "application/json" in accept or path.startswith("/api") or "/api/" in path
+    is_api = (
+        "application/json" in accept
+        or path.startswith("/api")
+        or "/api/" in path
+        or path.startswith("/.well-known")
+        or path.startswith("/static")
+        or path == "/favicon.ico"
+        or path.endswith((".json", ".ico", ".png", ".jpg", ".jpeg", ".svg", ".css", ".js", ".map", ".txt", ".xml"))
+    )
 
     if is_api:
         return JSONResponse(
@@ -190,9 +204,17 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     accept = request.headers.get("accept", "")
     path = request.url.path
-    is_api = "application/json" in accept or path.startswith("/api") or "/api/" in path
+    is_api = (
+        "application/json" in accept
+        or path.startswith("/api")
+        or "/api/" in path
+        or path.startswith("/.well-known")
+        or path.startswith("/static")
+        or path == "/favicon.ico"
+        or path.endswith((".json", ".ico", ".png", ".jpg", ".jpeg", ".svg", ".css", ".js", ".map", ".txt", ".xml"))
+    )
 
-    if is_api:
+    if is_api or exc.status_code == 404 and (path.startswith("/.well-known") or path == "/favicon.ico"):
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": exc.detail},

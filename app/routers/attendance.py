@@ -21,6 +21,7 @@ templates = Jinja2Templates(directory="app/templates")
 allow_hr_admin = RoleChecker(["admin", "hr_admin", "manager"])
 
 
+@router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def attendance_log(
     request: Request,

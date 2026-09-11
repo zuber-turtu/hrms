@@ -14,6 +14,7 @@ templates = Jinja2Templates(directory="app/templates")
 allow_admin = RoleChecker(["admin"])
 
 
+@router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def view_audit_logs(
     request: Request,

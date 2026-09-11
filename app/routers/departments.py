@@ -16,6 +16,7 @@ templates = Jinja2Templates(directory="app/templates")
 allow_hr_admin = RoleChecker(["admin", "hr_admin"])
 
 
+@router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def list_departments(
     request: Request,

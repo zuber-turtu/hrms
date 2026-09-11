@@ -74,6 +74,7 @@ def resolve_dept_and_desig(
     return dept_id, desig_id
 
 
+@router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def list_employees(
     request: Request,
