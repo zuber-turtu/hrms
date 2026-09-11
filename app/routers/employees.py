@@ -77,10 +77,43 @@ def resolve_dept_and_desig(
 @router.get("/", response_class=HTMLResponse)
 async def list_employees(
     request: Request,
+    q: Optional[str] = None,
+    role: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
-    employees = db.query(Employee).all()
+    query = db.query(Employee)
+
+    # Scoping for Managers: only employees in their department
+    if current_user.role == "manager":
+        query = query.filter(
+            Employee.department_id == current_user.department_id,
+            Employee.role.notin_(["admin", "hr_admin"])
+        )
+
+    if q and q.strip():
+        search_term = f"%{q.strip()}%"
+        query = query.outerjoin(Department, Employee.department_id == Department.id)\
+                     .outerjoin(Designation, Employee.designation_id == Designation.id)\
+                     .filter(
+                         (Employee.name.ilike(search_term)) |
+                         (Employee.email.ilike(search_term)) |
+                         (Department.name.ilike(search_term)) |
+                         (Designation.title.ilike(search_term))
+                     )
+
+    if role and role.strip() and role.strip() != "all":
+        query = query.filter(Employee.role == role.strip())
+
+    employees = query.order_by(Employee.id.asc()).all()
+
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(
+            request=request,
+            name="employees/partials/_table_rows.html",
+            context={"user": current_user, "employees": employees}
+        )
+
     return templates.TemplateResponse(
         request=request, name="employees/list.html", context={"user": current_user, "employees": employees}
     )

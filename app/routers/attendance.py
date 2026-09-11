@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from typing import Optional
 import datetime
 
 from app.database import get_db
@@ -12,6 +13,7 @@ from app.dependencies import require_auth, RoleChecker
 
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
+from app.utils.attendance import update_attendance_request_state
 
 router = APIRouter(prefix="/attendance")
 templates = Jinja2Templates(directory="app/templates")
@@ -22,6 +24,8 @@ allow_hr_admin = RoleChecker(["admin", "hr_admin", "manager"])
 @router.get("/", response_class=HTMLResponse)
 async def attendance_log(
     request: Request,
+    q: Optional[str] = None,
+    status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -31,6 +35,18 @@ async def attendance_log(
         raw_logs = (
             db.query(Attendance)
             .filter(Attendance.employee_id == current_user.id)
+            .order_by(Attendance.date.desc(), Attendance.check_in.asc())
+            .all()
+        )
+    elif current_user.role == "manager":
+        # Scoped to own department subordinates
+        raw_logs = (
+            db.query(Attendance)
+            .join(Employee, Attendance.employee_id == Employee.id)
+            .filter(
+                Employee.department_id == current_user.department_id,
+                Employee.role.notin_(["admin", "hr_admin"])
+            )
             .order_by(Attendance.date.desc(), Attendance.check_in.asc())
             .all()
         )
@@ -83,7 +99,7 @@ async def attendance_log(
         secs = int(total_seconds % 60)
         total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
         
-        logs_data.append({
+        item = {
             "id": group_logs[0].id,  # primary ID for override actions
             "date": date,
             "employee": employee,
@@ -94,10 +110,37 @@ async def attendance_log(
             "is_missed": is_missed,
             "check_in": group_logs[0].check_in,
             "check_out": group_logs[-1].check_out
-        })
+        }
+
+        # Apply search filter (date or employee name)
+        if q and q.strip():
+            query_lower = q.strip().lower()
+            emp_name = (employee.name or "").lower()
+            date_str = str(date).lower()
+            if query_lower not in emp_name and query_lower not in date_str:
+                continue
+
+        # Apply status filter
+        if status and status.strip() and status.strip() != "all":
+            st = status.strip().lower()
+            if st == "missed" and not is_missed:
+                continue
+            elif st == "overridden" and not is_overridden:
+                continue
+            elif st == "normal" and (is_missed or is_overridden):
+                continue
+
+        logs_data.append(item)
+
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(
+            request=request,
+            name="attendance/partials/_log_table.html",
+            context={"user": current_user, "logs": logs_data}
+        )
 
     return templates.TemplateResponse(
-        request, "attendance/log.html", {"user": current_user, "logs": logs_data}
+        request=request, name="attendance/log.html", context={"user": current_user, "logs": logs_data}
     )
 
 
@@ -124,6 +167,14 @@ async def check_in(
         db.add(log)
         db.commit()
 
+    if request.headers.get("HX-Request"):
+        update_attendance_request_state(db, current_user, request)
+        return templates.TemplateResponse(
+            request,
+            "attendance/partials/_topbar_widget.html",
+            {"user": current_user}
+        )
+
     safe_target = get_safe_redirect(request, default="/dashboard")
     return RedirectResponse(url=safe_target, status_code=302)
 
@@ -145,6 +196,14 @@ async def check_out(
     if log:
         log.check_out = get_ist_now()
         db.commit()
+
+    if request.headers.get("HX-Request"):
+        update_attendance_request_state(db, current_user, request)
+        return templates.TemplateResponse(
+            request,
+            "attendance/partials/_topbar_widget.html",
+            {"user": current_user}
+        )
 
     safe_target = get_safe_redirect(request, default="/dashboard")
     return RedirectResponse(url=safe_target, status_code=302)

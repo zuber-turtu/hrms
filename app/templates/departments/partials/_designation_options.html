@@ -1,0 +1,4 @@
+<option value="">-- Select Designation --</option>
+{% for des in designations %}
+    <option value="{{ des.id }}" {% if selected_id and selected_id == des.id %}selected{% endif %}>{{ des.title }}</option>
+{% endfor %}

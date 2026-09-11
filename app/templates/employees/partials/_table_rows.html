@@ -1,0 +1,67 @@
+{% for emp in employees %}
+<tr class="hover:bg-[#F4F7F7]/70 transition-colors emp-row" data-name="{{ emp.name|lower }}" data-email="{{ emp.email|lower }}" data-dept="{{ (emp.department or '')|lower }}" data-role="{{ emp.role|lower }}">
+    
+    <!-- Name & Email -->
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center space-x-3.5">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#008080] to-[#004444] text-white flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-[#B3E3E3]/40 shrink-0 font-heading">
+                {{ emp.name[0] if emp.name else 'E' }}
+            </div>
+            <div class="min-w-0">
+                <a href="/employees/{{ emp.id }}/view" class="text-sm font-bold text-[#1C2B2B] hover:text-[#008080] transition-colors truncate block">
+                    {{ emp.name }}
+                </a>
+                <span class="text-xs text-[#6B7F7F] block truncate">{{ emp.email }}</span>
+            </div>
+        </div>
+    </td>
+
+    <!-- Role Badge -->
+    <td class="px-6 py-4 whitespace-nowrap">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border
+            {% if emp.role == 'admin' %} bg-rose-50 text-rose-700 border-rose-200/80
+            {% elif emp.role == 'hr_admin' %} bg-[#E0F4F4] text-[#006666] border-[#B3E3E3]
+            {% elif emp.role == 'manager' %} bg-amber-50 text-amber-700 border-amber-200/80
+            {% elif emp.role == 'intern' %} bg-cyan-50 text-cyan-800 border-cyan-200/80
+            {% else %} bg-emerald-50 text-emerald-700 border-emerald-200/80 {% endif %}">
+            {{ emp.role.replace('_', ' ') | title }}
+        </span>
+    </td>
+
+    <!-- Department & Title -->
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm font-medium text-[#1C2B2B]">{{ emp.department or 'Unassigned' }}</div>
+        <div class="text-xs text-[#6B7F7F]">{{ emp.designation or 'No designation' }}</div>
+    </td>
+
+    <!-- Contact -->
+    <td class="px-6 py-4 whitespace-nowrap">
+        <span class="text-xs text-[#1C2B2B] font-mono">{{ emp.phone_number or '—' }}</span>
+    </td>
+
+    <!-- Actions -->
+    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+        <a href="/employees/{{ emp.id }}/view" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#1C2B2B] bg-[#F4F7F7] border border-[#B3E3E3]/60 hover:bg-[#E0F4F4] hover:text-[#008080] transition-colors" title="View Profile">
+            <i data-lucide="eye" class="w-3.5 h-3.5 mr-1"></i> View
+        </a>
+        {% if user.role in ['admin', 'hr_admin'] %}
+        <button onclick="openGeneratePayslipModal({{ emp.id }})" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#008080] bg-[#E0F4F4]/70 hover:bg-[#E0F4F4] border border-[#008080]/30 transition-colors cursor-pointer" title="Generate Draft Payslip">
+            <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1"></i> Payslip
+        </button>
+        <button onclick="openPasswordResetModal({{ emp.id }}, '{{ emp.name }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/60 transition-colors cursor-pointer" title="Reset Password">
+            <i data-lucide="key" class="w-3.5 h-3.5 mr-1"></i> Reset Key
+        </button>
+        {% endif %}
+    </td>
+</tr>
+{% else %}
+<tr id="server-empty-row">
+    <td colspan="5" class="px-6 py-12 text-center text-[#6B7F7F]">
+        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="search-x" class="w-6 h-6"></i>
+        </div>
+        <p class="text-sm font-semibold text-[#1C2B2B]">No matching employees found</p>
+        <p class="text-xs text-[#6B7F7F] mt-1">Try adjusting your search terms or filter selection.</p>
+    </td>
+</tr>
+{% endfor %}

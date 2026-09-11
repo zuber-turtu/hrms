@@ -10,6 +10,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Kannada:wght@400;700&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
 
+    <!-- HTMX CDN -->
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <style>
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 200ms ease-in-out;
+        }
+        .htmx-request .htmx-indicator,
+        .htmx-request.htmx-indicator {
+            opacity: 1;
+        }
+    </style>
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -220,31 +233,8 @@
             </div>
             
             {% if user %}
-            <div class="flex items-center space-x-3">
-                <!-- Check-in / Check-out Status Control -->
-                {% if request.state.is_checked_in %}
-                    <form action="/attendance/check-out" method="POST" class="inline-block">
-                        <button id="checkout-btn" data-checkin-time="{{ request.state.active_check_in_iso if request.state.active_check_in_iso else request.state.active_check_in.isoformat() + '+05:30' }}" data-accumulated-seconds="{{ request.state.accumulated_seconds }}" type="submit" class="inline-flex items-center px-3.5 py-1.5 sm:px-4 sm:py-2 border border-rose-600/30 text-xs sm:text-sm font-semibold rounded-lg text-white bg-[#E53E3E] hover:bg-[#C53030] shadow-sm hover:shadow transition-all active:scale-[0.98] group">
-                            <span class="w-2 h-2 rounded-full bg-rose-200 mr-2 animate-pulse-dot"></span>
-                            <i data-lucide="log-out" class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 text-rose-100"></i>
-                            <span>Check Out</span>
-                            <span class="hidden md:inline ml-1 text-rose-200 text-xs font-normal">({{ request.state.active_check_in.strftime('%I:%M %p') }})</span>
-                            <span id="active-timer" class="ml-2 px-1.5 py-0.5 rounded text-[11px] bg-[#004444] text-[#E0F4F4] font-mono tracking-wider">00:00:00</span>
-                        </button>
-                    </form>
-                {% else %}
-                    <form action="/attendance/check-in" method="POST" class="inline-block">
-                        <button type="submit" class="inline-flex items-center px-3.5 py-1.5 sm:px-4 sm:py-2 border border-[#008080]/30 text-xs sm:text-sm font-semibold rounded-lg text-white bg-[#008080] hover:bg-[#006666] shadow-sm hover:shadow transition-all active:scale-[0.98] group">
-                            <i data-lucide="log-in" class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 text-white/90"></i>
-                            <span>Check In</span>
-                            {% if request.state.accumulated_seconds > 0 %}
-                                <span class="hidden lg:inline ml-1.5 text-xs text-teal-100 font-normal">(Today: {{ request.state.accumulated_time_str }})</span>
-                            {% elif request.state.last_check_out %}
-                                <span class="hidden lg:inline ml-1.5 text-xs text-teal-100 font-normal">(Last: {{ request.state.last_check_out.strftime('%I:%M %p') }})</span>
-                            {% endif %}
-                        </button>
-                    </form>
-                {% endif %}
+            <div id="topbar-attendance-widget" class="flex items-center space-x-3">
+                {% include "attendance/partials/_topbar_widget.html" %}
             </div>
             {% endif %}
         </header>
@@ -363,6 +353,14 @@
       }
       setInterval(updateTimer, 1000);
       updateTimer();
+
+      // HTMX lifecycle hook: Re-initialize Lucide icons and active timers on partial swaps
+      document.addEventListener('htmx:afterSwap', function(evt) {
+          if (window.lucide) {
+              lucide.createIcons();
+          }
+          updateTimer();
+      });
     </script>
 </body>
 </html>

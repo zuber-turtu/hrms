@@ -268,3 +268,34 @@ async def api_get_departments_and_designations(
             "designations": [{"id": des.id, "title": des.title} for des in d.designations],
         })
     return JSONResponse(content={"departments": result})
+
+
+@router.get("/designations/options", response_class=HTMLResponse)
+@router.get("/{dept_id}/designations/options", response_class=HTMLResponse)
+async def get_designations_options(
+    request: Request,
+    dept_id: Optional[str] = None,
+    department_id: Optional[str] = None,
+    selected_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(RoleChecker(["admin", "hr_admin", "manager", "employee", "intern"])),
+):
+    target_id = dept_id or department_id or request.query_params.get("department_id") or request.query_params.get("department")
+    if not target_id or target_id in ("all", "", "0"):
+        return HTMLResponse('<option value="">-- Select Designation --</option>')
+    try:
+        d_id = int(target_id)
+    except ValueError:
+        return HTMLResponse('<option value="">-- Select Designation --</option>')
+        
+    designations = (
+        db.query(Designation)
+        .filter(Designation.department_id == d_id)
+        .order_by(Designation.title.asc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        request=request,
+        name="departments/partials/_designation_options.html",
+        context={"designations": designations, "selected_id": selected_id}
+    )

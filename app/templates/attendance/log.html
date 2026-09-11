@@ -59,12 +59,28 @@
         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
             <i data-lucide="search" class="w-4 h-4"></i>
         </div>
-        <input type="text" id="attendanceSearch" onkeyup="filterAttendance()" placeholder="Search by employee name or date (YYYY-MM-DD)..." class="w-full pl-10 pr-4 py-2 text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg text-[#1C2B2B] placeholder-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-all">
+        <input type="text" id="attendanceSearch" name="q" onkeyup="filterAttendance()"
+            hx-get="/attendance"
+            hx-trigger="keyup changed delay:300ms, search"
+            hx-target="#attendanceTableBody"
+            hx-include="#statusFilter"
+            hx-indicator="#att-search-spinner"
+            placeholder="Search by employee name or date (YYYY-MM-DD)..."
+            class="w-full pl-10 pr-10 py-2 text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg text-[#1C2B2B] placeholder-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-all">
+        <div id="att-search-spinner" class="htmx-indicator absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#008080]">
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+        </div>
     </div>
 
     <div class="flex items-center space-x-2">
         <label for="statusFilter" class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider shrink-0">Status:</label>
-        <select id="statusFilter" onchange="filterAttendance()" class="py-2 px-3 text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg text-[#1C2B2B] font-medium focus:bg-white focus:outline-none focus:border-[#008080]">
+        <select id="statusFilter" name="status" onchange="filterAttendance()"
+            hx-get="/attendance"
+            hx-trigger="change"
+            hx-target="#attendanceTableBody"
+            hx-include="#attendanceSearch"
+            hx-indicator="#att-search-spinner"
+            class="py-2 px-3 text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg text-[#1C2B2B] font-medium focus:bg-white focus:outline-none focus:border-[#008080]">
             <option value="all">All Records</option>
             <option value="normal">Normal</option>
             <option value="missed">Missed Punch</option>
@@ -89,94 +105,8 @@
                     {% endif %}
                 </tr>
             </thead>
-            <tbody class="divide-y divide-[#B3E3E3]/20 bg-white">
-                {% for log in logs %}
-                <tr class="hover:bg-[#F4F7F7]/70 transition-colors att-row" 
-                    data-date="{{ log.date|string|lower }}" 
-                    data-emp="{{ log.employee.name|lower }}" 
-                    data-status="{% if log.is_missed %}missed{% elif log.is_overridden %}overridden{% else %}normal{% endif %}">
-                    
-                    <!-- Date -->
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center space-x-2 text-sm font-semibold text-[#1C2B2B]">
-                            <i data-lucide="calendar" class="w-4 h-4 text-[#6B7F7F]"></i>
-                            <span>{{ log.date }}</span>
-                        </div>
-                    </td>
-
-                    <!-- Employee Name -->
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center space-x-2.5">
-                            <div class="w-7 h-7 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center font-bold text-xs shrink-0 border border-[#B3E3E3]">
-                                {{ log.employee.name[0] if log.employee.name else 'E' }}
-                            </div>
-                            <span class="text-sm font-medium text-[#1C2B2B]">{{ log.employee.name }}</span>
-                        </div>
-                    </td>
-
-                    <!-- Session Timestamps -->
-                    <td class="px-6 py-4 text-xs text-[#1C2B2B] max-w-sm">
-                        <span class="inline-block px-2.5 py-1 rounded-md bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#1C2B2B] font-mono truncate max-w-xs" title="{{ log.sessions }}">
-                            {{ log.sessions }}
-                        </span>
-                    </td>
-
-                    <!-- Total Active Duration -->
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-[#F4F7F7] border border-[#B3E3E3]/60 text-xs font-bold font-mono text-[#1C2B2B]">
-                            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1.5 text-[#6B7F7F]"></i>
-                            {{ log.total_active }}
-                        </span>
-                    </td>
-
-                    <!-- Status Pill -->
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        {% if log.is_missed %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80" title="Missing Check-Out from a previous day">
-                            <i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Missed Punch
-                        </span>
-                        {% elif log.is_overridden %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80" title="{{ log.override_reason }}">
-                            <i data-lucide="edit-2" class="w-3 h-3 mr-1"></i> Overridden
-                        </span>
-                        {% else %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                            <i data-lucide="check" class="w-3 h-3 mr-1"></i> Normal
-                        </span>
-                        {% endif %}
-                    </td>
-                    
-                    <!-- Admin Edit Action -->
-                    {% if user.role in ['admin', 'hr_admin'] %}
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#008080] bg-[#E0F4F4]/70 hover:bg-[#E0F4F4] transition-colors border border-[#008080]/30">
-                            <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Override
-                        </button>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% else %}
-                <tr id="server-empty-row">
-                    <td colspan="6" class="px-6 py-12 text-center text-[#6B7F7F]">
-                        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
-                            <i data-lucide="calendar-x" class="w-6 h-6"></i>
-                        </div>
-                        <p class="text-sm font-semibold text-[#1C2B2B]">No attendance logs found</p>
-                        <p class="text-xs text-[#6B7F7F] mt-1">Attendance records will show here once employees check in.</p>
-                    </td>
-                </tr>
-                {% endfor %}
-
-                <!-- Dynamic Client-side Empty Row -->
-                <tr id="noResultsRow" class="hidden">
-                    <td colspan="6" class="px-6 py-12 text-center text-[#6B7F7F]">
-                        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
-                            <i data-lucide="search-x" class="w-6 h-6"></i>
-                        </div>
-                        <p class="text-sm font-semibold text-[#1C2B2B]">No matching records found</p>
-                        <p class="text-xs text-[#6B7F7F] mt-1">Try adjusting your search query or status filter.</p>
-                    </td>
-                </tr>
+            <tbody class="divide-y divide-[#B3E3E3]/20 bg-white" id="attendanceTableBody">
+                {% include "attendance/partials/_log_table.html" %}
             </tbody>
         </table>
     </div>

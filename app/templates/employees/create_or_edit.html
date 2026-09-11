@@ -152,6 +152,11 @@
                         {% endif %}
                     </div>
                     <select name="department_id" id="department_id" onchange="filterDesignations()"
+                        hx-get="/departments/designations/options"
+                        hx-target="#designation_id"
+                        hx-trigger="change"
+                        hx-include="this"
+                        hx-swap="innerHTML"
                         {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#6B7F7F]/70 rounded-lg px-3.5 py-2.5 cursor-not-allowed"{% else %}class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-colors"{% endif %}>
                         <option value="">-- Select Department --</option>
                         {% for dept in departments %}

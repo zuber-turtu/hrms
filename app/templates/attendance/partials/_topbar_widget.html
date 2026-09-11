@@ -1,0 +1,23 @@
+{% if request.state.is_checked_in %}
+    <form hx-post="/attendance/check-out" hx-target="#topbar-attendance-widget" hx-swap="innerHTML" class="inline-block">
+        <button id="checkout-btn" data-checkin-time="{{ request.state.active_check_in_iso if request.state.active_check_in_iso else request.state.active_check_in.isoformat() + '+05:30' }}" data-accumulated-seconds="{{ request.state.accumulated_seconds }}" type="submit" class="inline-flex items-center px-3.5 py-1.5 sm:px-4 sm:py-2 border border-rose-600/30 text-xs sm:text-sm font-semibold rounded-lg text-white bg-[#E53E3E] hover:bg-[#C53030] shadow-sm hover:shadow transition-all active:scale-[0.98] group cursor-pointer">
+            <span class="w-2 h-2 rounded-full bg-rose-200 mr-2 animate-pulse-dot"></span>
+            <i data-lucide="log-out" class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 text-rose-100"></i>
+            <span>Check Out</span>
+            <span class="hidden md:inline ml-1 text-rose-200 text-xs font-normal">({{ request.state.active_check_in.strftime('%I:%M %p') }})</span>
+            <span id="active-timer" class="ml-2 px-1.5 py-0.5 rounded text-[11px] bg-[#004444] text-[#E0F4F4] font-mono tracking-wider">00:00:00</span>
+        </button>
+    </form>
+{% else %}
+    <form hx-post="/attendance/check-in" hx-target="#topbar-attendance-widget" hx-swap="innerHTML" class="inline-block">
+        <button type="submit" class="inline-flex items-center px-3.5 py-1.5 sm:px-4 sm:py-2 border border-[#008080]/30 text-xs sm:text-sm font-semibold rounded-lg text-white bg-[#008080] hover:bg-[#006666] shadow-sm hover:shadow transition-all active:scale-[0.98] group cursor-pointer">
+            <i data-lucide="log-in" class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 text-white/90"></i>
+            <span>Check In</span>
+            {% if request.state.accumulated_seconds > 0 %}
+                <span class="hidden lg:inline ml-1.5 text-xs text-teal-100 font-normal">(Today: {{ request.state.accumulated_time_str }})</span>
+            {% elif request.state.last_check_out %}
+                <span class="hidden lg:inline ml-1.5 text-xs text-teal-100 font-normal">(Last: {{ request.state.last_check_out.strftime('%I:%M %p') }})</span>
+            {% endif %}
+        </button>
+    </form>
+{% endif %}
