@@ -19,9 +19,11 @@ from app.models import (
     Payslip,
     AuditLog,
 )
-from app.dependencies import get_password_hash
+from fastapi.middleware.cors import CORSMiddleware
+from app.dependencies import get_password_hash, extract_token_from_request
 from app.config import settings
 from app.routers import auth, dashboard, company, employees, attendance, payroll, audit, departments
+from app.routers.api.v1 import api_v1_router
 
 
 @asynccontextmanager
@@ -66,7 +68,21 @@ async def lifespan(app: FastAPI):
     yield  # app runs
 
 
-app = FastAPI(title="TURTU HRMS", lifespan=lifespan)
+app = FastAPI(
+    title="TURTU HRMS API & Portal",
+    description="Full-featured enterprise HRMS backend with REST API v1 and interactive web portal.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# Enable CORS for SPA (React / Next.js / Vue) and Mobile (Flutter / React Native)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 from app.utils.timezone import get_ist_today, get_ist_now
 
@@ -79,7 +95,7 @@ async def add_attendance_state_middleware(request: Request, call_next):
     request.state.accumulated_seconds = 0
     request.state.accumulated_time_str = "00:00:00"
     
-    token = request.cookies.get(settings.COOKIE_NAME)
+    token = extract_token_from_request(request)
     if token:
         db = SessionLocal()
         try:
@@ -238,7 +254,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
-# Include Routers
+# Include Web Routers (Jinja2 / SSR)
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(employees.router)
@@ -247,6 +263,9 @@ app.include_router(payroll.router)
 app.include_router(company.router)
 app.include_router(audit.router)
 app.include_router(departments.router)
+
+# Include REST API v1 Routers (JSON / Mobile / SPA)
+app.include_router(api_v1_router)
 
 @app.get("/")
 def root():

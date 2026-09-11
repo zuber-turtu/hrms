@@ -49,9 +49,15 @@ def resolve_dept_and_desig(
     dept_id = None
     desig_id = None
 
-    if department_id and department_id > 0:
-        dept_id = department_id
-    elif department_str and department_str.strip():
+    if department_id:
+        try:
+            d_int = int(department_id)
+            if d_int > 0:
+                dept_id = d_int
+        except (ValueError, TypeError):
+            pass
+
+    if not dept_id and department_str and department_str.strip():
         clean_dept = department_str.strip()
         dept = db.query(Department).filter(Department.name == clean_dept).first()
         if not dept:
@@ -60,9 +66,15 @@ def resolve_dept_and_desig(
             db.flush()
         dept_id = dept.id
 
-    if designation_id and designation_id > 0:
-        desig_id = designation_id
-    elif designation_str and designation_str.strip():
+    if designation_id:
+        try:
+            ds_int = int(designation_id)
+            if ds_int > 0:
+                desig_id = ds_int
+        except (ValueError, TypeError):
+            pass
+
+    if not desig_id and designation_str and designation_str.strip():
         clean_desig = designation_str.strip()
         desig = db.query(Designation).filter(Designation.title == clean_desig).first()
         if not desig:

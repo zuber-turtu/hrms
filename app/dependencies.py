@@ -26,8 +26,18 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
+def extract_token_from_request(request: Request) -> Optional[str]:
+    """
+    Extracts JWT token from Authorization Bearer header or fallback cookie.
+    """
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        return auth_header[7:].strip()
+    return request.cookies.get(settings.COOKIE_NAME)
+
+
 def get_token_from_cookie(request: Request):
-    token = request.cookies.get(settings.COOKIE_NAME)
+    token = extract_token_from_request(request)
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -35,10 +45,11 @@ def get_token_from_cookie(request: Request):
         )
     return token
 
+
 def get_current_user(request: Request, db: Session = Depends(get_db)):
-    token = request.cookies.get(settings.COOKIE_NAME)
+    token = extract_token_from_request(request)
     if not token:
-        return None # Return None if not logged in
+        return None  # Return None if not logged in
     
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -50,6 +61,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
         
     user = db.query(Employee).filter(Employee.email == email).first()
     return user
+
 
 def require_auth(current_user: Employee = Depends(get_current_user)):
     if not current_user or not current_user.is_active:
