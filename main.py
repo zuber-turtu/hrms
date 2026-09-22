@@ -194,7 +194,7 @@ async def add_attendance_state_middleware(request: Request, call_next):
             email = payload.get("sub")
             if email:
                 user = db.query(Employee).filter(Employee.email == email).first()
-                if user:
+                if user and user.role != "admin":
                     today = get_ist_today()
                     # Query all logs today in Indian Standard Time
                     today_logs = db.query(Attendance).filter(

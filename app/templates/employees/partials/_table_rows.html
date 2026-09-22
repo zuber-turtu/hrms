@@ -1,5 +1,10 @@
 {% for emp in employees %}
-<tr class="hover:bg-[#F4F7F7]/70 transition-colors emp-row" data-name="{{ emp.name|lower }}" data-email="{{ emp.email|lower }}" data-dept="{{ (emp.department or '')|lower }}" data-role="{{ emp.role|lower }}">
+<tr class="hover:bg-[#F4F7F7]/70 transition-colors emp-row" 
+    data-letter="{{ emp.name[0]|upper if emp.name else '#' }}"
+    data-name="{{ emp.name|lower }}" 
+    data-email="{{ emp.email|lower }}" 
+    data-dept="{{ (emp.department or '')|lower }}" 
+    data-role="{{ emp.role|lower }}">
     
     <!-- Name & Email -->
     <td class="px-6 py-4 whitespace-nowrap">

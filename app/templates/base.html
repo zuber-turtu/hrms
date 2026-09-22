@@ -258,7 +258,7 @@
                 </div>
             </div>
             
-            {% if user %}
+            {% if user and user.role != 'admin' %}
             <div id="topbar-attendance-widget" class="flex items-center space-x-3">
                 {% include "attendance/partials/_topbar_widget.html" %}
             </div>

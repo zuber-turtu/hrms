@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPExc
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from io import BytesIO
 from collections import defaultdict
 import datetime
@@ -93,18 +94,34 @@ async def list_employees(
     request: Request,
     q: Optional[str] = None,
     role: Optional[str] = None,
+    sort: Optional[str] = "name_asc",
+    letter: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
-    query = db.query(Employee)
+    base_query = db.query(Employee)
 
     # Scoping for Managers: only employees in their department
     if current_user.role == "manager":
-        query = query.filter(
+        base_query = base_query.filter(
             Employee.department_id == current_user.department_id,
             Employee.role.notin_(["admin", "hr_admin"])
         )
 
+    # Calculate letter counts for active A-Z indicators
+    all_scoped_emps = base_query.all()
+    letter_counts = defaultdict(int)
+    for emp in all_scoped_emps:
+        if emp.name and emp.name.strip():
+            first_char = emp.name.strip()[0].upper()
+            if 'A' <= first_char <= 'Z':
+                letter_counts[first_char] += 1
+            else:
+                letter_counts['#'] += 1
+
+    query = base_query
+
+    # Search filter
     if q and q.strip():
         search_term = f"%{q.strip()}%"
         query = query.outerjoin(Department, Employee.department_id == Department.id)\
@@ -116,20 +133,61 @@ async def list_employees(
                          (Designation.title.ilike(search_term))
                      )
 
+    # Role filter
     if role and role.strip() and role.strip() != "all":
         query = query.filter(Employee.role == role.strip())
 
-    employees = query.order_by(Employee.id.asc()).all()
+    # Alphabetical letter filter
+    selected_letter = (letter or "").strip().upper()
+    if selected_letter and selected_letter != "ALL":
+        if selected_letter == "#":
+            # Filter non-alphabet characters
+            for alpha_char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                query = query.filter(~Employee.name.ilike(f"{alpha_char}%"))
+        else:
+            query = query.filter(Employee.name.ilike(f"{selected_letter}%"))
+
+    # Sorting options
+    sort_mode = (sort or "name_asc").lower().strip()
+    if sort_mode == "name_desc":
+        query = query.order_by(func.lower(Employee.name).desc())
+    elif sort_mode == "dept_asc":
+        query = query.outerjoin(Department, Employee.department_id == Department.id).order_by(func.lower(Department.name).asc(), func.lower(Employee.name).asc())
+    elif sort_mode == "dept_desc":
+        query = query.outerjoin(Department, Employee.department_id == Department.id).order_by(func.lower(Department.name).desc(), func.lower(Employee.name).asc())
+    elif sort_mode == "role_asc":
+        query = query.order_by(Employee.role.asc(), func.lower(Employee.name).asc())
+    elif sort_mode == "id_desc":
+        query = query.order_by(Employee.id.desc())
+    elif sort_mode == "id_asc":
+        query = query.order_by(Employee.id.asc())
+    else:  # default: name_asc (A-Z)
+        query = query.order_by(func.lower(Employee.name).asc())
+
+    employees = query.all()
+
+    context = {
+        "user": current_user,
+        "employees": employees,
+        "total_employees_count": len(all_scoped_emps),
+        "letter_counts": dict(letter_counts),
+        "current_sort": sort_mode,
+        "current_letter": selected_letter if selected_letter else "ALL",
+        "current_role": role or "all",
+        "current_q": q or "",
+    }
 
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(
             request=request,
             name="employees/partials/_table_rows.html",
-            context={"user": current_user, "employees": employees}
+            context=context
         )
 
     return templates.TemplateResponse(
-        request=request, name="employees/list.html", context={"user": current_user, "employees": employees}
+        request=request,
+        name="employees/list.html",
+        context=context
     )
 
 

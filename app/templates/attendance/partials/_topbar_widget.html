@@ -1,3 +1,4 @@
+{% if user and user.role != 'admin' %}
 {% if request.state.is_checked_in %}
     <form hx-post="/attendance/check-out" hx-target="#topbar-attendance-widget" hx-swap="innerHTML" class="inline-block">
         <button id="checkout-btn" data-checkin-time="{{ request.state.active_check_in_iso if request.state.active_check_in_iso else request.state.active_check_in.isoformat() + '+05:30' }}" data-accumulated-seconds="{{ request.state.accumulated_seconds }}" type="submit" class="inline-flex items-center px-3.5 py-1.5 sm:px-4 sm:py-2 border border-rose-600/30 text-xs sm:text-sm font-semibold rounded-lg text-white bg-[#E53E3E] hover:bg-[#C53030] shadow-sm hover:shadow transition-all active:scale-[0.98] group cursor-pointer">
@@ -20,4 +21,5 @@
             {% endif %}
         </button>
     </form>
+{% endif %}
 {% endif %}

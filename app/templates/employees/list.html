@@ -72,43 +72,110 @@
     </div>
 </div>
 
-<!-- Search & Filter Bar -->
-<div class="bg-white rounded-xl p-4 border border-[#B3E3E3]/60 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-    <!-- Search Input -->
-    <div class="relative flex-1">
-        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
-            <i data-lucide="search" class="w-4 h-4"></i>
+<!-- Search, Filter & Sort Controls -->
+<div class="space-y-3">
+    <!-- Top Filter Bar -->
+    <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-[#B3E3E3]/60 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        <!-- Search Input -->
+        <div class="relative flex-1">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
+                <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <input type="text" id="employeeSearch" name="q" value="{{ current_q }}" onkeyup="filterEmployees()"
+                placeholder="Search by employee name, email, department, role..."
+                class="w-full pl-10 pr-10 py-2.5 text-sm bg-[#F4F7F7] border border-[#B3E3E3]/80 rounded-xl text-[#1C2B2B] placeholder-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-all">
+            <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
         </div>
-        <input type="text" id="employeeSearch" name="q" onkeyup="filterEmployees()"
-            hx-get="/employees"
-            hx-trigger="keyup changed delay:300ms, search"
-            hx-target="#employeesTableBody"
-            hx-include="#roleFilter"
-            hx-indicator="#search-spinner"
-            placeholder="Search by employee name, email, department, role..."
-            class="w-full pl-10 pr-10 py-2 text-sm bg-[#F4F7F7] border border-[#B3E3E3]/80 rounded-lg text-[#1C2B2B] placeholder-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-1 focus:ring-[#008080] transition-all">
-        <div id="search-spinner" class="htmx-indicator absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#008080]">
-            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Role Filter Select -->
+            <div class="flex items-center space-x-1.5">
+                <label for="roleFilter" class="text-xs font-bold text-[#6B7F7F] uppercase tracking-wider shrink-0">Role:</label>
+                <select id="roleFilter" name="role" onchange="filterEmployees()"
+                    class="py-2 px-3 text-xs sm:text-sm bg-[#F4F7F7] border border-[#B3E3E3]/80 rounded-xl text-[#1C2B2B] font-medium focus:bg-white focus:outline-none focus:border-[#008080]">
+                    <option value="all" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
+                    <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Admin</option>
+                    <option value="hr_admin" {% if current_role == 'hr_admin' %}selected{% endif %}>HR Admin</option>
+                    <option value="manager" {% if current_role == 'manager' %}selected{% endif %}>Manager</option>
+                    <option value="employee" {% if current_role == 'employee' %}selected{% endif %}>Employee</option>
+                    <option value="intern" {% if current_role == 'intern' %}selected{% endif %}>Intern</option>
+                </select>
+            </div>
+
+            <!-- Sort By Select -->
+            <div class="flex items-center space-x-1.5">
+                <label for="sortSelector" class="text-xs font-bold text-[#6B7F7F] uppercase tracking-wider shrink-0">Sort:</label>
+                <select id="sortSelector" onchange="changeSort(this.value)"
+                    class="py-2 px-3 text-xs sm:text-sm bg-[#F4F7F7] border border-[#B3E3E3]/80 rounded-xl text-[#1C2B2B] font-medium focus:bg-white focus:outline-none focus:border-[#008080]">
+                    <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name (A ➔ Z)</option>
+                    <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name (Z ➔ A)</option>
+                    <option value="dept_asc" {% if current_sort == 'dept_asc' %}selected{% endif %}>Department (A ➔ Z)</option>
+                    <option value="role_asc" {% if current_sort == 'role_asc' %}selected{% endif %}>Role</option>
+                    <option value="id_desc" {% if current_sort == 'id_desc' %}selected{% endif %}>Recently Added</option>
+                </select>
+            </div>
         </div>
     </div>
 
-    <!-- Role Filter Select -->
-    <div class="flex items-center space-x-2">
-        <label for="roleFilter" class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider shrink-0">Role:</label>
-        <select id="roleFilter" name="role" onchange="filterEmployees()"
-            hx-get="/employees"
-            hx-trigger="change"
-            hx-target="#employeesTableBody"
-            hx-include="#employeeSearch"
-            hx-indicator="#search-spinner"
-            class="py-2 px-3 text-sm bg-[#F4F7F7] border border-[#B3E3E3]/80 rounded-lg text-[#1C2B2B] font-medium focus:bg-white focus:outline-none focus:border-[#008080]">
-            <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="hr_admin">HR Admin</option>
-            <option value="manager">Manager</option>
-            <option value="employee">Employee</option>
-            <option value="intern">Intern</option>
-        </select>
+    <!-- A–Z Alphabet Quick Jump Ribbon -->
+    <div class="bg-white rounded-2xl p-2.5 border border-[#B3E3E3]/60 shadow-sm flex items-center justify-between gap-1 overflow-x-auto select-none">
+        <div class="flex items-center space-x-1 shrink-0">
+            <button type="button" onclick="selectLetter('ALL')" id="letter-btn-ALL" 
+                class="letter-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all {% if current_letter == 'ALL' %}bg-[#008080] text-white shadow-sm shadow-[#008080]/30{% else %}bg-[#F4F7F7] text-[#6B7F7F] hover:bg-[#E0F4F4] hover:text-[#008080]{% endif %}">
+                ALL <span class="text-[11px] opacity-80">({{ total_employees_count or employees|length }})</span>
+            </button>
+        </div>
+        <div class="h-4 w-px bg-[#B3E3E3]/60 mx-1 shrink-0"></div>
+        <div class="flex items-center space-x-1 shrink-0" id="letterButtonsContainer">
+            {% for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+            {% set cnt = letter_counts.get(char, 0) if letter_counts else 0 %}
+            <button type="button" onclick="selectLetter('{{ char }}')" id="letter-btn-{{ char }}"
+                data-char="{{ char }}"
+                data-count="{{ cnt }}"
+                class="letter-filter-btn w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl text-xs font-bold transition-all relative group
+                    {% if current_letter == char %}
+                        bg-[#008080] text-white shadow-sm shadow-[#008080]/30 ring-2 ring-[#008080]/20
+                    {% elif cnt > 0 %}
+                        bg-[#F4F7F7] text-[#1C2B2B] hover:bg-[#E0F4F4] hover:text-[#008080] hover:scale-105 active:scale-95
+                    {% else %}
+                        bg-transparent text-gray-300 hover:text-gray-500 cursor-pointer
+                    {% endif %}"
+                title="Letter {{ char }}: {{ cnt }} employees">
+                {{ char }}
+                {% if cnt > 0 and current_letter != char %}
+                <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                {% endif %}
+            </button>
+            {% endfor %}
+            {% set other_cnt = letter_counts.get('#', 0) if letter_counts else 0 %}
+            {% if other_cnt > 0 %}
+            <button type="button" onclick="selectLetter('#')" id="letter-btn-HASH"
+                data-char="#"
+                data-count="{{ other_cnt }}"
+                class="letter-filter-btn w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl text-xs font-bold transition-all
+                    {% if current_letter == '#' %}
+                        bg-[#008080] text-white shadow-sm shadow-[#008080]/30
+                    {% else %}
+                        bg-[#F4F7F7] text-[#1C2B2B] hover:bg-[#E0F4F4] hover:text-[#008080]
+                    {% endif %}"
+                title="Non-alphabet names: {{ other_cnt }}">
+                #
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Active Filter Status Indicator (Shown dynamically when filtered) -->
+    <div id="activeFilterBanner" class="hidden bg-[#E0F4F4]/70 border border-[#B3E3E3] rounded-xl px-4 py-2 flex items-center justify-between text-xs text-[#006666]">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="filter" class="w-3.5 h-3.5 text-[#008080]"></i>
+            <span id="activeFilterText" class="font-medium">Filtered results</span>
+        </div>
+        <button type="button" onclick="clearAllFilters()" class="text-[#008080] font-bold hover:underline inline-flex items-center">
+            <i data-lucide="rotate-ccw" class="w-3 h-3 mr-1"></i> Clear Filters
+        </button>
     </div>
 </div>
 
@@ -118,9 +185,24 @@
         <table class="min-w-full divide-y divide-[#B3E3E3]/40" id="employeesTable">
             <thead class="bg-[#F4F7F7]">
                 <tr>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Employee</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Role</th>
-                    <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Department & Title</th>
+                    <th scope="col" onclick="toggleColumnSort('name')" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider cursor-pointer hover:bg-[#E0F4F4]/50 hover:text-[#008080] transition-colors select-none group">
+                        <div class="flex items-center space-x-1.5">
+                            <span>Employee</span>
+                            <span id="sort-icon-name" class="text-[#008080] font-bold text-xs"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5 inline opacity-60 group-hover:opacity-100"></i></span>
+                        </div>
+                    </th>
+                    <th scope="col" onclick="toggleColumnSort('role')" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider cursor-pointer hover:bg-[#E0F4F4]/50 hover:text-[#008080] transition-colors select-none group">
+                        <div class="flex items-center space-x-1.5">
+                            <span>Role</span>
+                            <span id="sort-icon-role" class="text-[#008080] font-bold text-xs"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5 inline opacity-40 group-hover:opacity-100"></i></span>
+                        </div>
+                    </th>
+                    <th scope="col" onclick="toggleColumnSort('dept')" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider cursor-pointer hover:bg-[#E0F4F4]/50 hover:text-[#008080] transition-colors select-none group">
+                        <div class="flex items-center space-x-1.5">
+                            <span>Department & Title</span>
+                            <span id="sort-icon-dept" class="text-[#008080] font-bold text-xs"><i data-lucide="arrow-up-down" class="w-3.5 h-3.5 inline opacity-40 group-hover:opacity-100"></i></span>
+                        </div>
+                    </th>
                     <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Contact</th>
                     <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-[#6B7F7F] uppercase tracking-wider">Actions</th>
                 </tr>
@@ -250,49 +332,182 @@
             </div>
         </div>
     </div>
-</div>
+{% endif %}
 
 <script>
-    function openPasswordResetModal(empId, empName) {
-        document.getElementById('resetPasswordModal').classList.remove('hidden');
-        document.getElementById('resetPasswordForm').action = "/employees/" + empId + "/reset-password";
-        document.getElementById('resetModalEmployeeName').textContent = empName;
-        document.getElementById('new_password').value = "";
-    }
-    function closePasswordResetModal() {
-        document.getElementById('resetPasswordModal').classList.add('hidden');
-    }
+    let currentSelectedLetter = "{{ current_letter or 'ALL' }}";
+    let currentSortMode = "{{ current_sort or 'name_asc' }}";
 
-    function openGeneratePayslipModal(empId) {
-        document.getElementById('generatePayslipModal').classList.remove('hidden');
-        if (empId) {
-            const selectEl = document.getElementById('modal_employee_id');
-            if (selectEl) {
-                selectEl.value = empId;
+    function selectLetter(letter) {
+        currentSelectedLetter = letter ? letter.toUpperCase() : 'ALL';
+        
+        // Update Letter Button Styles
+        const allBtns = document.querySelectorAll('.letter-filter-btn');
+        allBtns.forEach(btn => {
+            btn.classList.remove('bg-[#008080]', 'text-white', 'shadow-sm', 'shadow-[#008080]/30', 'ring-2', 'ring-[#008080]/20');
+            const cnt = parseInt(btn.getAttribute('data-count') || '0', 10);
+            if (cnt > 0) {
+                btn.classList.add('bg-[#F4F7F7]', 'text-[#1C2B2B]');
+            } else if (btn.id !== 'letter-btn-ALL') {
+                btn.classList.add('bg-transparent', 'text-gray-300');
+            } else {
+                btn.classList.add('bg-[#F4F7F7]', 'text-[#6B7F7F]');
             }
+        });
+
+        const activeBtn = document.getElementById('letter-btn-' + (currentSelectedLetter === '#' ? 'HASH' : currentSelectedLetter));
+        if (activeBtn) {
+            activeBtn.classList.remove('bg-[#F4F7F7]', 'bg-transparent', 'text-[#1C2B2B]', 'text-[#6B7F7F]', 'text-gray-300');
+            activeBtn.classList.add('bg-[#008080]', 'text-white', 'shadow-sm', 'shadow-[#008080]/30', 'ring-2', 'ring-[#008080]/20');
+        }
+
+        filterEmployees();
+        
+        // Update URL state without reload
+        if (window.history.replaceState) {
+            const url = new URL(window.location);
+            if (currentSelectedLetter !== 'ALL') {
+                url.searchParams.set('letter', currentSelectedLetter);
+            } else {
+                url.searchParams.delete('letter');
+            }
+            window.history.replaceState({}, '', url);
         }
     }
-    function closeGeneratePayslipModal() {
-        document.getElementById('generatePayslipModal').classList.add('hidden');
+
+    function toggleColumnSort(col) {
+        if (col === 'name') {
+            currentSortMode = (currentSortMode === 'name_asc') ? 'name_desc' : 'name_asc';
+        } else if (col === 'role') {
+            currentSortMode = (currentSortMode === 'role_asc') ? 'name_asc' : 'role_asc';
+        } else if (col === 'dept') {
+            currentSortMode = (currentSortMode === 'dept_asc') ? 'dept_desc' : 'dept_asc';
+        }
+        
+        const sortSelect = document.getElementById('sortSelector');
+        if (sortSelect) sortSelect.value = currentSortMode;
+        
+        changeSort(currentSortMode);
     }
 
-    // Client-side search and role filter
+    function changeSort(val) {
+        currentSortMode = val || 'name_asc';
+        updateSortIcons();
+        sortDOMRows();
+        filterEmployees();
+    }
+
+    function updateSortIcons() {
+        const nameIcon = document.getElementById('sort-icon-name');
+        const roleIcon = document.getElementById('sort-icon-role');
+        const deptIcon = document.getElementById('sort-icon-dept');
+
+        if (nameIcon) {
+            nameIcon.innerHTML = currentSortMode === 'name_asc' ? '<i data-lucide="arrow-down-a-z" class="w-4 h-4 inline text-[#008080]"></i>' : 
+                                 currentSortMode === 'name_desc' ? '<i data-lucide="arrow-up-z-a" class="w-4 h-4 inline text-[#008080]"></i>' : 
+                                 '<i data-lucide="arrow-up-down" class="w-3.5 h-3.5 inline opacity-40"></i>';
+        }
+        if (roleIcon) {
+            roleIcon.innerHTML = currentSortMode === 'role_asc' ? '<i data-lucide="arrow-up" class="w-4 h-4 inline text-[#008080]"></i>' : 
+                                 '<i data-lucide="arrow-up-down" class="w-3.5 h-3.5 inline opacity-40"></i>';
+        }
+        if (deptIcon) {
+            deptIcon.innerHTML = currentSortMode === 'dept_asc' ? '<i data-lucide="arrow-down-a-z" class="w-4 h-4 inline text-[#008080]"></i>' : 
+                                 currentSortMode === 'dept_desc' ? '<i data-lucide="arrow-up-z-a" class="w-4 h-4 inline text-[#008080]"></i>' : 
+                                 '<i data-lucide="arrow-up-down" class="w-3.5 h-3.5 inline opacity-40"></i>';
+        }
+        if (window.lucide) { lucide.createIcons(); }
+    }
+
+    function sortDOMRows() {
+        const tbody = document.getElementById('employeesTableBody');
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('.emp-row'));
+        if (rows.length === 0) return;
+
+        rows.sort((a, b) => {
+            const nameA = (a.getAttribute('data-name') || '').toLowerCase();
+            const nameB = (b.getAttribute('data-name') || '').toLowerCase();
+            const deptA = (a.getAttribute('data-dept') || '').toLowerCase();
+            const deptB = (b.getAttribute('data-dept') || '').toLowerCase();
+            const roleA = (a.getAttribute('data-role') || '').toLowerCase();
+            const roleB = (b.getAttribute('data-role') || '').toLowerCase();
+
+            if (currentSortMode === 'name_desc') {
+                return nameB.localeCompare(nameA);
+            } else if (currentSortMode === 'dept_asc') {
+                return deptA.localeCompare(deptB) || nameA.localeCompare(nameB);
+            } else if (currentSortMode === 'dept_desc') {
+                return deptB.localeCompare(deptA) || nameA.localeCompare(nameB);
+            } else if (currentSortMode === 'role_asc') {
+                return roleA.localeCompare(roleB) || nameA.localeCompare(nameB);
+            } else { // default: name_asc
+                return nameA.localeCompare(nameB);
+            }
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    function clearSearchInput() {
+        const input = document.getElementById('employeeSearch');
+        if (input) {
+            input.value = '';
+            filterEmployees();
+            input.focus();
+        }
+    }
+
+    function clearAllFilters() {
+        const searchInput = document.getElementById('employeeSearch');
+        if (searchInput) searchInput.value = '';
+        
+        const roleSelect = document.getElementById('roleFilter');
+        if (roleSelect) roleSelect.value = 'all';
+
+        const sortSelect = document.getElementById('sortSelector');
+        if (sortSelect) sortSelect.value = 'name_asc';
+
+        currentSortMode = 'name_asc';
+        selectLetter('ALL');
+    }
+
+    // Client-side instant filter combining Search + Role + Letter
     function filterEmployees() {
-        const query = document.getElementById('employeeSearch').value.toLowerCase().trim();
-        const roleFilter = document.getElementById('roleFilter').value.toLowerCase();
+        const searchInput = document.getElementById('employeeSearch');
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const roleSelect = document.getElementById('roleFilter');
+        const roleFilter = roleSelect ? roleSelect.value.toLowerCase() : 'all';
         const rows = document.querySelectorAll('.emp-row');
         let visibleCount = 0;
+
+        // Toggle search clear button
+        const clearBtn = document.getElementById('clearSearchBtn');
+        if (clearBtn) {
+            if (query.length > 0) clearBtn.classList.remove('hidden');
+            else clearBtn.classList.add('hidden');
+        }
 
         rows.forEach(row => {
             const name = row.getAttribute('data-name') || '';
             const email = row.getAttribute('data-email') || '';
             const dept = row.getAttribute('data-dept') || '';
             const role = row.getAttribute('data-role') || '';
+            const letter = (row.getAttribute('data-letter') || '#').toUpperCase();
 
             const matchesQuery = !query || name.includes(query) || email.includes(query) || dept.includes(query) || role.includes(query);
             const matchesRole = (roleFilter === 'all') || (role === roleFilter);
+            
+            let matchesLetter = true;
+            if (currentSelectedLetter && currentSelectedLetter !== 'ALL') {
+                if (currentSelectedLetter === '#') {
+                    matchesLetter = !('A' <= letter && letter <= 'Z');
+                } else {
+                    matchesLetter = (letter === currentSelectedLetter);
+                }
+            }
 
-            if (matchesQuery && matchesRole) {
+            if (matchesQuery && matchesRole && matchesLetter) {
                 row.style.display = '';
                 visibleCount++;
             } else {
@@ -300,21 +515,77 @@
             }
         });
 
-        const noResults = document.getElementById('noResultsRow');
-        if (noResults) {
-            if (visibleCount === 0 && rows.length > 0) {
-                noResults.classList.remove('hidden');
+        // Server-rendered empty row vs dynamic no results
+        const serverEmpty = document.getElementById('server-empty-row');
+        if (serverEmpty) {
+            serverEmpty.style.display = (rows.length === 0) ? '' : 'none';
+        }
+
+        // Active filter status banner
+        const filterBanner = document.getElementById('activeFilterBanner');
+        const filterText = document.getElementById('activeFilterText');
+        const isFiltered = query || roleFilter !== 'all' || currentSelectedLetter !== 'ALL';
+
+        if (filterBanner && filterText) {
+            if (isFiltered) {
+                const parts = [];
+                if (currentSelectedLetter !== 'ALL') parts.push(`Letter <strong>"${currentSelectedLetter}"</strong>`);
+                if (roleFilter !== 'all') parts.push(`Role <strong>"${roleFilter.replace('_', ' ')}"</strong>`);
+                if (query) parts.push(`Search <strong>"${query}"</strong>`);
+                filterText.innerHTML = `Showing <strong>${visibleCount}</strong> staff members with ` + parts.join(' • ');
+                filterBanner.classList.remove('hidden');
             } else {
-                noResults.classList.add('hidden');
+                filterBanner.classList.add('hidden');
             }
         }
 
+        // Update count badge
         const badge = document.getElementById('emp-count-badge');
         if (badge) {
             badge.textContent = visibleCount;
         }
     }
+
+    // Modal Helpers
+    function openPasswordResetModal(empId, empName) {
+        const modal = document.getElementById('resetPasswordModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            document.getElementById('resetPasswordForm').action = "/employees/" + empId + "/reset-password";
+            document.getElementById('resetModalEmployeeName').textContent = empName;
+            document.getElementById('new_password').value = "";
+        }
+    }
+    function closePasswordResetModal() {
+        const modal = document.getElementById('resetPasswordModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function openGeneratePayslipModal(empId) {
+        const modal = document.getElementById('generatePayslipModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            if (empId) {
+                const selectEl = document.getElementById('modal_employee_id');
+                if (selectEl) selectEl.value = empId;
+            }
+        }
+    }
+    function closeGeneratePayslipModal() {
+        const modal = document.getElementById('generatePayslipModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    // Initialize on DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSortIcons();
+        sortDOMRows();
+        if (currentSelectedLetter && currentSelectedLetter !== 'ALL') {
+            selectLetter(currentSelectedLetter);
+        } else {
+            filterEmployees();
+        }
+    });
 </script>
-{% endif %}
 
 {% endblock %}
