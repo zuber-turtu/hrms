@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
@@ -12,6 +12,7 @@ from app.dependencies import (
     require_auth,
 )
 from app.config import settings
+from app.utils.rate_limiter import login_rate_limiter
 from app.schemas.auth import (
     LoginRequest,
     TokenResponse,
@@ -25,13 +26,17 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/login", response_model=TokenResponse)
 async def api_login(
+    request: Request,
     payload: LoginRequest,
     db: Session = Depends(get_db),
 ):
     """
     Authenticate employee via email and password, returning JWT access token.
+    Rate limited to 5 attempts per minute per IP/Account.
     """
     clean_email = payload.email.strip().lower()
+    login_rate_limiter.check(request, identifier=clean_email)
+
     user = db.query(Employee).filter(Employee.email == clean_email).first()
 
     if not user or not verify_password(payload.password, user.hashed_password):
@@ -39,6 +44,9 @@ async def api_login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
+
+    # Reset attempts on successful authentication
+    login_rate_limiter.reset(request, identifier=clean_email)
 
     if not user.is_active:
         raise HTTPException(

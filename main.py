@@ -18,18 +18,41 @@ from app.models import (
     Attendance,
     Payslip,
     AuditLog,
+    DocumentType,
+    EmployeeDocument,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from app.dependencies import get_password_hash, extract_token_from_request
 from app.config import settings
-from app.routers import auth, dashboard, company, employees, attendance, payroll, audit, departments
+from app.routers import auth, dashboard, company, employees, attendance, payroll, audit, departments, documents
 from app.routers.api.v1 import api_v1_router
+
+
+def ensure_schema_columns(db_engine):
+    """Auto-migrate schema columns that were added after initial table creation."""
+    from sqlalchemy import inspect, text
+    try:
+        inspector = inspect(db_engine)
+        if "employee_profiles" in inspector.get_table_names():
+            existing_cols = {c["name"] for c in inspector.get_columns("employee_profiles")}
+            with db_engine.begin() as conn:
+                if "avatar_url" not in existing_cols:
+                    conn.execute(text("ALTER TABLE employee_profiles ADD COLUMN avatar_url VARCHAR(500)"))
+                if "photo_file_id" not in existing_cols:
+                    conn.execute(text("ALTER TABLE employee_profiles ADD COLUMN photo_file_id VARCHAR(255)"))
+    except Exception as e:
+        print(f"[Schema Migration Warning] {e}")
+
+
+# Run initial column checks on module load
+ensure_schema_columns(engine)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup: create tables and seed default super admin."""
     Base.metadata.create_all(bind=engine)
+    ensure_schema_columns(engine)
     db = SessionLocal()
     try:
         admin = db.query(Employee).filter(Employee.role == "admin").first()
@@ -63,6 +86,74 @@ async def lifespan(app: FastAPI):
         elif admin.role != "admin":
             admin.role = "admin"
             db.commit()
+
+        # Seed standard dynamic document types if empty
+        if db.query(DocumentType).count() == 0:
+            defaults = [
+                DocumentType(
+                    title="Aadhaar Card",
+                    code="aadhaar_card",
+                    description="Upload clear scan of Aadhaar Card front and back in a single PDF or image.",
+                    category="KYC",
+                    is_mandatory=True,
+                    who_uploads="employee",
+                    allowed_extensions="pdf,jpg,jpeg,png,webp",
+                    display_order=1,
+                ),
+                DocumentType(
+                    title="PAN Card",
+                    code="pan_card",
+                    description="Mandatory for TDS and payroll taxation processing.",
+                    category="KYC",
+                    is_mandatory=True,
+                    who_uploads="employee",
+                    allowed_extensions="pdf,jpg,jpeg,png,webp",
+                    display_order=2,
+                ),
+                DocumentType(
+                    title="Highest Degree Certificate",
+                    code="highest_degree",
+                    description="Graduation / Post-Graduation degree certificate or consolidated marksheets.",
+                    category="Education",
+                    is_mandatory=True,
+                    who_uploads="employee",
+                    allowed_extensions="pdf,jpg,jpeg,png,webp",
+                    display_order=3,
+                ),
+                DocumentType(
+                    title="Resume / Curriculum Vitae (CV)",
+                    code="resume_cv",
+                    description="Updated professional resume or CV.",
+                    category="Experience",
+                    is_mandatory=True,
+                    who_uploads="employee",
+                    allowed_extensions="pdf,docx,doc",
+                    display_order=4,
+                ),
+                DocumentType(
+                    title="Previous Relieving Letter",
+                    code="previous_relieving_letter",
+                    description="Relieving letter or service certificate from your previous employer (if applicable).",
+                    category="Experience",
+                    is_mandatory=False,
+                    who_uploads="employee",
+                    allowed_extensions="pdf,jpg,jpeg,png,webp",
+                    display_order=5,
+                ),
+                DocumentType(
+                    title="Signed Offer Letter & NDA",
+                    code="signed_offer_letter",
+                    description="Official company signed appointment letter and non-disclosure agreement.",
+                    category="Company Letters",
+                    is_mandatory=True,
+                    who_uploads="admin_only",
+                    allowed_extensions="pdf,docx,doc",
+                    display_order=6,
+                ),
+            ]
+            db.add_all(defaults)
+            db.commit()
+            print("Seeded 6 default dynamic Document Types.")
     finally:
         db.close()
     yield  # app runs
@@ -148,7 +239,7 @@ async def add_attendance_state_middleware(request: Request, call_next):
 @app.middleware("http")
 async def add_security_headers_middleware(request: Request, call_next):
     response = await call_next(request)
-    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
@@ -263,6 +354,7 @@ app.include_router(payroll.router)
 app.include_router(company.router)
 app.include_router(audit.router)
 app.include_router(departments.router)
+app.include_router(documents.router)
 
 # Include REST API v1 Routers (JSON / Mobile / SPA)
 app.include_router(api_v1_router)

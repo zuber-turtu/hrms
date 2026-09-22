@@ -37,6 +37,10 @@ class Employee(Base):
 
     # Backward compatibility properties for templates and helper access
     @property
+    def avatar_url(self):
+        return self.profile.avatar_url if self.profile else None
+
+    @property
     def phone_number(self):
         return self.profile.phone_number if self.profile else None
 
@@ -143,6 +147,8 @@ class EmployeeProfile(Base):
     experience = Column(String, nullable=True)
     aadhar_number = Column(String, nullable=True)
     pan_number = Column(String, nullable=True)
+    avatar_url = Column(String, nullable=True)
+    photo_file_id = Column(String, nullable=True)
 
     employee = orm_relationship("Employee", back_populates="profile")
 

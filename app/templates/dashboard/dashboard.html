@@ -7,9 +7,16 @@
 <div class="relative overflow-hidden bg-gradient-to-r from-[#004444] via-[#003B3B] to-[#1C2B2B] rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-[#004444]/15 border border-[#005050]">
     <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="flex items-center space-x-4">
+            {% if user.avatar_url or (user.profile and user.profile.avatar_url) %}
+            <img src="{{ user.avatar_url or user.profile.avatar_url }}" alt="{{ user.name }}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shadow-lg ring-2 ring-[#B3E3E3]/40 shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#008080] text-white hidden flex items-center justify-center font-bold text-xl sm:text-2xl shadow-lg shadow-[#008080]/30 ring-2 ring-[#B3E3E3]/30 shrink-0 font-heading">
+                {{ user.name[0] if user.name else 'U' }}
+            </div>
+            {% else %}
             <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#008080] text-white flex items-center justify-center font-bold text-xl sm:text-2xl shadow-lg shadow-[#008080]/30 ring-2 ring-[#B3E3E3]/30 shrink-0 font-heading">
                 {{ user.name[0] if user.name else 'U' }}
             </div>
+            {% endif %}
             <div>
                 <div class="flex items-center space-x-2">
                     <span class="text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#E0F4F4] text-[#005050] border border-[#B3E3E3]">

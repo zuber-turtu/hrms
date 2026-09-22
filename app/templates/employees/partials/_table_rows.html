@@ -4,9 +4,16 @@
     <!-- Name & Email -->
     <td class="px-6 py-4 whitespace-nowrap">
         <div class="flex items-center space-x-3.5">
+            {% if emp.avatar_url or (emp.profile and emp.profile.avatar_url) %}
+            <img src="{{ emp.avatar_url or emp.profile.avatar_url }}" alt="{{ emp.name }}" class="w-10 h-10 rounded-xl object-cover ring-2 ring-[#B3E3E3]/60 shadow-sm shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#008080] to-[#004444] text-white hidden flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-[#B3E3E3]/40 shrink-0 font-heading">
+                {{ emp.name[0] if emp.name else 'E' }}
+            </div>
+            {% else %}
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#008080] to-[#004444] text-white flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-[#B3E3E3]/40 shrink-0 font-heading">
                 {{ emp.name[0] if emp.name else 'E' }}
             </div>
+            {% endif %}
             <div class="min-w-0">
                 <a href="/employees/{{ emp.id }}/view" class="text-sm font-bold text-[#1C2B2B] hover:text-[#008080] transition-colors truncate block">
                     {{ emp.name }}

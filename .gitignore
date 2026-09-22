@@ -130,5 +130,23 @@ env/
 *.db
 *.db-journal
 
-# Local Environment Variables
+# Local Environment Variables & Secrets
 .env
+.env.local
+.env.*.local
+service_account.json
+credentials.json
+*.service_account.json
+
+# Local Uploaded Files (Avatars & KYC Documents) - Never push user data
+static/uploads/*
+!static/uploads/.gitkeep
+static/uploads/avatars/*
+!static/uploads/avatars/.gitkeep
+static/uploads/documents/*
+!static/uploads/documents/.gitkeep
+
+# Scratch Scripts & Temporary Files
+scratch/
+*.xlsx
+*.csv

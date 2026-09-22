@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.employee import Employee
 from app.dependencies import verify_password, create_access_token, get_password_hash, require_auth
 from app.config import settings
+from app.utils.rate_limiter import login_rate_limiter
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -26,11 +27,26 @@ async def login(
     password: str = Form(...),
     db: Session = Depends(get_db),
 ):
-    user = db.query(Employee).filter(Employee.email == email).first()
+    clean_email = email.strip().lower()
+    try:
+        login_rate_limiter.check(request, identifier=clean_email)
+    except HTTPException as e:
+        return templates.TemplateResponse(
+            request=request,
+            name="auth/login.html",
+            context={"error": e.detail},
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    user = db.query(Employee).filter(Employee.email == clean_email).first()
     if not user or not verify_password(password, user.hashed_password):
         return templates.TemplateResponse(
-            request, "auth/login.html", {"error": "Invalid email or password"}
+            request=request,
+            name="auth/login.html",
+            context={"error": "Invalid email or password"},
         )
+
+    login_rate_limiter.reset(request, identifier=clean_email)
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(

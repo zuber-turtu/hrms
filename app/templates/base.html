@@ -145,6 +145,13 @@
                             <span>My Profile</span>
                         </a>
                     </li>
+
+                    <li>
+                        <a href="/my-documents" data-nav-link="/my-documents" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="files" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                            <span>My Documents</span>
+                        </a>
+                    </li>
                     
                     <li>
                         <a href="/change-password" data-nav-link="/change-password" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
@@ -164,6 +171,18 @@
                         <a href="/employees" data-nav-link="/employees" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
                             <i data-lucide="users-round" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
                             <span>Employee Directory</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/documents/compliance" data-nav-link="/documents/compliance" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="file-check-2" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                            <span>KYC Compliance</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/documents/types" data-nav-link="/documents/types" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="folder-cog" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                            <span>Document Fields</span>
                         </a>
                     </li>
                     <li>
@@ -196,9 +215,16 @@
         <div class="p-3.5 border-t border-[#003333] bg-[#003333]/50">
             <div class="flex items-center justify-between p-2 rounded-xl bg-[#003B3B] border border-[#005050] mb-2">
                 <div class="flex items-center min-w-0">
+                    {% if user.avatar_url or (user.profile and user.profile.avatar_url) %}
+                    <img src="{{ user.avatar_url or user.profile.avatar_url }}" alt="{{ user.name }}" class="w-8 h-8 rounded-lg object-cover ring-1 ring-[#B3E3E3]/30 shadow-sm shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
+                    <div class="w-8 h-8 rounded-lg bg-[#008080] text-white hidden flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-[#B3E3E3]/20 shrink-0">
+                        {{ user.name[0] if user.name else 'U' }}
+                    </div>
+                    {% else %}
                     <div class="w-8 h-8 rounded-lg bg-[#008080] text-white flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-[#B3E3E3]/20 shrink-0">
                         {{ user.name[0] if user.name else 'U' }}
                     </div>
+                    {% endif %}
                     <div class="ml-2.5 min-w-0">
                         <p class="text-xs font-semibold text-white truncate">{{ user.name }}</p>
                         <span class="inline-block text-[10px] font-medium text-[#80C7C7] capitalize truncate">

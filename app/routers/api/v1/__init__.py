@@ -7,6 +7,7 @@ from .departments import router as departments_router
 from .payroll import router as payroll_router
 from .company import router as company_router
 from .audit import router as audit_router
+from .documents import router as documents_router
 
 api_v1_router = APIRouter(prefix="/api/v1")
 
@@ -17,3 +18,4 @@ api_v1_router.include_router(departments_router)
 api_v1_router.include_router(payroll_router)
 api_v1_router.include_router(company_router)
 api_v1_router.include_router(audit_router)
+api_v1_router.include_router(documents_router)

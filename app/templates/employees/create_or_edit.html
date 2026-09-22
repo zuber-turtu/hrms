@@ -31,7 +31,7 @@
     </div>
 
     <!-- Main Form -->
-    <form action="{{ '/employees/' ~ employee.id ~ '/edit' if employee else '/employees/create' }}" method="POST" class="space-y-6">
+    <form action="{{ '/employees/' ~ employee.id ~ '/edit' if employee else '/employees/create' }}" method="POST" enctype="multipart/form-data" class="space-y-6">
 
         <!-- Section 1: Personal & Contact Information -->
         <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-6">
@@ -41,7 +41,31 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-heading font-bold text-[#1C2B2B] uppercase tracking-wider">Personal & Contact Info</h3>
-                    <p class="text-xs text-[#6B7F7F]">Core personal identity and communication details</p>
+                    <p class="text-xs text-[#6B7F7F]">Core personal identity, profile photo, and communication details</p>
+                </div>
+            </div>
+
+            <!-- Profile Photo Upload Dropzone -->
+            <div class="mb-6 p-4 rounded-xl bg-[#F4F7F7] border border-dashed border-[#B3E3E3] flex flex-col sm:flex-row items-center gap-5">
+                <div class="relative group shrink-0">
+                    <div id="avatar-preview-container" class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-[#008080] to-[#004444] text-white flex items-center justify-center font-bold text-2xl shadow-md ring-2 ring-[#B3E3E3]/60 overflow-hidden">
+                        {% if employee and employee.avatar_url %}
+                            <span id="avatar-placeholder-text" class="hidden">{{ employee.name[0] if employee and employee.name else 'U' }}</span>
+                            <img id="avatar-preview-img" src="{{ employee.avatar_url }}" alt="{{ employee.name }}" class="w-full h-full object-cover" onerror="this.classList.add('hidden'); document.getElementById('avatar-placeholder-text').classList.remove('hidden');">
+                        {% else %}
+                            <span id="avatar-placeholder-text">{{ employee.name[0] if employee and employee.name else 'U' }}</span>
+                            <img id="avatar-preview-img" src="" alt="Preview" class="w-full h-full object-cover hidden">
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex-1 text-center sm:text-left">
+                    <h4 class="text-xs font-bold text-[#1C2B2B] uppercase tracking-wider mb-1">Profile Photo / Avatar</h4>
+                    <p class="text-xs text-[#6B7F7F] mb-3">Upload a professional portrait photo (JPG, PNG, or WEBP, max 5MB). Automatically synced to cloud storage.</p>
+                    <label class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#008080] bg-white border border-[#B3E3E3] hover:bg-[#E0F4F4] hover:border-[#008080] shadow-sm cursor-pointer transition-colors">
+                        <i data-lucide="camera" class="w-3.5 h-3.5 mr-1.5 text-[#008080]"></i> Choose Photo
+                        <input type="file" name="photo" id="photo_input" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden" onchange="previewAvatar(event)">
+                    </label>
+                    <span id="photo-filename" class="text-xs text-[#6B7F7F] ml-2 italic"></span>
                 </div>
             </div>
 
@@ -366,6 +390,31 @@
 </div>
 
 <script>
+    function previewAvatar(event) {
+        const input = event.target;
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const filenameSpan = document.getElementById('photo-filename');
+        if (filenameSpan) {
+            filenameSpan.textContent = file.name;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewImg = document.getElementById('avatar-preview-img');
+            const placeholderText = document.getElementById('avatar-placeholder-text');
+            if (previewImg) {
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('hidden');
+            }
+            if (placeholderText) {
+                placeholderText.classList.add('hidden');
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
     function filterDesignations() {
         const deptSelect = document.getElementById('department_id');
         const desigSelect = document.getElementById('designation_id');

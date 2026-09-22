@@ -24,6 +24,7 @@ from app.models.audit import AuditLog
 from app.config import settings
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
+from app.services.storage import get_storage_provider
 
 router = APIRouter(prefix="/employees")
 templates = Jinja2Templates(directory="app/templates")
@@ -186,6 +187,7 @@ async def create_employee(
     bank_name: str = Form(None),
     account_number: str = Form(None),
     ifsc_code: str = Form(None),
+    photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
@@ -214,9 +216,28 @@ async def create_employee(
     db.add(emp)
     db.flush()
 
+    # Handle Photo Upload if present
+    avatar_url = None
+    photo_file_id = None
+    if photo and photo.filename:
+        file_bytes = await photo.read()
+        if len(file_bytes) > 0:
+            try:
+                storage = get_storage_provider()
+                avatar_url, photo_file_id = storage.upload_file(
+                    file_bytes,
+                    filename=photo.filename,
+                    content_type=photo.content_type or "image/jpeg",
+                    folder="avatars",
+                )
+            except Exception as e:
+                print(f"[create_employee Photo Upload Error] {e}")
+
     # 2. Create Profile
     profile = EmployeeProfile(
         employee_id=emp.id,
+        avatar_url=avatar_url,
+        photo_file_id=photo_file_id,
         phone_number=phone_number,
         home_address=home_address,
         city=city,
@@ -267,6 +288,7 @@ async def create_employee(
 
 
 
+@router.get("/{emp_id}", response_class=HTMLResponse)
 @router.get("/{emp_id}/view", response_class=HTMLResponse)
 async def view_employee(
     emp_id: int,
@@ -359,6 +381,10 @@ async def view_employee(
             "check_out": group_logs[-1].check_out
         })
         
+    # 3. Fetch Document & KYC checklist
+    from app.routers.documents import get_employee_document_checklist
+    doc_data = get_employee_document_checklist(employee, db)
+
     return templates.TemplateResponse(
         request=request,
         name="employees/view.html",
@@ -367,6 +393,9 @@ async def view_employee(
             "employee": employee,
             "payslips": payslips,
             "attendance_logs": attendance_data,
+            "doc_checklist": doc_data["checklist"],
+            "doc_unmapped": doc_data["unmapped_docs"],
+            "doc_summary": doc_data,
         },
     )
 
@@ -433,6 +462,7 @@ async def edit_employee(
     bank_name: str = Form(None),
     account_number: str = Form(None),
     ifsc_code: str = Form(None),
+    photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -514,34 +544,52 @@ async def edit_employee(
     if not employee.profile:
         employee.profile = EmployeeProfile(employee_id=employee.id)
         db.add(employee.profile)
-        employee.profile.phone_number = phone_number
-        employee.profile.home_address = home_address
-        employee.profile.city = city
-        employee.profile.state = state
-        employee.profile.country = country
-        employee.profile.gender = gender
-        employee.profile.qualification = qualification
-        employee.profile.experience = experience
-        employee.profile.aadhar_number = aadhar_number
-        employee.profile.pan_number = pan_number
+    
+    employee.profile.phone_number = phone_number
+    employee.profile.home_address = home_address
+    employee.profile.city = city
+    employee.profile.state = state
+    employee.profile.country = country
+    employee.profile.gender = gender
+    employee.profile.qualification = qualification
+    employee.profile.experience = experience
+    employee.profile.aadhar_number = aadhar_number
+    employee.profile.pan_number = pan_number
 
-        # Bank Account Update
-        if not employee.bank_account:
-            employee.bank_account = EmployeeBankAccount(employee_id=employee.id)
-            db.add(employee.bank_account)
-        employee.bank_account.bank_name = bank_name
-        employee.bank_account.account_number = account_number
-        employee.bank_account.ifsc_code = ifsc_code
+    # Handle Photo Upload if present
+    if photo and photo.filename:
+        file_bytes = await photo.read()
+        if len(file_bytes) > 0:
+            try:
+                storage = get_storage_provider()
+                avatar_url, photo_file_id = storage.upload_file(
+                    file_bytes,
+                    filename=photo.filename,
+                    content_type=photo.content_type or "image/jpeg",
+                    folder="avatars",
+                )
+                employee.profile.avatar_url = avatar_url
+                employee.profile.photo_file_id = photo_file_id
+            except Exception as e:
+                pass
 
-        # Emergency Contact Update
-        if not employee.emergency_contacts:
-            contact = EmployeeEmergencyContact(employee_id=employee.id)
-            employee.emergency_contacts.append(contact)
-            db.add(contact)
-        employee.emergency_contacts[0].contact_name = emergency_contact_name
-        employee.emergency_contacts[0].relationship = emergency_contact_relation
-        employee.emergency_contacts[0].phone_number = emergency_contact
-        db.commit()
+    # Bank Account Update
+    if not employee.bank_account:
+        employee.bank_account = EmployeeBankAccount(employee_id=employee.id)
+        db.add(employee.bank_account)
+    employee.bank_account.bank_name = bank_name
+    employee.bank_account.account_number = account_number
+    employee.bank_account.ifsc_code = ifsc_code
+
+    # Emergency Contact Update
+    if not employee.emergency_contacts:
+        contact = EmployeeEmergencyContact(employee_id=employee.id)
+        employee.emergency_contacts.append(contact)
+        db.add(contact)
+    employee.emergency_contacts[0].contact_name = emergency_contact_name
+    employee.emergency_contacts[0].relationship = emergency_contact_relation
+    employee.emergency_contacts[0].phone_number = emergency_contact
+    db.commit()
 
     response = RedirectResponse(url=f"/employees/{emp_id}/view", status_code=302)
     if current_user.id == emp_id and email != current_user.email:

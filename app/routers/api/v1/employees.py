@@ -27,6 +27,7 @@ from app.schemas.employee import (
     AdminPasswordReset,
 )
 from app.routers.employees import resolve_dept_and_desig
+from app.services.storage import get_storage_provider
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
@@ -46,6 +47,7 @@ def _format_employee_out(emp: Employee) -> EmployeeOut:
         designation_title=emp.designation.title if emp.designation else None,
         joining_date=emp.joining_date,
         is_active=emp.is_active,
+        avatar_url=emp.avatar_url,
         phone_number=emp.phone_number,
         gender=emp.gender,
         home_address=emp.home_address,
@@ -180,6 +182,8 @@ async def api_create_employee(
         profile_data["aadhar_number"] = payload.aadhar_number
     if payload.pan_number:
         profile_data["pan_number"] = payload.pan_number
+    if payload.avatar_url:
+        profile_data["avatar_url"] = payload.avatar_url
 
     profile = EmployeeProfile(employee_id=new_employee.id, **profile_data)
     db.add(profile)
@@ -397,6 +401,8 @@ async def api_update_employee(
         employee.profile.aadhar_number = payload.aadhar_number
     if payload.pan_number is not None:
         employee.profile.pan_number = payload.pan_number
+    if payload.avatar_url is not None:
+        employee.profile.avatar_url = payload.avatar_url
 
     # Bank Account Update
     if payload.bank_name or payload.account_number or payload.ifsc_code:
@@ -412,6 +418,62 @@ async def api_update_employee(
 
     db.commit()
     db.refresh(employee)
+    return _format_employee_out(employee)
+
+
+@router.post("/{emp_id}/avatar", response_model=EmployeeOut)
+async def api_upload_employee_avatar(
+    emp_id: int,
+    file: Optional[UploadFile] = File(None),
+    photo: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(require_auth),
+):
+    """
+    Upload employee profile photo / avatar via pluggable storage engine (Local / Google Drive / S3 / R2).
+    Accepts multipart upload under either 'file' or 'photo' field name.
+    """
+    upload = file or photo
+    if not upload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No file provided. Please attach a file under 'file' or 'photo' field."
+        )
+
+    employee = db.query(Employee).filter(Employee.id == emp_id).first()
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
+        )
+
+    is_admin = current_user.role in ["admin", "hr_admin"]
+    if current_user.id != emp_id and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted"
+        )
+
+    file_bytes = await upload.read()
+    if not file_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file provided"
+        )
+
+    storage = get_storage_provider()
+    avatar_url, photo_file_id = storage.upload_file(
+        file_bytes,
+        filename=upload.filename or "avatar.jpg",
+        content_type=upload.content_type or "image/jpeg",
+        folder="avatars",
+    )
+
+    if not employee.profile:
+        employee.profile = EmployeeProfile(employee_id=employee.id)
+        db.add(employee.profile)
+
+    employee.profile.avatar_url = avatar_url
+    employee.profile.photo_file_id = photo_file_id
+    db.commit()
+    db.refresh(employee)
+
     return _format_employee_out(employee)
 
 

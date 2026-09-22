@@ -14,6 +14,7 @@ class ProfileBase(BaseModel):
     experience: Optional[str] = None
     aadhar_number: Optional[str] = None
     pan_number: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 class ProfileOut(ProfileBase):
@@ -75,8 +76,9 @@ class EmployeeCreate(BaseModel):
     joining_date: Optional[date] = None
     
     # Profile fields (flat or nested)
+    avatar_url: Optional[str] = None
     phone_number: Optional[str] = None
-    phone: Optional[str] = None # alias
+    phone: Optional[str] = None  # alias
     gender: Optional[str] = None
     home_address: Optional[str] = None
     city: Optional[str] = None
@@ -120,8 +122,9 @@ class EmployeeUpdate(BaseModel):
     is_active: Optional[bool] = None
 
     # Profile fields
+    avatar_url: Optional[str] = None
     phone_number: Optional[str] = None
-    phone: Optional[str] = None # alias
+    phone: Optional[str] = None  # alias
     gender: Optional[str] = None
     home_address: Optional[str] = None
     city: Optional[str] = None
@@ -165,7 +168,8 @@ class EmployeeOut(BaseModel):
     joining_date: Optional[date] = None
     is_active: bool
 
-    # Contact & Personal details
+    # Avatar & Contact details
+    avatar_url: Optional[str] = None
     phone_number: Optional[str] = None
     gender: Optional[str] = None
     home_address: Optional[str] = None

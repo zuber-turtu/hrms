@@ -15,9 +15,16 @@
     <!-- Employee Name -->
     <td class="px-6 py-4 whitespace-nowrap">
         <div class="flex items-center space-x-2.5">
+            {% if log.employee.avatar_url or (log.employee.profile and log.employee.profile.avatar_url) %}
+            <img src="{{ log.employee.avatar_url or log.employee.profile.avatar_url }}" alt="{{ log.employee.name }}" class="w-7 h-7 rounded-lg object-cover ring-1 ring-[#B3E3E3] shadow-sm shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
+            <div class="w-7 h-7 rounded-lg bg-[#E0F4F4] text-[#008080] hidden flex items-center justify-center font-bold text-xs shrink-0 border border-[#B3E3E3]">
+                {{ log.employee.name[0] if log.employee.name else 'E' }}
+            </div>
+            {% else %}
             <div class="w-7 h-7 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center font-bold text-xs shrink-0 border border-[#B3E3E3]">
                 {{ log.employee.name[0] if log.employee.name else 'E' }}
             </div>
+            {% endif %}
             <span class="text-sm font-medium text-[#1C2B2B]">{{ log.employee.name }}</span>
         </div>
     </td>
