@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}TURTU HRMS{% endblock %}</title>
+    <title>{% block title %}TURTU HRMS — Enterprise HR & Payroll{% endblock %}</title>
     
-    <!-- Google Fonts: Nunito (UI/Body), Poppins (Headings/Brand), JetBrains Mono (Code/Numbers), Noto Sans Kannada -->
+    <!-- Google Fonts: Nunito (UI/Body), Poppins (Headings/Brand), Noto Sans Kannada (Regional), JetBrains Mono (Financials/Data) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Kannada:wght@400;700&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -20,6 +20,24 @@
         .htmx-request .htmx-indicator,
         .htmx-request.htmx-indicator {
             opacity: 1;
+        }
+        /* Custom smooth thin scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #B3E3E3;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #80C7C7;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #005050;
         }
     </style>
 
@@ -62,11 +80,13 @@
                             slate: '#6B7F7F',
                             foam: '#E8F7F7',
                             alert: '#E53E3E',
+                            rose_light: '#FFE8E8',
                         }
                     },
                     boxShadow: {
-                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02)',
-                        'card-hover': '0 10px 20px -5px rgba(0, 0, 0, 0.04), 0 6px 8px -4px rgba(0, 0, 0, 0.02)',
+                        'card': '0 1px 3px 0 rgba(28, 43, 43, 0.04), 0 1px 2px -1px rgba(28, 43, 43, 0.03)',
+                        'card-hover': '0 4px 6px -1px rgba(28, 43, 43, 0.06), 0 2px 4px -2px rgba(28, 43, 43, 0.04)',
+                        'dropdown': '0 10px 15px -3px rgba(28, 43, 43, 0.08), 0 4px 6px -4px rgba(28, 43, 43, 0.04)',
                     }
                 }
             }
@@ -82,53 +102,53 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
-<body class="h-full flex overflow-hidden font-sans text-[#1C2B2B] antialiased bg-[#F4F7F7]">
+<body class="h-full flex overflow-hidden font-sans text-slate-900 antialiased bg-slate-50 selection:bg-teal-500 selection:text-white">
 
     {% if user %}
     <!-- Mobile Sidebar Backdrop Overlay -->
-    <div id="sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 z-40 bg-[#004444]/60 backdrop-blur-sm hidden md:hidden transition-opacity duration-300"></div>
+    <div id="sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs hidden md:hidden transition-opacity duration-300"></div>
 
     <!-- Sidebar Navigation -->
-    <aside id="sidebar-menu" class="fixed inset-y-0 left-0 z-50 w-64 bg-[#004444] text-[#E0F4F4] flex flex-col h-full shrink-0 shadow-2xl transition-transform duration-300 transform -translate-x-full md:translate-x-0 md:static border-r border-[#003333]">
+    <aside id="sidebar-menu" class="fixed inset-y-0 left-0 z-50 w-64 bg-[#002626] text-teal-100 flex flex-col h-full shrink-0 shadow-xl transition-transform duration-300 transform -translate-x-full md:translate-x-0 md:static border-r border-[#001D1D]">
         
         <!-- App Brand Logo -->
-        <div class="h-16 flex items-center justify-between px-6 border-b border-[#003333] bg-[#003333]/50">
+        <div class="h-16 flex items-center justify-between px-5 border-b border-[#001D1D] bg-[#001E1E]">
             <a href="/dashboard" class="flex items-center space-x-3 group">
-                <img src="/static/images/icon.jpeg" alt="Logo" class="w-9 h-9 object-contain rounded-xl bg-slate-950 p-0.5 shadow-md shadow-[#008080]/20 group-hover:scale-105 transition-transform shrink-0">
+                <img src="/static/images/icon.jpeg" alt="Logo" class="w-8 h-8 object-contain rounded-lg bg-slate-950 p-0.5 shadow-sm group-hover:scale-105 transition-transform shrink-0">
                 <div class="flex flex-col">
-                    <span class="text-base font-bold text-white tracking-tight leading-tight font-heading">TURTU<span class="text-[#80C7C7]"> HRMS</span></span>
-                    <span class="text-[10px] uppercase font-semibold tracking-wider text-[#80C7C7]">Enterprise HR</span>
+                    <span class="text-sm font-bold text-white tracking-tight leading-tight font-heading">TURTU <span class="text-teal-400">HRMS</span></span>
+                    <span class="text-[10px] uppercase font-semibold tracking-wider text-teal-300/80">Enterprise Platform</span>
                 </div>
             </a>
-            <button onclick="toggleMobileSidebar()" class="md:hidden text-[#B3E3E3] hover:text-white p-1 rounded-lg hover:bg-[#005050]">
+            <button onclick="toggleMobileSidebar()" class="md:hidden text-teal-300 hover:text-white p-1 rounded-lg hover:bg-teal-900/50">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
         
         <!-- Nav Items -->
-        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-6 sidebar-scroll">
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-5 sidebar-scroll text-xs">
             
             <!-- Main Section -->
             <div>
-                <div class="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-[#80C7C7]">Main Menu</div>
-                <ul class="space-y-1">
+                <div class="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-400/70">Main Menu</div>
+                <ul class="space-y-0.5">
                     <li>
-                        <a href="/dashboard" data-nav-link="/dashboard" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="layout-dashboard" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                        <a href="/dashboard" data-nav-link="/dashboard" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="layout-dashboard" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
                             <span>Dashboard</span>
                         </a>
                     </li>
                     
                     <li>
-                        <a href="/attendance" data-nav-link="/attendance" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="calendar-clock" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                        <a href="/attendance" data-nav-link="/attendance" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="calendar-clock" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
                             <span>Attendance Log</span>
                         </a>
                     </li>
                     
                     <li>
-                        <a href="/payroll" data-nav-link="/payroll" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="wallet-cards" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                        <a href="/payroll" data-nav-link="/payroll" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="wallet-cards" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
                             <span>Payroll & Payslips</span>
                         </a>
                     </li>
@@ -137,26 +157,26 @@
 
             <!-- Account Section -->
             <div>
-                <div class="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-[#80C7C7]">My Account</div>
-                <ul class="space-y-1">
+                <div class="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-400/70">Self Service</div>
+                <ul class="space-y-0.5">
                     <li>
-                        <a href="/employees/{{ user.id }}/view" data-nav-link="/employees/{{ user.id }}/view" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="user-check" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                        <a href="/employees/{{ user.id }}/view" data-nav-link="/employees/{{ user.id }}/view" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="user-check" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
                             <span>My Profile</span>
                         </a>
                     </li>
 
                     <li>
-                        <a href="/my-documents" data-nav-link="/my-documents" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="files" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
-                            <span>My Documents</span>
+                        <a href="/my-documents" data-nav-link="/my-documents" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="files" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
+                            <span>My Documents & KYC</span>
                         </a>
                     </li>
                     
                     <li>
-                        <a href="/change-password" data-nav-link="/change-password" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="shield-check" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
-                            <span>Security Credentials</span>
+                        <a href="/change-password" data-nav-link="/change-password" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="shield-check" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
+                            <span>Security & Password</span>
                         </a>
                     </li>
                 </ul>
@@ -165,42 +185,42 @@
             <!-- Administration Section -->
             {% if user.role in ['admin', 'hr_admin'] %}
             <div>
-                <div class="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-[#80C7C7]">Administration</div>
-                <ul class="space-y-1">
+                <div class="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-400/70">Administration</div>
+                <ul class="space-y-0.5">
                     <li>
-                        <a href="/employees" data-nav-link="/employees" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="users-round" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                        <a href="/employees" data-nav-link="/employees" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="users-round" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
                             <span>Employee Directory</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/documents/compliance" data-nav-link="/documents/compliance" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="file-check-2" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
-                            <span>KYC Compliance</span>
+                        <a href="/documents/compliance" data-nav-link="/documents/compliance" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="file-check-2" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
+                            <span>KYC Compliance Matrix</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/documents/types" data-nav-link="/documents/types" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="folder-cog" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
-                            <span>Document Fields</span>
+                        <a href="/documents/types" data-nav-link="/documents/types" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="folder-cog" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
+                            <span>Document Types</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/departments" data-nav-link="/departments" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="network" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                        <a href="/departments" data-nav-link="/departments" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="network" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
                             <span>Departments & Roles</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/company/profile" data-nav-link="/company/profile" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="settings-2" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                        <a href="/company/profile" data-nav-link="/company/profile" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="settings-2" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
                             <span>Company Settings</span>
                         </a>
                     </li>
                     {% if user.role == 'admin' %}
                     <li>
-                        <a href="/audit" data-nav-link="/audit" class="nav-item flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium text-[#E0F4F4] hover:bg-[#005050] hover:text-white transition-all duration-150 group">
-                            <i data-lucide="scroll-text" class="w-4 h-4 mr-3 text-[#B3E3E3] group-hover:text-white transition-colors"></i>
+                        <a href="/audit" data-nav-link="/audit" class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group">
+                            <i data-lucide="scroll-text" class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors"></i>
                             <span>Audit Logs</span>
                         </a>
                     </li>
@@ -212,27 +232,27 @@
         </nav>
         
         <!-- Sidebar User Footer Card -->
-        <div class="p-3.5 border-t border-[#003333] bg-[#003333]/50">
-            <div class="flex items-center justify-between p-2 rounded-xl bg-[#003B3B] border border-[#005050] mb-2">
+        <div class="p-3 border-t border-[#001D1D] bg-[#001E1E]">
+            <div class="flex items-center justify-between p-2 rounded-lg bg-[#002D2D] border border-[#004040]">
                 <div class="flex items-center min-w-0">
                     {% if user.avatar_url or (user.profile and user.profile.avatar_url) %}
-                    <img src="{{ user.avatar_url or user.profile.avatar_url }}" alt="{{ user.name }}" class="w-8 h-8 rounded-lg object-cover ring-1 ring-[#B3E3E3]/30 shadow-sm shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
-                    <div class="w-8 h-8 rounded-lg bg-[#008080] text-white hidden flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-[#B3E3E3]/20 shrink-0">
+                    <img src="{{ user.avatar_url or user.profile.avatar_url }}" alt="{{ user.name }}" class="w-8 h-8 rounded-lg object-cover ring-1 ring-teal-500/30 shadow-xs shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
+                    <div class="w-8 h-8 rounded-lg bg-teal-700 text-white hidden flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
                         {{ user.name[0] if user.name else 'U' }}
                     </div>
                     {% else %}
-                    <div class="w-8 h-8 rounded-lg bg-[#008080] text-white flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-[#B3E3E3]/20 shrink-0">
+                    <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
                         {{ user.name[0] if user.name else 'U' }}
                     </div>
                     {% endif %}
                     <div class="ml-2.5 min-w-0">
-                        <p class="text-xs font-semibold text-white truncate">{{ user.name }}</p>
-                        <span class="inline-block text-[10px] font-medium text-[#80C7C7] capitalize truncate">
+                        <p class="text-xs font-semibold text-white truncate leading-tight">{{ user.name }}</p>
+                        <span class="inline-block text-[10px] font-medium text-teal-300 capitalize truncate">
                             {{ user.role.replace('_', ' ') }}
                         </span>
                     </div>
                 </div>
-                <a href="/logout" title="Sign out" class="p-1.5 text-[#B3E3E3] hover:text-rose-400 hover:bg-[#004444] rounded-lg transition-colors ml-1">
+                <a href="/logout" title="Sign out" class="p-1.5 text-teal-300 hover:text-rose-400 hover:bg-[#003838] rounded-md transition-colors ml-1">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                 </a>
             </div>
@@ -241,18 +261,18 @@
     {% endif %}
 
     <!-- Main Content Area -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#F4F7F7] min-w-0">
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 min-w-0">
         
         <!-- Top Navigation Bar -->
-        <header class="h-16 bg-white border-b border-[#B3E3E3]/60 flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 z-10 shadow-sm">
-            <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
+        <header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 shadow-xs">
+            <div class="flex items-center space-x-3 min-w-0">
                 {% if user %}
-                <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-[#6B7F7F] hover:text-[#1C2B2B] hover:bg-[#E0F4F4] rounded-lg focus:outline-none">
+                <button onclick="toggleMobileSidebar()" class="md:hidden p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg focus:outline-none">
                     <i data-lucide="menu" class="w-5 h-5"></i>
                 </button>
                 {% endif %}
                 <div class="min-w-0">
-                    <h1 class="text-base sm:text-lg font-bold text-[#1C2B2B] tracking-tight truncate font-heading">
+                    <h1 class="text-sm sm:text-base font-semibold text-slate-900 tracking-tight truncate font-heading">
                         {% block header_title %}HRMS Portal{% endblock %}
                     </h1>
                 </div>
@@ -266,33 +286,33 @@
         </header>
 
         <!-- Main Scrollable Body Content -->
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7">
             <div class="max-w-7xl mx-auto space-y-6">
                 
                 <!-- Global Flash Notifications -->
                 {% if request.query_params.get('success') %}
-                <div class="flash-message bg-[#E8F7F7] border border-[#B3E3E3] rounded-2xl p-4 shadow-sm flex items-start space-x-3.5 animate-fadeIn">
-                    <div class="p-1.5 rounded-xl bg-[#E0F4F4] text-[#005050] shrink-0">
+                <div class="flash-message bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 shadow-xs flex items-start space-x-3 animate-fadeIn">
+                    <div class="p-1 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
                         <i data-lucide="check-circle-2" class="w-4 h-4"></i>
                     </div>
-                    <div class="flex-1 text-xs sm:text-sm font-semibold text-[#005050] leading-snug pt-0.5">
+                    <div class="flex-1 text-xs sm:text-sm font-medium text-emerald-800 leading-snug pt-0.5">
                         {{ request.query_params.get('success') }}
                     </div>
-                    <button onclick="this.closest('.flash-message').remove()" class="text-[#005050] hover:text-[#004444] p-1 rounded-lg hover:bg-[#B3E3E3]/40 transition-colors">
+                    <button onclick="this.closest('.flash-message').remove()" class="text-emerald-600 hover:text-emerald-800 p-1 rounded-lg hover:bg-emerald-100 transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
                 {% endif %}
 
                 {% if request.query_params.get('error') %}
-                <div class="flash-message bg-[#FFE8E8] border border-rose-200 rounded-2xl p-4 shadow-sm flex items-start space-x-3.5 animate-fadeIn">
-                    <div class="p-1.5 rounded-xl bg-rose-100 text-[#E53E3E] shrink-0">
+                <div class="flash-message bg-rose-50 border border-rose-200 rounded-xl p-3.5 shadow-xs flex items-start space-x-3 animate-fadeIn">
+                    <div class="p-1 rounded-lg bg-rose-100 text-rose-700 shrink-0">
                         <i data-lucide="alert-triangle" class="w-4 h-4"></i>
                     </div>
-                    <div class="flex-1 text-xs sm:text-sm font-semibold text-[#E53E3E] leading-snug pt-0.5">
+                    <div class="flex-1 text-xs sm:text-sm font-medium text-rose-800 leading-snug pt-0.5">
                         {{ request.query_params.get('error') }}
                     </div>
-                    <button onclick="this.closest('.flash-message').remove()" class="text-rose-500 hover:text-rose-700 p-1 rounded-lg hover:bg-rose-100/50 transition-colors">
+                    <button onclick="this.closest('.flash-message').remove()" class="text-rose-500 hover:text-rose-700 p-1 rounded-lg hover:bg-rose-100 transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>

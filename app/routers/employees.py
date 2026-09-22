@@ -702,17 +702,24 @@ async def import_employees(
     
     imported_count = 0
     skipped_count = 0
+    seen_emails_in_batch = set()
     
     rows = list(sheet.iter_rows(values_only=True))
     if len(rows) > 1:
         # Skip header row
         for row in rows[1:]:
-            email = clean_str(row[2])
+            email = clean_str(row[2]).strip().lower()
             if not email:
                 continue
+            
+            # Check 1: Duplicate inside the uploaded Excel sheet itself
+            if email in seen_emails_in_batch:
+                skipped_count += 1
+                continue
+            seen_emails_in_batch.add(email)
                 
-            # Check if exists
-            existing = db.query(Employee).filter(Employee.email == email).first()
+            # Check 2: Duplicate in Database (Employee already exists by email)
+            existing = db.query(Employee).filter(func.lower(Employee.email) == email).first()
             if existing:
                 skipped_count += 1
                 continue
@@ -777,6 +784,19 @@ async def import_employees(
 
             imported_count += 1
             
+        db.commit()
+
+        # Audit Log entry for the batch import
+        audit = AuditLog(
+            actor_id=current_user.id,
+            actor_email=current_user.email,
+            action="BULK_EMPLOYEE_IMPORT",
+            entity="Employee",
+            entity_id=0,
+            old_value="[EXCEL_FILE_UPLOAD]",
+            new_value=f"Imported {imported_count} new employees, skipped {skipped_count} duplicates",
+        )
+        db.add(audit)
         db.commit()
         
     return RedirectResponse(url=f"/employees?imported={imported_count}&skipped={skipped_count}", status_code=302)

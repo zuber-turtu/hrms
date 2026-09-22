@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-50">
+<html lang="en" class="h-full bg-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,20 +35,6 @@
                             700: '#005050',
                             800: '#004444',
                             900: '#1C2B2B',
-                        },
-                        turtu: {
-                            teal: '#008080',
-                            dark: '#004444',
-                            mist: '#E0F4F4',
-                            light: '#B3E3E3',
-                            wash: '#F4F7F7',
-                            mint: '#EAF7F5',
-                            saffron: '#FF8C42',
-                            turmeric: '#F2C94C',
-                            forest: '#1C2B2B',
-                            slate: '#6B7F7F',
-                            foam: '#E8F7F7',
-                            alert: '#E53E3E',
                         }
                     }
                 }
@@ -64,41 +50,43 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
-<body class="h-full flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-[#004444] via-[#003B3B] to-[#1C2B2B] font-sans antialiased text-[#1C2B2B]">
+<body class="h-full flex items-center justify-center p-4 sm:p-6 bg-slate-900 font-sans antialiased text-slate-900">
 
     <div class="w-full max-w-md">
         
         <!-- App Logo & Branding Header -->
         <div class="text-center mb-8">
-            <img src="/static/images/icon.jpeg" alt="TURTU Logo" class="w-16 h-16 object-contain rounded-2xl bg-slate-950 p-1 mb-4 shadow-xl ring-4 ring-[#008080]/30 mx-auto">
-            <h1 class="text-2xl font-extrabold text-white tracking-tight font-heading">TURTU<span class="text-[#80C7C7]"> HRMS</span></h1>
-            <p class="text-xs text-[#B3E3E3] mt-1">Enterprise Human Resource Management System</p>
+            <div class="inline-flex items-center justify-center p-1.5 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl mb-3.5">
+                <img src="/static/images/icon.jpeg" alt="TURTU Logo" class="w-12 h-12 object-contain rounded-xl">
+            </div>
+            <h1 class="text-2xl font-bold text-white tracking-tight font-heading">TURTU <span class="text-teal-400">HRMS</span></h1>
+            <p class="text-xs text-slate-400 mt-1">Enterprise Human Resource Management System</p>
         </div>
 
         <!-- Login Card -->
-        <div class="bg-white rounded-2xl shadow-2xl p-7 sm:p-8 border border-[#B3E3E3]/60">
-            <div class="mb-6">
-                <h2 class="text-lg font-bold text-[#1C2B2B] font-heading">Sign in to your account</h2>
-                <p class="text-xs text-[#6B7F7F] mt-0.5">Please enter your company email and password.</p>
+        <div class="bg-white rounded-xl shadow-2xl p-7 sm:p-8 border border-slate-200">
+            <div class="mb-6 pb-4 border-b border-slate-100">
+                <h2 class="text-base font-bold text-slate-900 font-heading">Sign in to your account</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Enter your corporate credentials to continue</p>
             </div>
             
             {% if error %}
-            <div class="mb-5 bg-[#FFE8E8] border border-rose-200 rounded-xl p-3.5 flex items-start space-x-3">
-                <div class="p-1 rounded-full bg-rose-100 text-[#E53E3E] shrink-0">
+            <div class="mb-4 bg-rose-50 border border-rose-200 rounded-lg p-3 flex items-start space-x-2.5">
+                <div class="p-0.5 rounded text-rose-600 shrink-0">
                     <i data-lucide="alert-circle" class="w-4 h-4"></i>
                 </div>
-                <div class="text-xs font-semibold text-[#E53E3E]">
+                <div class="text-xs font-semibold text-rose-700">
                     {{ error }}
                 </div>
             </div>
             {% endif %}
 
             {% if success %}
-            <div class="mb-5 bg-[#E8F7F7] border border-[#B3E3E3] rounded-xl p-3.5 flex items-start space-x-3">
-                <div class="p-1 rounded-full bg-[#E0F4F4] text-[#005050] shrink-0">
+            <div class="mb-4 bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-start space-x-2.5">
+                <div class="p-0.5 rounded text-emerald-600 shrink-0">
                     <i data-lucide="check-circle" class="w-4 h-4"></i>
                 </div>
-                <div class="text-xs font-semibold text-[#005050]">
+                <div class="text-xs font-semibold text-emerald-700">
                     {{ success }}
                 </div>
             </div>
@@ -106,34 +94,40 @@
 
             <form action="/login" method="POST" class="space-y-4">
                 <div>
-                    <label for="email" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Email address</label>
-                    <div class="relative rounded-lg shadow-sm">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
+                    <label for="email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Work Email</label>
+                    <div class="relative rounded-lg">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                             <i data-lucide="mail" class="w-4 h-4"></i>
                         </div>
-                        <input type="email" name="email" id="email" required placeholder="name@company.com" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg pl-10 pr-3.5 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] transition-colors">
+                        <input type="email" name="email" id="email" required placeholder="name@company.com" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg pl-9 pr-3.5 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                     </div>
                 </div>
 
                 <div>
-                    <label for="password" class="block text-xs font-semibold text-[#1C2B2B] uppercase tracking-wider mb-1.5">Password</label>
-                    <div class="relative rounded-lg shadow-sm">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Password</label>
+                    </div>
+                    <div class="relative rounded-lg">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                             <i data-lucide="lock" class="w-4 h-4"></i>
                         </div>
-                        <input type="password" name="password" id="password" required placeholder="••••••••" class="w-full text-sm bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg pl-10 pr-10 py-2.5 text-[#1C2B2B] focus:bg-white focus:outline-none focus:border-[#008080] transition-colors">
-                        <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#6B7F7F] hover:text-[#1C2B2B] focus:outline-none">
+                        <input type="password" name="password" id="password" required placeholder="••••••••" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg pl-9 pr-9 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
                             <i data-lucide="eye" id="password-toggle-icon" class="w-4 h-4"></i>
                         </button>
                     </div>
                 </div>
 
                 <div class="pt-2">
-                    <button type="submit" class="w-full flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-[#008080] hover:bg-[#006666] shadow-md shadow-[#008080]/30 transition-all active:scale-[0.98]">
-                        <i data-lucide="log-in" class="w-4 h-4 mr-2"></i> Sign In
+                    <button type="submit" class="w-full flex items-center justify-center py-2 px-4 rounded-lg text-xs sm:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors active:scale-[0.98]">
+                        <i data-lucide="log-in" class="w-4 h-4 mr-2"></i> Sign In to Portal
                     </button>
                 </div>
             </form>
+        </div>
+
+        <div class="text-center mt-6">
+            <p class="text-[11px] text-slate-400">© 2026 TURTU HRMS. Authenticated Session Protected.</p>
         </div>
 
     </div>

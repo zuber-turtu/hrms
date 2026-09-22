@@ -8,6 +8,9 @@ from app.database import get_db
 from app.dependencies import require_auth
 from app.models.employee import Employee
 from app.models.attendance import Attendance
+from app.models.document import EmployeeDocument
+from app.models.payroll import Payslip
+from app.models.department import Department
 
 from app.utils.timezone import get_ist_today
 
@@ -27,9 +30,46 @@ async def dashboard(
         Attendance.date == today
     ).first()
     
+    stats = {}
+    recent_attendances = []
+    if current_user.role in ['admin', 'hr_admin']:
+        stats['total_employees'] = db.query(Employee).filter(Employee.is_active == True).count()
+        stats['present_today'] = db.query(Attendance).filter(
+            Attendance.date == today,
+            Attendance.check_in.isnot(None)
+        ).count()
+        stats['pending_docs'] = db.query(EmployeeDocument).filter(
+            EmployeeDocument.status == 'pending'
+        ).count()
+        stats['draft_payslips'] = db.query(Payslip).filter(
+            Payslip.status == 'draft'
+        ).count()
+        recent_attendances = db.query(Attendance).filter(
+            Attendance.date == today
+        ).order_by(Attendance.check_in.desc()).limit(5).all()
+    else:
+        # For regular employee, get personal monthly attendance count & latest payslip
+        stats['my_present_days'] = db.query(Attendance).filter(
+            Attendance.employee_id == current_user.id,
+            Attendance.date >= today.replace(day=1),
+            Attendance.check_in.isnot(None)
+        ).count()
+        stats['my_pending_docs'] = db.query(EmployeeDocument).filter(
+            EmployeeDocument.employee_id == current_user.id,
+            EmployeeDocument.status == 'pending'
+        ).count()
+        stats['latest_payslip'] = db.query(Payslip).filter(
+            Payslip.employee_id == current_user.id
+        ).order_by(Payslip.year.desc(), Payslip.month.desc()).first()
+
     return templates.TemplateResponse(
         request, 
         "dashboard/dashboard.html", 
-        {"user": current_user, "attendance_today": attendance_today}
+        {
+            "user": current_user, 
+            "attendance_today": attendance_today,
+            "stats": stats,
+            "recent_attendances": recent_attendances,
+            "today": today
+        }
     )
-

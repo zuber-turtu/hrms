@@ -1,75 +1,75 @@
 {% extends "base.html" %}
 
-{% block header_title %}Document Compliance & Verification Report{% endblock %}
+{% block header_title %}Document Compliance & KYC Audit{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto space-y-6">
+<div class="space-y-5">
 
     <!-- Top Action Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <div class="flex items-center space-x-2">
-                <a href="/dashboard" class="text-xs font-semibold text-[#6B7F7F] hover:text-[#008080] transition-colors flex items-center">
+                <a href="/dashboard" class="text-xs font-semibold text-slate-500 hover:text-teal-700 transition-colors flex items-center">
                     <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1"></i> Dashboard
                 </a>
             </div>
-            <h2 class="text-xl font-heading font-bold text-[#1C2B2B] tracking-tight mt-1">
-                Document Compliance & Verification Report
+            <h2 class="text-lg sm:text-xl font-bold font-heading text-slate-900 tracking-tight mt-1">
+                KYC Compliance & Verification Report
             </h2>
-            <p class="text-xs text-[#6B7F7F] mt-0.5">
-                Track employee KYC verification status, missing mandatory paperwork, and compliance completion rates.
+            <p class="text-xs text-slate-500 mt-0.5">
+                Audit company-wide document verification progress, identify missing paperwork, and review submissions
             </p>
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2">
             {% if user.role in ['admin', 'hr_admin'] %}
-            <a href="/documents/types" class="inline-flex items-center px-3.5 py-2 border border-[#B3E3E3] rounded-xl text-xs sm:text-sm font-semibold text-[#1C2B2B] bg-white hover:bg-[#F4F7F7] shadow-sm transition-colors">
-                <i data-lucide="settings" class="w-4 h-4 mr-1.5 text-[#6B7F7F]"></i> Configure Fields
+            <a href="/documents/types" class="inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs">
+                <i data-lucide="settings" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Configure Fields
             </a>
             {% endif %}
         </div>
     </div>
 
     <!-- Summary Metrics Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div class="bg-white rounded-2xl p-5 border border-[#B3E3E3]/60 shadow-sm">
-            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Total Staff</p>
-            <p class="text-2xl font-heading font-extrabold text-[#1C2B2B] mt-1">{{ total_employees }}</p>
-            <p class="text-[11px] text-[#008080] mt-0.5">Active profiles</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Staff</p>
+            <p class="text-2xl font-bold font-mono text-slate-900 mt-1">{{ total_employees }}</p>
+            <p class="text-[11px] text-teal-700 font-medium mt-0.5">Active profiles</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-[#B3E3E3]/60 shadow-sm">
-            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Fully Compliant</p>
-            <p class="text-2xl font-heading font-extrabold text-emerald-600 mt-1">{{ total_compliant }}</p>
-            <p class="text-[11px] text-[#6B7F7F] mt-0.5">100% Verified KYC</p>
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Fully Compliant</p>
+            <p class="text-2xl font-bold font-mono text-emerald-700 mt-1">{{ total_compliant }}</p>
+            <p class="text-[11px] text-emerald-700 mt-0.5">100% Verified</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-[#B3E3E3]/60 shadow-sm">
-            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Compliance Rate</p>
-            <p class="text-2xl font-heading font-extrabold text-[#008080] mt-1">{{ overall_compliance_rate }}%</p>
-            <p class="text-[11px] text-[#6B7F7F] mt-0.5">Company-wide score</p>
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Compliance Rate</p>
+            <p class="text-2xl font-bold font-mono text-teal-700 mt-1">{{ overall_compliance_rate }}%</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Organization score</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-[#B3E3E3]/60 shadow-sm">
-            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Pending Review</p>
-            <p class="text-2xl font-heading font-extrabold text-amber-600 mt-1">{{ total_pending_verifications }}</p>
-            <p class="text-[11px] text-[#6B7F7F] mt-0.5">Awaiting HR action</p>
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Review</p>
+            <p class="text-2xl font-bold font-mono text-amber-700 mt-1">{{ total_pending_verifications }}</p>
+            <p class="text-[11px] text-amber-700 mt-0.5">Awaiting HR action</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-[#B3E3E3]/60 shadow-sm">
-            <p class="text-xs font-semibold text-[#6B7F7F] uppercase tracking-wider">Rejected Items</p>
-            <p class="text-2xl font-heading font-extrabold text-rose-600 mt-1">{{ total_rejected }}</p>
-            <p class="text-[11px] text-[#6B7F7F] mt-0.5">Needs re-upload</p>
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Rejected Items</p>
+            <p class="text-2xl font-bold font-mono text-rose-700 mt-1">{{ total_rejected }}</p>
+            <p class="text-[11px] text-rose-700 mt-0.5">Needs re-upload</p>
         </div>
     </div>
 
     <!-- Filter Bar -->
-    <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm p-4">
-        <form method="GET" action="/documents/compliance" class="flex flex-wrap items-center gap-4">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-card p-3.5">
+        <form method="GET" action="/documents/compliance" class="flex flex-wrap items-center gap-3">
             {% if user.role in ['admin', 'hr_admin'] %}
-            <div class="min-w-[200px]">
-                <label for="department_id" class="block text-[11px] font-bold text-[#1C2B2B] uppercase tracking-wider mb-1">Department</label>
-                <select name="department_id" onchange="this.form.submit()" class="w-full text-xs bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3 py-2 text-[#1C2B2B] focus:outline-none focus:border-[#008080]">
+            <div class="min-w-[180px]">
+                <label for="department_id" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
+                <select name="department_id" onchange="this.form.submit()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
                     <option value="">All Departments</option>
                     {% for d in departments %}
                         <option value="{{ d.id }}" {{ 'selected' if selected_dept == d.id else '' }}>{{ d.name }}</option>
@@ -78,9 +78,9 @@
             </div>
             {% endif %}
 
-            <div class="min-w-[200px]">
-                <label for="status_filter" class="block text-[11px] font-bold text-[#1C2B2B] uppercase tracking-wider mb-1">Compliance Status</label>
-                <select name="status_filter" onchange="this.form.submit()" class="w-full text-xs bg-[#F4F7F7] border border-[#B3E3E3] rounded-lg px-3 py-2 text-[#1C2B2B] focus:outline-none focus:border-[#008080]">
+            <div class="min-w-[180px]">
+                <label for="status_filter" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Compliance Status</label>
+                <select name="status_filter" onchange="this.form.submit()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
                     <option value="">All Statuses</option>
                     <option value="compliant" {{ 'selected' if selected_status == 'compliant' else '' }}>Fully Compliant (100%)</option>
                     <option value="pending" {{ 'selected' if selected_status == 'pending' else '' }}>Has Pending Verifications</option>
@@ -89,85 +89,86 @@
             </div>
 
             <div class="self-end pb-0.5">
-                <a href="/documents/compliance" class="inline-flex items-center px-3 py-2 text-xs font-semibold text-[#6B7F7F] hover:text-[#1C2B2B]">
-                    Reset Filters
+                <a href="/documents/compliance" class="inline-flex items-center px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900">
+                    Reset
                 </a>
             </div>
         </form>
     </div>
 
     <!-- Compliance Table -->
-    <div class="bg-white rounded-2xl border border-[#B3E3E3]/60 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs sm:text-sm">
-                <thead>
-                    <tr class="bg-[#E0F4F4]/50 border-b border-[#B3E3E3]/40 text-[#006666] font-heading font-bold text-[11px] uppercase tracking-wider">
-                        <th class="py-3.5 px-5">Employee</th>
-                        <th class="py-3.5 px-4">Department & Role</th>
-                        <th class="py-3.5 px-4">Mandatory Verified</th>
-                        <th class="py-3.5 px-4">Compliance %</th>
-                        <th class="py-3.5 px-4">Pending Review</th>
-                        <th class="py-3.5 px-5 text-right">Actions</th>
+            <table class="min-w-full divide-y divide-slate-200 text-xs">
+                <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                    <tr>
+                        <th class="py-3 px-5 text-left">Employee</th>
+                        <th class="py-3 px-4 text-left">Department & Role</th>
+                        <th class="py-3 px-4 text-left">Mandatory Verified</th>
+                        <th class="py-3 px-4 text-left">Compliance %</th>
+                        <th class="py-3 px-4 text-left">Pending Review</th>
+                        <th class="py-3 px-5 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[#B3E3E3]/30 text-[#1C2B2B]">
+                <tbody class="divide-y divide-slate-100 bg-white">
                     {% for row in report_data %}
                     {% set emp = row.employee %}
-                    <tr class="hover:bg-[#F4F7F7]/60 transition-colors">
-                        <td class="py-3.5 px-5">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#008080] to-[#004444] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-3.5 px-5 whitespace-nowrap">
+                            <div class="flex items-center space-x-2.5">
+                                <div class="w-7 h-7 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
                                     {{ emp.name[0] if emp.name else 'E' }}
                                 </div>
                                 <div>
-                                    <a href="/employees/{{ emp.id }}#documents" class="font-bold text-[#1C2B2B] hover:text-[#008080] transition-colors">
+                                    <a href="/employees/{{ emp.id }}/view#documents" class="font-bold text-slate-900 hover:text-teal-700 transition-colors block">
                                         {{ emp.name }}
                                     </a>
-                                    <span class="text-xs text-[#6B7F7F] block">{{ emp.email }}</span>
+                                    <span class="text-[11px] text-slate-500 block">{{ emp.email }}</span>
                                 </div>
                             </div>
                         </td>
-                        <td class="py-3.5 px-4">
-                            <span class="font-medium text-[#1C2B2B] block">{{ emp.department or 'No Dept' }}</span>
-                            <span class="text-xs text-[#6B7F7F]">{{ emp.designation or emp.role | title }}</span>
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <span class="font-semibold text-slate-900 block">{{ emp.department or 'General' }}</span>
+                            <span class="text-[11px] text-slate-500">{{ emp.designation or emp.role.replace('_', ' ') | title }}</span>
                         </td>
-                        <td class="py-3.5 px-4">
-                            <div class="flex items-center space-x-2">
-                                <span class="font-bold text-[#1C2B2B]">{{ row.mandatory_verified }} / {{ row.mandatory_total }}</span>
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <div class="flex items-center space-x-1.5 font-mono font-bold text-slate-900">
+                                <span>{{ row.mandatory_verified }} / {{ row.mandatory_total }}</span>
                                 {% if row.is_compliant %}
-                                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+                                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
                                 {% endif %}
                             </div>
                         </td>
-                        <td class="py-3.5 px-4">
-                            <div class="w-32">
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <div class="w-28">
                                 <div class="flex items-center justify-between text-[11px] mb-1 font-semibold">
-                                    <span class="{{ 'text-emerald-700' if row.compliance_percent == 100 else 'text-amber-700' }}">{{ row.compliance_percent }}%</span>
+                                    <span class="{{ 'text-emerald-700 font-bold' if row.compliance_percent == 100 else 'text-amber-700 font-bold' }} font-mono">{{ row.compliance_percent }}%</span>
                                 </div>
-                                <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div class="h-full {{ 'bg-emerald-500' if row.compliance_percent == 100 else 'bg-amber-500' }} rounded-full" style="width: {{ row.compliance_percent }}%"></div>
                                 </div>
                             </div>
                         </td>
-                        <td class="py-3.5 px-4">
+                        <td class="py-3.5 px-4 whitespace-nowrap">
                             {% if row.pending_count > 0 %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 font-mono">
                                     {{ row.pending_count }} Pending
                                 </span>
                             {% else %}
-                                <span class="text-xs text-[#6B7F7F]">—</span>
+                                <span class="text-xs text-slate-400 font-mono">—</span>
                             {% endif %}
                         </td>
-                        <td class="py-3.5 px-5 text-right">
-                            <a href="/employees/{{ emp.id }}#documents" class="inline-flex items-center px-3 py-1.5 border border-[#B3E3E3] rounded-xl text-xs font-semibold text-[#006666] bg-[#E0F4F4] hover:bg-[#d0efef] transition-colors">
-                                <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1 text-[#008080]"></i> Review Dossier
+                        <td class="py-3.5 px-5 text-right whitespace-nowrap">
+                            <a href="/employees/{{ emp.id }}/view#documents" class="inline-flex items-center px-2.5 py-1 border border-slate-300 rounded-md text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
+                                <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1 text-teal-700"></i> Review Dossier
                             </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="py-12 text-center text-[#6B7F7F]">
-                            <p class="font-semibold text-sm text-[#1C2B2B]">No employees matched filter criteria</p>
+                        <td colspan="6" class="py-12 text-center text-slate-500">
+                            <p class="font-semibold text-xs sm:text-sm text-slate-800">No employees matched filter criteria</p>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Try changing your department or status selection.</p>
                         </td>
                     </tr>
                     {% endfor %}

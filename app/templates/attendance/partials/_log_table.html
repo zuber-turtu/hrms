@@ -1,83 +1,83 @@
 {% for log in logs %}
-<tr class="hover:bg-[#F4F7F7]/70 transition-colors att-row" 
+<tr class="hover:bg-slate-50/80 transition-colors att-row" 
     data-date="{{ log.date|string|lower }}" 
     data-emp="{{ log.employee.name|lower }}" 
     data-status="{% if log.is_missed %}missed{% elif log.is_overridden %}overridden{% else %}normal{% endif %}">
     
     <!-- Date -->
-    <td class="px-6 py-4 whitespace-nowrap">
-        <div class="flex items-center space-x-2 text-sm font-semibold text-[#1C2B2B]">
-            <i data-lucide="calendar" class="w-4 h-4 text-[#6B7F7F]"></i>
+    <td class="px-5 py-3.5 whitespace-nowrap">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-900 font-mono">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
             <span>{{ log.date }}</span>
         </div>
     </td>
 
     <!-- Employee Name (Clickable to Employee Details) -->
-    <td class="px-6 py-4 whitespace-nowrap">
-        <a href="/employees/{{ log.employee.id }}/view#attendance" class="inline-flex items-center space-x-2.5 group cursor-pointer" title="View {{ log.employee.name }}'s details & attendance history">
+    <td class="px-5 py-3.5 whitespace-nowrap">
+        <a href="/employees/{{ log.employee.id }}/view#attendance" class="inline-flex items-center space-x-2.5 group cursor-pointer" title="View {{ log.employee.name }}'s details">
             {% if log.employee.avatar_url or (log.employee.profile and log.employee.profile.avatar_url) %}
-            <img src="{{ log.employee.avatar_url or log.employee.profile.avatar_url }}" alt="{{ log.employee.name }}" class="w-7 h-7 rounded-lg object-cover ring-1 ring-[#B3E3E3] shadow-sm shrink-0 group-hover:ring-[#008080] group-hover:scale-105 transition-all" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
-            <div class="w-7 h-7 rounded-lg bg-[#E0F4F4] text-[#008080] hidden flex items-center justify-center font-bold text-xs shrink-0 border border-[#B3E3E3] group-hover:border-[#008080] group-hover:scale-105 transition-all">
+            <img src="{{ log.employee.avatar_url or log.employee.profile.avatar_url }}" alt="{{ log.employee.name }}" class="w-7 h-7 rounded-lg object-cover ring-1 ring-slate-200 shadow-2xs shrink-0 group-hover:scale-105 transition-all" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
+            <div class="w-7 h-7 rounded-lg bg-teal-700 text-white hidden flex items-center justify-center font-bold text-xs shrink-0">
                 {{ log.employee.name[0] if log.employee.name else 'E' }}
             </div>
             {% else %}
-            <div class="w-7 h-7 rounded-lg bg-[#E0F4F4] text-[#008080] flex items-center justify-center font-bold text-xs shrink-0 border border-[#B3E3E3] group-hover:border-[#008080] group-hover:scale-105 transition-all">
+            <div class="w-7 h-7 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
                 {{ log.employee.name[0] if log.employee.name else 'E' }}
             </div>
             {% endif %}
-            <span class="text-sm font-semibold text-[#1C2B2B] group-hover:text-[#008080] group-hover:underline underline-offset-2 transition-colors">{{ log.employee.name }}</span>
+            <span class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors">{{ log.employee.name }}</span>
         </a>
     </td>
 
     <!-- Session Timestamps -->
-    <td class="px-6 py-4 text-xs text-[#1C2B2B] max-w-sm">
-        <span class="inline-block px-2.5 py-1 rounded-md bg-[#F4F7F7] border border-[#B3E3E3]/60 text-[#1C2B2B] font-mono truncate max-w-xs" title="{{ log.sessions }}">
+    <td class="px-5 py-3.5 text-xs text-slate-900 max-w-xs">
+        <span class="inline-block px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800 font-mono truncate max-w-xs text-[11px]" title="{{ log.sessions }}">
             {{ log.sessions }}
         </span>
     </td>
 
     <!-- Total Active Duration -->
-    <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-[#F4F7F7] border border-[#B3E3E3]/60 text-xs font-bold font-mono text-[#1C2B2B]">
-            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1.5 text-[#6B7F7F]"></i>
+    <td class="px-5 py-3.5 whitespace-nowrap">
+        <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-xs font-bold font-mono text-slate-900">
+            <i data-lucide="clock" class="w-3 h-3 mr-1 text-slate-400"></i>
             {{ log.total_active }}
         </span>
     </td>
 
     <!-- Status Pill -->
-    <td class="px-6 py-4 whitespace-nowrap">
+    <td class="px-5 py-3.5 whitespace-nowrap">
         {% if log.is_missed %}
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80" title="Missing Check-Out from a previous day">
-            <i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Missed Punch
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200" title="Missing Check-Out from a previous day">
+            <i data-lucide="alert-circle" class="w-3 h-3 mr-1 text-rose-600"></i> Missed Punch
         </span>
         {% elif log.is_overridden %}
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80" title="{{ log.override_reason }}">
-            <i data-lucide="edit-2" class="w-3 h-3 mr-1"></i> Overridden
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200" title="{{ log.override_reason }}">
+            <i data-lucide="edit-2" class="w-3 h-3 mr-1 text-amber-600"></i> Overridden
         </span>
         {% else %}
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-            <i data-lucide="check" class="w-3 h-3 mr-1"></i> Normal
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Verified
         </span>
         {% endif %}
     </td>
     
     <!-- Admin Edit Action -->
     {% if user.role in ['admin', 'hr_admin'] %}
-    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#008080] bg-[#E0F4F4]/70 hover:bg-[#E0F4F4] transition-colors border border-[#008080]/30 cursor-pointer">
-            <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Override
+    <td class="px-5 py-3.5 whitespace-nowrap text-right text-xs font-medium">
+        <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors cursor-pointer shadow-2xs">
+            <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> Override
         </button>
     </td>
     {% endif %}
 </tr>
 {% else %}
 <tr id="server-empty-row">
-    <td colspan="6" class="px-6 py-12 text-center text-[#6B7F7F]">
-        <div class="w-12 h-12 rounded-2xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center mx-auto mb-3">
-            <i data-lucide="calendar-x" class="w-6 h-6"></i>
+    <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+        <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5">
+            <i data-lucide="calendar-x" class="w-5 h-5"></i>
         </div>
-        <p class="text-sm font-semibold text-[#1C2B2B]">No attendance logs found</p>
-        <p class="text-xs text-[#6B7F7F] mt-1">Attendance records will show here once employees check in.</p>
+        <p class="text-xs sm:text-sm font-semibold text-slate-800">No attendance logs found</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">Records will populate once daily punches are recorded.</p>
     </td>
 </tr>
 {% endfor %}
