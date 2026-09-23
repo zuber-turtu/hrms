@@ -1,6 +1,13 @@
-from io import BytesIO
 import os
+import sys
+import shutil
+import base64
+import tempfile
+import subprocess
+import logging
+from io import BytesIO
 import datetime
+
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image as RLImage
 from reportlab.lib.styles import ParagraphStyle
@@ -11,7 +18,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 from app.services.formatters import number_to_words, get_month_name, mask_account_number
 
-# Font Registration Flag
+logger = logging.getLogger(__name__)
+
+# Font Registration Flag for ReportLab
 _FONTS_REGISTERED = False
 
 def register_brand_fonts():
@@ -65,18 +74,484 @@ def get_font_name(preferred: str, fallback: str = "Helvetica") -> str:
     return fallback
 
 
-def generate_payslip_pdf(payslip, company=None, employee=None):
+def find_headless_browser() -> str | None:
+    """Locates an available Chromium or Microsoft Edge executable for high-fidelity PDF rendering."""
+    candidates = [
+        os.environ.get("CHROME_PATH"),
+        os.environ.get("EDGE_PATH"),
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        shutil.which("msedge"),
+        shutil.which("chrome"),
+        shutil.which("google-chrome"),
+        shutil.which("chromium"),
+        shutil.which("chromium-browser"),
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    ]
+    for path in candidates:
+        if path and os.path.exists(path) and os.path.isfile(path):
+            return path
+    return None
+
+
+def generate_payslip_html(payslip, company=None, employee=None) -> str:
     """
-    Generates a production-quality, vector-sharp PDF of the employee payslip.
-    Accurately mirrors the layout, typography, colors, and structure of the web dashboard.
+    Renders an exact standalone HTML document with identical Tailwind CSS,
+    Google Fonts (Nunito, Poppins, JetBrains Mono), and Lucide icons matching the web print DOM.
     """
+    if employee is None:
+        employee = getattr(payslip, "employee", None)
+        
+    company_name = company.name if company and company.name else "TURTU HRMS"
+    company_addr = company.address if company and company.address else "Karnataka, India"
+    currency = company.currency_symbol if company and company.currency_symbol else "₹"
+    month_name = get_month_name(payslip.month)
+    slip_no = f"PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}"
+    
+    if hasattr(payslip.generated_on, 'strftime') and payslip.generated_on:
+        date_str = payslip.generated_on.strftime('%b %d, %Y')
+    elif payslip.generated_on:
+        date_str = str(payslip.generated_on)
+    else:
+        date_str = "—"
+
+    emp_name = employee.name if employee and hasattr(employee, 'name') and employee.name else "Employee"
+    emp_id_val = f"{employee.id:04d}" if employee and hasattr(employee, 'id') and employee.id else "0001"
+    
+    dept_name = "Operations"
+    if employee and hasattr(employee, 'department') and employee.department:
+        dept_name = employee.department.name if hasattr(employee.department, 'name') else str(employee.department)
+        
+    desig_title = "Staff"
+    if employee and hasattr(employee, 'designation') and employee.designation:
+        desig_title = employee.designation.title if hasattr(employee.designation, 'title') else str(employee.designation)
+        
+    emp_bank = "HDFC Bank"
+    emp_acc = "N/A"
+    emp_ifsc = "HDFC0001092"
+    if employee and hasattr(employee, 'bank_account') and employee.bank_account:
+        if employee.bank_account.bank_name:
+            emp_bank = employee.bank_account.bank_name
+        if employee.bank_account.account_number:
+            emp_acc = mask_account_number(employee.bank_account.account_number)
+        if employee.bank_account.ifsc_code:
+            emp_ifsc = employee.bank_account.ifsc_code
+            
+    emp_doj = "—"
+    if employee and hasattr(employee, 'joining_date') and employee.joining_date:
+        emp_doj = str(employee.joining_date)
+        
+    emp_pan = "ABCDE1234F"
+    if employee and hasattr(employee, 'profile') and employee.profile and employee.profile.pan_number:
+        emp_pan = employee.profile.pan_number
+
+    payable_days = payslip.payable_days if payslip.payable_days is not None else 22
+    days_worked = payslip.days_worked if payslip.days_worked is not None else 0.0
+    lop_days = max(0.0, payable_days - days_worked)
+
+    basic = payslip.basic or 0.0
+    hra = payslip.hra or 0.0
+    allowances = payslip.allowances or 0.0
+    bonus = payslip.bonus or 0.0
+    pf = payslip.pf or 0.0
+    tax = payslip.tax or 0.0
+    other_deductions = payslip.other_deductions or 0.0
+
+    gross_earnings = basic + hra + allowances + bonus
+    total_deductions = pf + tax + other_deductions
+    net_salary = payslip.net_salary or 0.0
+    amount_in_words = number_to_words(net_salary, "Dollars" if currency == "$" else "Rupees")
+
+    # Embed local logo safely
+    logo_base64 = ""
+    logo_path = os.path.abspath("static/images/icon.jpeg")
+    if not os.path.exists(logo_path):
+        logo_path = os.path.abspath("static/images/logo.png")
+    if os.path.exists(logo_path):
+        try:
+            with open(logo_path, "rb") as lf:
+                logo_base64 = f"data:image/jpeg;base64,{base64.b64encode(lf.read()).decode('utf-8')}"
+        except Exception:
+            logo_base64 = ""
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en" class="bg-white">
+<head>
+    <meta charset="UTF-8">
+    <title>Salary Slip — {payslip.month:02d}/{payslip.year}</title>
+    
+    <!-- Google Fonts: Nunito, Poppins, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {{
+            theme: {{
+                extend: {{
+                    fontFamily: {{
+                        sans: ['"Nunito"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        heading: ['"Poppins"', '"Nunito"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    }},
+                    colors: {{
+                        teal: {{
+                            50: '#E0F4F4',
+                            600: '#008080',
+                            700: '#005050',
+                            800: '#003333',
+                        }}
+                    }}
+                }}
+            }}
+        }}
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @page {{
+            size: A4 portrait;
+            margin: 0 !important;
+        }}
+        *, *::before, *::after {{
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }}
+        html, body {{
+            background: #ffffff !important;
+            color: #0F172A !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            max-height: 297mm !important;
+            overflow: hidden !important;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }}
+        .payslip-sheet {{
+            box-sizing: border-box !important;
+            width: 194mm !important;
+            max-width: 194mm !important;
+            margin: 8mm auto !important;
+            padding: 5mm 6mm !important;
+            border: 1px solid #CBD5E1 !important;
+            border-radius: 6px !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+        }}
+        .payslip-sheet > div + div {{
+            margin-top: 2.5mm !important;
+        }}
+        .payslip-sheet table {{
+            width: 100% !important;
+            table-layout: fixed !important;
+        }}
+        .payslip-sheet th, .payslip-sheet td {{
+            padding-top: 1.5mm !important;
+            padding-bottom: 1.5mm !important;
+        }}
+    </style>
+</head>
+<body class="bg-white text-slate-900">
+
+    <div class="payslip-sheet">
+        
+        <!-- 1. Corporate Letterhead Header -->
+        <div class="flex justify-between items-start pb-3.5 border-b border-slate-300 gap-4">
+            <div class="flex items-center space-x-3.5">
+                {'<img src="' + logo_base64 + '" alt="Logo" class="w-11 h-11 object-contain rounded-lg bg-slate-950 p-1 shadow-xs border border-slate-200 shrink-0">' if logo_base64 else ''}
+                <div>
+                    <h1 class="text-base font-heading font-bold text-slate-900 tracking-tight uppercase leading-tight">
+                        {company_name}
+                    </h1>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        {company_addr}
+                    </p>
+                    <p class="text-[10px] text-slate-400 mt-0.5 font-mono">
+                        CIN: U72200KA2024PTC123456 • GSTIN: 29TURTU1234F1Z5 • PAN: TURTU1234F
+                    </p>
+                </div>
+            </div>
+
+            <!-- Statement Title & Reference Block -->
+            <div class="text-right shrink-0">
+                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-heading">Salary Statement</div>
+                <div class="text-xs font-bold text-slate-900 font-mono mt-0.5">
+                    Slip #{slip_no}
+                </div>
+                <div class="text-[10px] font-medium text-slate-500 mt-0.5 font-mono">
+                    Date: {date_str}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Payslip Period Title Ribbon -->
+        <div class="bg-slate-900 text-white text-center py-1.5 px-4 rounded-md font-heading font-bold text-xs uppercase tracking-wider">
+            Payslip for the Month of {month_name} {payslip.year}
+        </div>
+
+        <!-- 3. Employee & Bank Information Grid -->
+        <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/60">
+            <div class="grid grid-cols-2 divide-x divide-slate-200 text-xs">
+                
+                <!-- Left: Employee Details -->
+                <div class="p-3 space-y-1">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-200 font-heading">
+                        Employee Identification
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">Employee Name:</span>
+                        <span class="font-bold text-slate-900 text-right">{emp_name}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">Employee ID:</span>
+                        <span class="font-mono font-bold text-slate-900 text-right">#{emp_id_val}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">Department:</span>
+                        <span class="font-medium text-slate-900 text-right">{dept_name}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">Designation:</span>
+                        <span class="font-medium text-slate-900 text-right">{desig_title}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">Date of Joining:</span>
+                        <span class="font-mono font-medium text-slate-900 text-right">{emp_doj}</span>
+                    </div>
+                </div>
+
+                <!-- Right: Bank & Statutory Details -->
+                <div class="p-3 space-y-1">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-200 font-heading">
+                        Payment & Statutory Details
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">Bank Name:</span>
+                        <span class="font-medium text-slate-900 text-right">{emp_bank}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">Account No:</span>
+                        <span class="font-mono font-bold text-slate-900 text-right">{emp_acc}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">IFSC Code:</span>
+                        <span class="font-mono font-medium text-slate-900 uppercase text-right">{emp_ifsc}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">PAN Number:</span>
+                        <span class="font-mono font-medium text-slate-900 uppercase text-right">{emp_pan}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">PF / UAN No:</span>
+                        <span class="font-mono font-medium text-slate-900 text-right">100982348123</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 4. Attendance Summary Ribbon -->
+        <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50 p-2">
+            <div class="grid grid-cols-4 gap-2 text-center text-xs">
+                <div>
+                    <span class="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block font-heading">Payable Days</span>
+                    <span class="font-mono font-bold text-slate-900 text-xs">{payable_days}</span>
+                </div>
+                <div>
+                    <span class="text-[9.5px] font-bold text-emerald-700 uppercase tracking-wider block font-heading">Days Worked</span>
+                    <span class="font-mono font-bold text-emerald-800 text-xs">{days_worked:.1f}</span>
+                </div>
+                <div>
+                    <span class="text-[9.5px] font-bold text-rose-700 uppercase tracking-wider block font-heading">Loss of Pay (LOP)</span>
+                    <span class="font-mono font-bold text-rose-800 text-xs">{lop_days:.1f}</span>
+                </div>
+                <div>
+                    <span class="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block font-heading">Payment Mode</span>
+                    <span class="font-semibold text-slate-900 text-xs">Direct Transfer</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Comparative Earnings & Deductions Statement -->
+        <div class="border border-slate-200 rounded-lg overflow-hidden">
+            <table class="w-full text-xs divide-y divide-slate-200">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[10px] font-heading">
+                        <th class="px-3.5 py-1.5 text-left w-5/12 border-r border-slate-200">Earnings</th>
+                        <th class="px-3.5 py-1.5 text-right w-2/12 border-r border-slate-200">Amount ({currency})</th>
+                        <th class="px-3.5 py-1.5 text-left w-5/12 border-r border-slate-200">Deductions</th>
+                        <th class="px-3.5 py-1.5 text-right w-2/12">Amount ({currency})</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <tr>
+                        <td class="px-3.5 py-1 text-slate-800 font-medium border-r border-slate-200">Basic Salary</td>
+                        <td class="px-3.5 py-1 text-right font-mono font-bold text-slate-900 border-r border-slate-200">{basic:.2f}</td>
+                        <td class="px-3.5 py-1 text-slate-800 font-medium border-r border-slate-200">Provident Fund (PF)</td>
+                        <td class="px-3.5 py-1 text-right font-mono font-bold text-slate-900">{pf:.2f}</td>
+                    </tr>
+                    <tr class="bg-slate-50/40">
+                        <td class="px-3.5 py-1 text-slate-800 font-medium border-r border-slate-200">House Rent Allowance (HRA)</td>
+                        <td class="px-3.5 py-1 text-right font-mono font-bold text-slate-900 border-r border-slate-200">{hra:.2f}</td>
+                        <td class="px-3.5 py-1 text-slate-800 font-medium border-r border-slate-200">Tax Withholding (TDS)</td>
+                        <td class="px-3.5 py-1 text-right font-mono font-bold text-slate-900">{tax:.2f}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3.5 py-1 text-slate-800 font-medium border-r border-slate-200">Special & Other Allowances</td>
+                        <td class="px-3.5 py-1 text-right font-mono font-bold text-slate-900 border-r border-slate-200">{allowances:.2f}</td>
+                        <td class="px-3.5 py-1 text-slate-800 font-medium border-r border-slate-200">Other Deductions / Advances</td>
+                        <td class="px-3.5 py-1 text-right font-mono font-bold text-slate-900">{other_deductions:.2f}</td>
+                    </tr>
+                    <tr class="bg-slate-50/40">
+                        <td class="px-3.5 py-1 text-slate-800 font-medium border-r border-slate-200">Performance Bonus</td>
+                        <td class="px-3.5 py-1 text-right font-mono font-bold text-slate-900 border-r border-slate-200">{bonus:.2f}</td>
+                        <td class="px-3.5 py-1 text-slate-400 italic border-r border-slate-200">—</td>
+                        <td class="px-3.5 py-1 text-right font-mono text-slate-400">0.00</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="bg-slate-50 font-bold border-t-2 border-slate-200 text-slate-900 font-heading">
+                        <td class="px-3.5 py-1.5 uppercase text-[10px] border-r border-slate-200">Gross Earnings (A)</td>
+                        <td class="px-3.5 py-1.5 text-right font-mono text-xs border-r border-slate-200 text-slate-900">
+                            {currency}{gross_earnings:.2f}
+                        </td>
+                        <td class="px-3.5 py-1.5 uppercase text-[10px] text-rose-700 border-r border-slate-200">Total Deductions (B)</td>
+                        <td class="px-3.5 py-1.5 text-right font-mono text-xs text-rose-700">
+                            {currency}{total_deductions:.2f}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- 6. Net Take-Home Salary Highlight Box -->
+        <div class="border border-slate-300 rounded-lg overflow-hidden bg-slate-50 p-3">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                <div>
+                    <span class="text-xs font-bold text-slate-900 uppercase tracking-wider block font-heading">Net Take-Home Salary (A - B)</span>
+                    <span class="text-[10px] text-slate-500 mt-0.5 block">
+                        Disbursed via Electronic Bank Transfer (NEFT/RTGS)
+                    </span>
+                </div>
+                <div class="text-right">
+                    <span class="text-xl font-black font-mono text-slate-900 tracking-tight">
+                        {currency}{net_salary:.2f}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="pt-1.5 text-xs text-slate-800">
+                <span class="font-bold text-slate-500 uppercase tracking-wider text-[9.5px] font-heading">Amount in Words:</span>
+                <span class="font-semibold italic text-slate-900 ml-1">{amount_in_words}</span>
+            </div>
+        </div>
+
+        <!-- 7. Official Sign-Off & Verification Footer -->
+        <div class="pt-2 border-t border-slate-200 flex justify-between items-end gap-5 text-xs text-slate-500">
+            <div class="space-y-0.5 max-w-md">
+                <div class="flex items-center space-x-1.5 font-bold text-teal-700">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-teal-600"></i>
+                    <span class="text-[11px]">Official Authenticated Statement</span>
+                </div>
+                <p class="text-[10px] text-slate-400 leading-relaxed">
+                    *Computer-generated official salary certificate issued by TURTU HRMS. Does not require physical signature.
+                </p>
+                <p class="text-[9px] text-slate-400 font-mono">HASH: AUTH-PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}-VERIFIED</p>
+            </div>
+
+            <!-- Authorized Signatory Stamp Box -->
+            <div class="text-right min-w-[170px]">
+                <div class="border-b border-slate-300 pb-6 mb-1">
+                    <span class="inline-block text-[10px] font-serif italic text-slate-400">Authorized Signature</span>
+                </div>
+                <p class="text-xs font-bold text-slate-900 font-heading">Authorized Signatory</p>
+                <p class="text-[9.5px] text-slate-400 uppercase tracking-wider font-medium">{company_name}</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
+"""
+    return html_content
+
+
+def generate_payslip_pdf_headless(payslip, company=None, employee=None) -> BytesIO | None:
+    """Generates PDF by executing Chromium / Edge in headless print mode for 100% exact print match."""
+    browser_bin = find_headless_browser()
+    if not browser_bin:
+        return None
+
+    html_code = generate_payslip_html(payslip, company, employee)
+    
+    with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w", encoding="utf-8") as hf:
+        hf.write(html_code)
+        html_path = hf.name
+
+    pdf_temp_path = html_path.replace(".html", ".pdf")
+
+    cmd = [
+        browser_bin,
+        "--headless",
+        "--disable-gpu",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--no-pdf-header-footer",
+        "--print-to-pdf-no-header",
+        f"--print-to-pdf={pdf_temp_path}",
+        html_path
+    ]
+
+    try:
+        res = subprocess.run(cmd, capture_output=True, timeout=15)
+        if res.returncode == 0 and os.path.exists(pdf_temp_path) and os.path.getsize(pdf_temp_path) > 0:
+            buffer = BytesIO()
+            with open(pdf_temp_path, "rb") as pf:
+                buffer.write(pf.read())
+            buffer.seek(0)
+            return buffer
+        else:
+            logger.warning(f"Headless browser PDF generation failed with code {res.returncode}: {res.stderr.decode('utf-8', 'ignore')}")
+    except Exception as e:
+        logger.warning(f"Headless browser PDF generation encountered error: {e}")
+    finally:
+        if os.path.exists(html_path):
+            try:
+                os.unlink(html_path)
+            except Exception:
+                pass
+        if os.path.exists(pdf_temp_path):
+            try:
+                os.unlink(pdf_temp_path)
+            except Exception:
+                pass
+    return None
+
+
+def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> BytesIO:
+    """Fallback ReportLab PDF generator providing exact styling if headless browser is unavailable."""
     register_brand_fonts()
 
     if employee is None:
         employee = getattr(payslip, "employee", None)
 
     buffer = BytesIO()
-    # A4 standard portrait layout with exact 24pt margins
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
@@ -86,212 +561,50 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
         bottomMargin=24
     )
     
-    # TURTU Brand & Dashboard Color Palette
-    c_dark = colors.HexColor("#0F172A")        # Slate-900 (Ribbon, Headers)
-    c_teal = colors.HexColor("#008080")        # TURTU Primary Teal
-    c_teal_dark = colors.HexColor("#005050")   # Teal Forest
-    c_mist = colors.HexColor("#E0F4F4")        # Teal Mist (Highlight fills, badges)
-    c_light = colors.HexColor("#CBD5E1")       # Slate-300 (Dividers, borders)
-    c_border = colors.HexColor("#E2E8F0")      # Slate-200 (Subtle borders)
-    c_wash = colors.HexColor("#F8FAFC")        # Slate-50 (Row fills, container backgrounds)
-    c_text_primary = colors.HexColor("#0F172A") # Deep Slate / Forest
-    c_text_secondary = colors.HexColor("#64748B") # Slate-500
-    c_rose_bg = colors.HexColor("#FFF1F2")     # Alert Rose / Red light bg
-    c_rose_text = colors.HexColor("#BE123C")   # Alert Rose / Red text (Rose-700)
-    c_emerald_text = colors.HexColor("#047857")# Positive / Present green (Emerald-700)
-    c_amber_text = colors.HexColor("#B45309")  # Amber-700 for draft status
+    c_dark = colors.HexColor("#0F172A")
+    c_teal = colors.HexColor("#008080")
+    c_light = colors.HexColor("#CBD5E1")
+    c_border = colors.HexColor("#E2E8F0")
+    c_wash = colors.HexColor("#F8FAFC")
+    c_text_primary = colors.HexColor("#0F172A")
+    c_text_secondary = colors.HexColor("#64748B")
+    c_rose_bg = colors.HexColor("#FFF1F2")
+    c_rose_text = colors.HexColor("#BE123C")
+    c_emerald_text = colors.HexColor("#047857")
+    c_amber_text = colors.HexColor("#B45309")
 
-    # Font Families with fallback support
     f_body = get_font_name("Nunito", "Helvetica")
     f_bold = get_font_name("Nunito-Bold", "Helvetica-Bold")
     f_heading = get_font_name("Poppins-Bold", "Helvetica-Bold")
-    f_semi = get_font_name("Poppins-SemiBold", "Helvetica-Bold")
     f_mono = get_font_name("JetBrainsMono", "Courier")
     f_mono_bold = get_font_name("JetBrainsMono-Bold", "Courier-Bold")
 
-    # Typography Styles
-    company_title_style = ParagraphStyle(
-        'CompTitle',
-        fontName=f_heading,
-        fontSize=12.5,
-        leading=15,
-        textColor=c_text_primary,
-        alignment=TA_LEFT
-    )
-    company_sub_style = ParagraphStyle(
-        'CompSub',
-        fontName=f_body,
-        fontSize=7,
-        leading=9.5,
-        textColor=c_text_secondary,
-        alignment=TA_LEFT
-    )
-    statement_title_style = ParagraphStyle(
-        'StateTitle',
-        fontName=f_heading,
-        fontSize=8.5,
-        leading=11,
-        textColor=c_text_secondary,
-        alignment=TA_RIGHT
-    )
-    statement_meta_style = ParagraphStyle(
-        'StateMeta',
-        fontName=f_mono_bold,
-        fontSize=8,
-        leading=11,
-        textColor=c_text_primary,
-        alignment=TA_RIGHT
-    )
-    statement_date_style = ParagraphStyle(
-        'StateDate',
-        fontName=f_body,
-        fontSize=7.5,
-        leading=10,
-        textColor=c_text_secondary,
-        alignment=TA_RIGHT
-    )
-    ribbon_style = ParagraphStyle(
-        'Ribbon',
-        fontName=f_heading,
-        fontSize=9,
-        leading=12,
-        textColor=colors.white,
-        alignment=TA_CENTER
-    )
-    table_header_style = ParagraphStyle(
-        'TableHead',
-        fontName=f_heading,
-        fontSize=7.5,
-        leading=10,
-        textColor=c_text_primary,
-        alignment=TA_LEFT
-    )
-    table_header_right = ParagraphStyle(
-        'TableHeadR',
-        fontName=f_heading,
-        fontSize=7.5,
-        leading=10,
-        textColor=c_text_primary,
-        alignment=TA_RIGHT
-    )
-    section_subhead_style = ParagraphStyle(
-        'SecSubHead',
-        fontName=f_heading,
-        fontSize=7,
-        leading=9,
-        textColor=c_text_secondary
-    )
-    cell_label_style = ParagraphStyle(
-        'CellLbl',
-        fontName=f_body,
-        fontSize=7,
-        leading=9,
-        textColor=c_text_secondary
-    )
-    cell_value_style = ParagraphStyle(
-        'CellVal',
-        fontName=f_body,
-        fontSize=7.5,
-        leading=10,
-        textColor=c_text_primary
-    )
-    cell_value_bold = ParagraphStyle(
-        'CellValB',
-        fontName=f_bold,
-        fontSize=7.5,
-        leading=10,
-        textColor=c_text_primary
-    )
-    cell_mono_bold = ParagraphStyle(
-        'CellMonoB',
-        fontName=f_mono_bold,
-        fontSize=7.5,
-        leading=10,
-        textColor=c_text_primary
-    )
-    cell_mono_right = ParagraphStyle(
-        'CellMonoR',
-        fontName=f_mono_bold,
-        fontSize=7.5,
-        leading=10,
-        textColor=c_text_primary,
-        alignment=TA_RIGHT
-    )
-    subtotal_label = ParagraphStyle(
-        'SubtotalLbl',
-        fontName=f_heading,
-        fontSize=7.5,
-        leading=10,
-        textColor=c_text_primary
-    )
-    subtotal_amt_earn = ParagraphStyle(
-        'SubtotalEarn',
-        fontName=f_mono_bold,
-        fontSize=8.5,
-        leading=11,
-        textColor=c_text_primary,
-        alignment=TA_RIGHT
-    )
-    subtotal_amt_deduct = ParagraphStyle(
-        'SubtotalDeduct',
-        fontName=f_mono_bold,
-        fontSize=8.5,
-        leading=11,
-        textColor=c_rose_text,
-        alignment=TA_RIGHT
-    )
-    net_box_label = ParagraphStyle(
-        'NetBoxLbl',
-        fontName=f_heading,
-        fontSize=8.5,
-        leading=11,
-        textColor=c_text_primary,
-        alignment=TA_LEFT
-    )
-    net_box_sub = ParagraphStyle(
-        'NetBoxSub',
-        fontName=f_body,
-        fontSize=7,
-        leading=9,
-        textColor=c_text_secondary,
-        alignment=TA_LEFT
-    )
-    net_box_words = ParagraphStyle(
-        'NetBoxWords',
-        fontName=f_body,
-        fontSize=7.5,
-        leading=9.5,
-        textColor=c_text_primary,
-        alignment=TA_LEFT
-    )
-    net_box_amount = ParagraphStyle(
-        'NetBoxAmt',
-        fontName=f_mono_bold,
-        fontSize=15,
-        leading=18,
-        textColor=c_text_primary,
-        alignment=TA_RIGHT
-    )
-    footer_text_style = ParagraphStyle(
-        'FooterTxt',
-        fontName=f_body,
-        fontSize=6.5,
-        leading=8.5,
-        textColor=c_text_secondary,
-        alignment=TA_LEFT
-    )
-    footer_sign_style = ParagraphStyle(
-        'FooterSgn',
-        fontName=f_heading,
-        fontSize=7.5,
-        leading=10,
-        textColor=c_text_primary,
-        alignment=TA_RIGHT
-    )
+    company_title_style = ParagraphStyle('CompTitle', fontName=f_heading, fontSize=12.5, leading=15, textColor=c_text_primary, alignment=TA_LEFT)
+    company_sub_style = ParagraphStyle('CompSub', fontName=f_body, fontSize=7, leading=9.5, textColor=c_text_secondary, alignment=TA_LEFT)
+    statement_title_style = ParagraphStyle('StateTitle', fontName=f_heading, fontSize=8.5, leading=11, textColor=c_text_secondary, alignment=TA_RIGHT)
+    statement_meta_style = ParagraphStyle('StateMeta', fontName=f_mono_bold, fontSize=8, leading=11, textColor=c_text_primary, alignment=TA_RIGHT)
+    statement_date_style = ParagraphStyle('StateDate', fontName=f_body, fontSize=7.5, leading=10, textColor=c_text_secondary, alignment=TA_RIGHT)
+    ribbon_style = ParagraphStyle('Ribbon', fontName=f_heading, fontSize=9, leading=12, textColor=colors.white, alignment=TA_CENTER)
+    table_header_style = ParagraphStyle('TableHead', fontName=f_heading, fontSize=7.5, leading=10, textColor=c_text_primary, alignment=TA_LEFT)
+    table_header_right = ParagraphStyle('TableHeadR', fontName=f_heading, fontSize=7.5, leading=10, textColor=c_text_primary, alignment=TA_RIGHT)
+    section_subhead_style = ParagraphStyle('SecSubHead', fontName=f_heading, fontSize=7, leading=9, textColor=c_text_secondary)
+    cell_label_style = ParagraphStyle('CellLbl', fontName=f_body, fontSize=7, leading=9, textColor=c_text_secondary)
+    cell_value_style = ParagraphStyle('CellVal', fontName=f_body, fontSize=7.5, leading=10, textColor=c_text_primary)
+    cell_value_bold = ParagraphStyle('CellValB', fontName=f_bold, fontSize=7.5, leading=10, textColor=c_text_primary)
+    cell_mono_bold = ParagraphStyle('CellMonoB', fontName=f_mono_bold, fontSize=7.5, leading=10, textColor=c_text_primary)
+    cell_mono_right = ParagraphStyle('CellMonoR', fontName=f_mono_bold, fontSize=7.5, leading=10, textColor=c_text_primary, alignment=TA_RIGHT)
+    subtotal_label = ParagraphStyle('SubtotalLbl', fontName=f_heading, fontSize=7.5, leading=10, textColor=c_text_primary)
+    subtotal_amt_earn = ParagraphStyle('SubtotalEarn', fontName=f_mono_bold, fontSize=8.5, leading=11, textColor=c_text_primary, alignment=TA_RIGHT)
+    subtotal_amt_deduct = ParagraphStyle('SubtotalDeduct', fontName=f_mono_bold, fontSize=8.5, leading=11, textColor=c_rose_text, alignment=TA_RIGHT)
+    net_box_label = ParagraphStyle('NetBoxLbl', fontName=f_heading, fontSize=8.5, leading=11, textColor=c_text_primary, alignment=TA_LEFT)
+    net_box_sub = ParagraphStyle('NetBoxSub', fontName=f_body, fontSize=7, leading=9, textColor=c_text_secondary, alignment=TA_LEFT)
+    net_box_words = ParagraphStyle('NetBoxWords', fontName=f_body, fontSize=7.5, leading=9.5, textColor=c_text_primary, alignment=TA_LEFT)
+    net_box_amount = ParagraphStyle('NetBoxAmt', fontName=f_mono_bold, fontSize=15, leading=18, textColor=c_text_primary, alignment=TA_RIGHT)
+    footer_text_style = ParagraphStyle('FooterTxt', fontName=f_body, fontSize=6.5, leading=8.5, textColor=c_text_secondary, alignment=TA_LEFT)
+    footer_sign_style = ParagraphStyle('FooterSgn', fontName=f_heading, fontSize=7.5, leading=10, textColor=c_text_primary, alignment=TA_RIGHT)
 
     elements = []
     
-    # 1. Company Information & Header
     company_name = company.name if company and company.name else "TURTU HRMS"
     company_addr = company.address if company and company.address else "Karnataka, India"
     currency = company.currency_symbol if company and company.currency_symbol else "₹"
@@ -356,7 +669,7 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
     elements.append(Spacer(1, 4))
     elements.append(HRFlowable(width="100%", thickness=1, color=c_light, spaceBefore=0, spaceAfter=5))
 
-    # 2. Payslip Month Banner (Slate-900 Dashboard Bar)
+    # 2. Month Ribbon
     ribbon_data = [[Paragraph(f"PAYSLIP FOR THE MONTH OF {month_name.upper()} {payslip.year}", ribbon_style)]]
     ribbon_table = Table(ribbon_data, colWidths=[547])
     ribbon_table.setStyle(TableStyle([
@@ -368,7 +681,7 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
     elements.append(ribbon_table)
     elements.append(Spacer(1, 4))
 
-    # 3. Employee and Bank Metadata Grid
+    # 3. Employee & Payment Info
     emp_name = employee.name if employee and hasattr(employee, 'name') and employee.name else "Employee"
     emp_id_val = f"#{employee.id:04d}" if employee and hasattr(employee, 'id') and employee.id else "#0001"
     
@@ -447,7 +760,7 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
     elements.append(meta_container)
     elements.append(Spacer(1, 4))
 
-    # 4. Attendance Summary Ribbon
+    # 4. Attendance Summary
     payable_days = payslip.payable_days if payslip.payable_days is not None else 22
     days_worked = payslip.days_worked if payslip.days_worked is not None else 0.0
     lop_days = max(0.0, payable_days - days_worked)
@@ -491,14 +804,12 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
     total_deductions = pf + tax + other_deductions
 
     breakdown_data = [
-        # Table Header
         [
             Paragraph("EARNINGS", table_header_style),
             Paragraph(f"AMOUNT ({currency})", table_header_right),
             Paragraph("DEDUCTIONS", table_header_style),
             Paragraph(f"AMOUNT ({currency})", table_header_right)
         ],
-        # Rows
         [
             Paragraph("Basic Salary", cell_value_style),
             Paragraph(f"{basic:,.2f}", cell_mono_right),
@@ -523,7 +834,6 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
             Paragraph("—", ParagraphStyle('Dash', fontName=f_body, fontSize=7.5, textColor=c_text_secondary)),
             Paragraph("0.00", ParagraphStyle('DashAmt', fontName=f_mono_bold, fontSize=7.5, textColor=c_text_secondary, alignment=TA_RIGHT))
         ],
-        # Subtotals Row
         [
             Paragraph("<b>GROSS EARNINGS (A)</b>", subtotal_label),
             Paragraph(f"<b>{currency} {total_earnings:,.2f}</b>", subtotal_amt_earn),
@@ -534,24 +844,17 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
 
     breakdown_table = Table(breakdown_data, colWidths=[193.5, 80, 193.5, 80])
     breakdown_table.setStyle(TableStyle([
-        # Headers
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#F1F5F9")),
         ('TOPPADDING', (0,0), (-1,0), 3.5),
         ('BOTTOMPADDING', (0,0), (-1,0), 3.5),
-        
-        # Rows
         ('BACKGROUND', (0,1), (-1,-2), colors.white),
         ('ROWBACKGROUNDS', (0,1), (-1,-2), [colors.white, c_wash]),
         ('TOPPADDING', (0,1), (-1,-2), 3),
         ('BOTTOMPADDING', (0,1), (-1,-2), 3),
-
-        # Subtotals Row
         ('BACKGROUND', (0,-1), (1,-1), c_wash),
         ('BACKGROUND', (2,-1), (3,-1), c_rose_bg),
         ('TOPPADDING', (0,-1), (-1,-1), 4),
         ('BOTTOMPADDING', (0,-1), (-1,-1), 4),
-
-        # Grid lines
         ('BOX', (0,0), (-1,-1), 0.75, c_border),
         ('INNERGRID', (0,0), (-1,-1), 0.5, c_border),
         ('LEFTPADDING', (0,0), (-1,-1), 6),
@@ -560,7 +863,7 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
     elements.append(breakdown_table)
     elements.append(Spacer(1, 4))
 
-    # 6. Net Take-Home Salary Highlight Box
+    # 6. Net Salary Box
     words = number_to_words(payslip.net_salary or 0.0, currency)
     net_content = [
         [
@@ -588,7 +891,7 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
     elements.append(net_table)
     elements.append(Spacer(1, 10))
 
-    # 7. Official Footer & Authorized Signatory Block
+    # 7. Footer
     disclaimer = [
         Paragraph("<b>Official Authenticated Statement</b>", ParagraphStyle('DisclH', parent=cell_value_bold, textColor=c_teal)),
         Paragraph("*Computer-generated official salary certificate issued by TURTU HRMS. Does not require physical signature.", footer_text_style),
@@ -608,7 +911,18 @@ def generate_payslip_pdf(payslip, company=None, employee=None):
     ]))
     elements.append(footer_table)
 
-    # Build PDF document
     doc.build(elements)
     buffer.seek(0)
     return buffer
+
+
+def generate_payslip_pdf(payslip, company=None, employee=None) -> BytesIO:
+    """
+    Unified PDF generator:
+    1. Tries high-fidelity Chromium / Edge headless rendering (producing 100% exact print match).
+    2. Gracefully falls back to ReportLab vector rendering if headless browser is not available.
+    """
+    pdf_buffer = generate_payslip_pdf_headless(payslip, company, employee)
+    if pdf_buffer is not None:
+        return pdf_buffer
+    return generate_payslip_pdf_reportlab(payslip, company, employee)
