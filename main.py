@@ -40,6 +40,17 @@ def ensure_schema_columns(db_engine):
                     conn.execute(text("ALTER TABLE employee_profiles ADD COLUMN avatar_url VARCHAR(500)"))
                 if "photo_file_id" not in existing_cols:
                     conn.execute(text("ALTER TABLE employee_profiles ADD COLUMN photo_file_id VARCHAR(255)"))
+                if "uan_number" not in existing_cols:
+                    conn.execute(text("ALTER TABLE employee_profiles ADD COLUMN uan_number VARCHAR(100)"))
+        if "company" in inspector.get_table_names():
+            existing_cols = {c["name"] for c in inspector.get_columns("company")}
+            with db_engine.begin() as conn:
+                if "cin" not in existing_cols:
+                    conn.execute(text("ALTER TABLE company ADD COLUMN cin VARCHAR(100)"))
+                if "gstin" not in existing_cols:
+                    conn.execute(text("ALTER TABLE company ADD COLUMN gstin VARCHAR(100)"))
+                if "pan" not in existing_cols:
+                    conn.execute(text("ALTER TABLE company ADD COLUMN pan VARCHAR(100)"))
     except Exception as e:
         print(f"[Schema Migration Warning] {e}")
 

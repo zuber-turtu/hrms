@@ -39,6 +39,9 @@ async def update_company_profile(
     address: str = Form(""),
     currency_symbol: str = Form("$"),
     working_days_per_month: int = Form(22),
+    cin: str = Form(None),
+    gstin: str = Form(None),
+    pan: str = Form(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
@@ -47,10 +50,13 @@ async def update_company_profile(
         company = Company()
         db.add(company)
 
-    company.name = name
-    company.address = address
-    company.currency_symbol = currency_symbol
+    company.name = name.strip() if name else "Acme Corp"
+    company.address = address.strip() if address else ""
+    company.currency_symbol = currency_symbol.strip() if currency_symbol else "$"
     company.working_days_per_month = working_days_per_month
+    company.cin = cin.strip().upper() if cin and cin.strip() else None
+    company.gstin = gstin.strip().upper() if gstin and gstin.strip() else None
+    company.pan = pan.strip().upper() if pan and pan.strip() else None
     db.commit()
 
     return RedirectResponse(url="/company/profile", status_code=302)

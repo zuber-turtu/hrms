@@ -81,6 +81,10 @@ class Employee(Base):
         return self.profile.pan_number if self.profile else None
 
     @property
+    def uan_number(self):
+        return self.profile.uan_number if self.profile else None
+
+    @property
     def bank_name(self):
         return self.bank_account.bank_name if self.bank_account else None
 
@@ -147,6 +151,7 @@ class EmployeeProfile(Base):
     experience = Column(String, nullable=True)
     aadhar_number = Column(String, nullable=True)
     pan_number = Column(String, nullable=True)
+    uan_number = Column(String, nullable=True)
     avatar_url = Column(String, nullable=True)
     photo_file_id = Column(String, nullable=True)
 

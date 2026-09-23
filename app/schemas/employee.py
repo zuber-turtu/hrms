@@ -14,6 +14,7 @@ class ProfileBase(BaseModel):
     experience: Optional[str] = None
     aadhar_number: Optional[str] = None
     pan_number: Optional[str] = None
+    uan_number: Optional[str] = None
     avatar_url: Optional[str] = None
 
 
@@ -88,6 +89,7 @@ class EmployeeCreate(BaseModel):
     experience: Optional[str] = None
     aadhar_number: Optional[str] = None
     pan_number: Optional[str] = None
+    uan_number: Optional[str] = None
 
     # Bank fields
     bank_name: Optional[str] = None
@@ -134,6 +136,7 @@ class EmployeeUpdate(BaseModel):
     experience: Optional[str] = None
     aadhar_number: Optional[str] = None
     pan_number: Optional[str] = None
+    uan_number: Optional[str] = None
 
     # Bank fields
     bank_name: Optional[str] = None
@@ -180,6 +183,7 @@ class EmployeeOut(BaseModel):
     experience: Optional[str] = None
     aadhar_number: Optional[str] = None
     pan_number: Optional[str] = None
+    uan_number: Optional[str] = None
 
     # Bank info
     bank_name: Optional[str] = None

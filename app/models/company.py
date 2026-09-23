@@ -9,3 +9,6 @@ class Company(Base):
     address = Column(String, default="123 Enterprise Way")
     currency_symbol = Column(String, default="$")
     working_days_per_month = Column(Integer, default=22)
+    cin = Column(String, nullable=True, default=None)
+    gstin = Column(String, nullable=True, default=None)
+    pan = Column(String, nullable=True, default=None)

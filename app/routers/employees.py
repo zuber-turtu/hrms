@@ -242,6 +242,7 @@ async def create_employee(
     emergency_contact_relation: str = Form(None),
     aadhar_number: str = Form(None),
     pan_number: str = Form(None),
+    uan_number: str = Form(None),
     bank_name: str = Form(None),
     account_number: str = Form(None),
     ifsc_code: str = Form(None),
@@ -306,6 +307,7 @@ async def create_employee(
         experience=experience,
         aadhar_number=aadhar_number,
         pan_number=pan_number,
+        uan_number=uan_number,
     )
     db.add(profile)
 
@@ -517,6 +519,7 @@ async def edit_employee(
     emergency_contact_relation: str = Form(None),
     aadhar_number: str = Form(None),
     pan_number: str = Form(None),
+    uan_number: str = Form(None),
     bank_name: str = Form(None),
     account_number: str = Form(None),
     ifsc_code: str = Form(None),
@@ -613,6 +616,7 @@ async def edit_employee(
     employee.profile.experience = experience
     employee.profile.aadhar_number = aadhar_number
     employee.profile.pan_number = pan_number
+    employee.profile.uan_number = uan_number
 
     # Handle Photo Upload if present
     if photo and photo.filename:
@@ -752,6 +756,7 @@ async def import_employees(
                 experience=clean_str(row[10]),
                 aadhar_number=clean_str(row[14]),
                 pan_number=clean_str(row[15]),
+                uan_number=clean_str(row[19]) if len(row) > 19 else None,
             )
             db.add(profile)
 

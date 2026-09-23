@@ -52,6 +52,29 @@
                 <input type="number" name="working_days_per_month" id="working_days_per_month" value="{{ company.working_days_per_month }}" required class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                 <p class="text-[11px] text-slate-500 mt-1">Baseline denominator for daily pro-rata wage calculation across attendance records.</p>
             </div>
+
+            <!-- Statutory & Tax Identification Section -->
+            <div class="pt-4 border-t border-slate-100">
+                <div class="mb-3">
+                    <h4 class="text-xs font-bold font-heading text-slate-900 uppercase tracking-wider">Statutory & Tax Identification</h4>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Corporate identification numbers printed on official payslip headers. Leave blank to omit from payslips.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="cin" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Corporate ID (CIN)</label>
+                        <input type="text" name="cin" id="cin" value="{{ company.cin or '' }}" placeholder="e.g. U72200KA2024PTC123456" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                    </div>
+                    <div>
+                        <label for="gstin" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">GSTIN</label>
+                        <input type="text" name="gstin" id="gstin" value="{{ company.gstin or '' }}" placeholder="e.g. 29TURTU1234F1Z5" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                    </div>
+                    <div>
+                        <label for="pan" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Company PAN</label>
+                        <input type="text" name="pan" id="pan" value="{{ company.pan or '' }}" placeholder="e.g. TURTU1234F" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                    </div>
+                </div>
+            </div>
             
             <div class="flex justify-end pt-3.5 border-t border-slate-100">
                 <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors active:scale-95 flex items-center">

@@ -58,6 +58,7 @@ def _format_employee_out(emp: Employee) -> EmployeeOut:
         experience=emp.experience,
         aadhar_number=emp.aadhar_number,
         pan_number=emp.pan_number,
+        uan_number=emp.uan_number,
         bank_name=emp.bank_name,
         account_number=emp.account_number,
         ifsc_code=emp.ifsc_code,
@@ -182,6 +183,8 @@ async def api_create_employee(
         profile_data["aadhar_number"] = payload.aadhar_number
     if payload.pan_number:
         profile_data["pan_number"] = payload.pan_number
+    if payload.uan_number:
+        profile_data["uan_number"] = payload.uan_number
     if payload.avatar_url:
         profile_data["avatar_url"] = payload.avatar_url
 
@@ -401,6 +404,8 @@ async def api_update_employee(
         employee.profile.aadhar_number = payload.aadhar_number
     if payload.pan_number is not None:
         employee.profile.pan_number = payload.pan_number
+    if payload.uan_number is not None:
+        employee.profile.uan_number = payload.uan_number
     if payload.avatar_url is not None:
         employee.profile.avatar_url = payload.avatar_url
 

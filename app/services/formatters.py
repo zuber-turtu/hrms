@@ -15,11 +15,10 @@ def mask_account_number(account_number: str) -> str:
         return clean
     return "X" * (len(clean) - 4) + clean[-4:]
 
-def number_to_words(num: float, currency_symbol: str = "$") -> str:
+def number_to_words(num: float, currency_symbol: str = "₹") -> str:
     """Converts a monetary number into standard English words with support for international and Indian numbering systems."""
     try:
-        is_rupee = currency_symbol in ["₹", "INR", "Rs", "Rs.", "rupees", "Rupees"]
-        currency_name = "Rupees" if is_rupee else "Dollars"
+        is_rupee = currency_symbol in ["₹", "INR", "Rs", "Rs.", "rupees", "Rupees", "Rupee", "rupee"] or str(currency_symbol).startswith("₹")
         
         units = [
             "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
@@ -59,24 +58,35 @@ def number_to_words(num: float, currency_symbol: str = "$") -> str:
             else:
                 return helper_indian(n // 10000000) + "Crore " + helper_indian(n % 10000000)
 
-        int_part = int(abs(num))
-        cents = int(round((abs(num) - int_part) * 100))
+        def convert_cents(c: int) -> str:
+            if c < 20:
+                return units[c]
+            else:
+                return tens[c // 10] + (" " + units[c % 10] if c % 10 != 0 else "")
 
-        if int_part == 0:
-            words = "Zero "
-        else:
-            words = helper_indian(int_part) if is_rupee else helper_western(int_part)
+        total_cents = int(round(abs(float(num)) * 100))
+        int_part = total_cents // 100
+        cents = total_cents % 100
 
-        words = words.strip() + f" {currency_name}"
+        currency_name = ("Rupee" if int_part == 1 else "Rupees") if is_rupee else ("Dollar" if int_part == 1 else "Dollars")
+        cents_name = ("Paisa" if cents == 1 else "Paise") if is_rupee else ("Cent" if cents == 1 else "Cents")
+
+        if int_part == 0 and cents == 0:
+            return f"Zero {currency_name} Only"
+
+        parts = []
+        if int_part > 0:
+            int_words = (helper_indian(int_part) if is_rupee else helper_western(int_part)).strip()
+            parts.append(f"{int_words} {currency_name}")
 
         if cents > 0:
-            cents_name = "Paise" if is_rupee else "Cents"
-            words += f" and {cents}/100 {cents_name}"
+            cents_words = convert_cents(cents).strip()
+            parts.append(f"{cents_words} {cents_name}")
 
-        words += " Only"
-        if num < 0:
-            words = "Minus " + words
-        return words
+        result = " and ".join(parts) + " Only"
+        if float(num) < 0:
+            result = "Minus " + result
+        return " ".join(result.split())
     except Exception:
         return f"{num:.2f} Only"
 

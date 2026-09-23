@@ -51,6 +51,12 @@ async def update_company_profile(
         company.currency_symbol = payload.currency_symbol
     if payload.working_days_per_month is not None:
         company.working_days_per_month = payload.working_days_per_month
+    if payload.cin is not None:
+        company.cin = payload.cin.strip().upper() if payload.cin and payload.cin.strip() else None
+    if payload.gstin is not None:
+        company.gstin = payload.gstin.strip().upper() if payload.gstin and payload.gstin.strip() else None
+    if payload.pan is not None:
+        company.pan = payload.pan.strip().upper() if payload.pan and payload.pan.strip() else None
 
     db.commit()
     db.refresh(company)

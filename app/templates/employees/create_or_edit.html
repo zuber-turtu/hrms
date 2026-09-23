@@ -259,7 +259,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label for="aadhar_number" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Aadhaar Card Number</label>
                     <input type="text" name="aadhar_number" id="aadhar_number" value="{{ employee.aadhar_number if employee else '' }}" placeholder="12-digit Aadhaar number"
@@ -269,6 +269,11 @@
                     <label for="pan_number" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">PAN Card Number</label>
                     <input type="text" name="pan_number" id="pan_number" value="{{ employee.pan_number if employee else '' }}" placeholder="10-digit alphanumeric PAN"
                         class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono uppercase focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                </div>
+                <div>
+                    <label for="uan_number" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">PF / UAN Number</label>
+                    <input type="text" name="uan_number" id="uan_number" value="{{ employee.uan_number if employee else '' }}" placeholder="12-digit PF / UAN (e.g. 100982348123)"
+                        class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                 </div>
             </div>
         </div>

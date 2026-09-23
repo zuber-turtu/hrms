@@ -124,17 +124,17 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
     emp_name = employee.name if employee and hasattr(employee, 'name') and employee.name else "Employee"
     emp_id_val = f"{employee.id:04d}" if employee and hasattr(employee, 'id') and employee.id else "0001"
     
-    dept_name = "Operations"
+    dept_name = "—"
     if employee and hasattr(employee, 'department') and employee.department:
         dept_name = employee.department.name if hasattr(employee.department, 'name') else str(employee.department)
         
-    desig_title = "Staff"
+    desig_title = "—"
     if employee and hasattr(employee, 'designation') and employee.designation:
         desig_title = employee.designation.title if hasattr(employee.designation, 'title') else str(employee.designation)
         
-    emp_bank = "HDFC Bank"
-    emp_acc = "N/A"
-    emp_ifsc = "HDFC0001092"
+    emp_bank = "—"
+    emp_acc = "—"
+    emp_ifsc = "—"
     if employee and hasattr(employee, 'bank_account') and employee.bank_account:
         if employee.bank_account.bank_name:
             emp_bank = employee.bank_account.bank_name
@@ -147,9 +147,15 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
     if employee and hasattr(employee, 'joining_date') and employee.joining_date:
         emp_doj = str(employee.joining_date)
         
-    emp_pan = "ABCDE1234F"
+    emp_pan = "—"
     if employee and hasattr(employee, 'profile') and employee.profile and employee.profile.pan_number:
         emp_pan = employee.profile.pan_number
+
+    emp_uan = "—"
+    if employee and hasattr(employee, 'profile') and employee.profile and getattr(employee.profile, 'uan_number', None):
+        emp_uan = employee.profile.uan_number
+    elif employee and hasattr(employee, 'uan_number') and employee.uan_number:
+        emp_uan = employee.uan_number
 
     payable_days = payslip.payable_days if payslip.payable_days is not None else 22
     days_worked = payslip.days_worked if payslip.days_worked is not None else 0.0
@@ -179,6 +185,17 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
                 logo_base64 = f"data:image/jpeg;base64,{base64.b64encode(lf.read()).decode('utf-8')}"
         except Exception:
             logo_base64 = ""
+
+    statutory_parts = []
+    if company:
+        if getattr(company, "cin", None) and str(company.cin).strip():
+            statutory_parts.append(f"CIN: {str(company.cin).strip()}")
+        if getattr(company, "gstin", None) and str(company.gstin).strip():
+            statutory_parts.append(f"GSTIN: {str(company.gstin).strip()}")
+        if getattr(company, "pan", None) and str(company.pan).strip():
+            statutory_parts.append(f"PAN: {str(company.pan).strip()}")
+    
+    statutory_markup = f'<p class="text-[10px] text-slate-400 mt-0.5 font-mono">{" • ".join(statutory_parts)}</p>' if statutory_parts else ''
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en" class="bg-white">
@@ -278,9 +295,7 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
                     <p class="text-xs text-slate-500 mt-0.5">
                         {company_addr}
                     </p>
-                    <p class="text-[10px] text-slate-400 mt-0.5 font-mono">
-                        CIN: U72200KA2024PTC123456 • GSTIN: 29TURTU1234F1Z5 • PAN: TURTU1234F
-                    </p>
+                    {statutory_markup}
                 </div>
             </div>
 
@@ -355,7 +370,7 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
                     </div>
                     <div class="flex justify-between">
                         <span class="font-medium text-slate-500">PF / UAN No:</span>
-                        <span class="font-mono font-medium text-slate-900 text-right">100982348123</span>
+                        <span class="font-mono font-medium text-slate-900 text-right">{emp_uan}</span>
                     </div>
                 </div>
 
@@ -466,7 +481,7 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
                     <span class="text-[11px]">Official Authenticated Statement</span>
                 </div>
                 <p class="text-[10px] text-slate-400 leading-relaxed">
-                    *Computer-generated official salary certificate issued by TURTU HRMS. Does not require physical signature.
+                    *Computer-generated official salary certificate issued by {company_name}. Does not require physical signature.
                 </p>
                 <p class="text-[9px] text-slate-400 font-mono">HASH: AUTH-PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}-VERIFIED</p>
             </div>
@@ -611,12 +626,22 @@ def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> Byte
     month_name = get_month_name(payslip.month)
     slip_no = f"PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}"
     
+    statutory_parts_rl = []
+    if company:
+        if getattr(company, "cin", None) and str(company.cin).strip():
+            statutory_parts_rl.append(f"CIN: {str(company.cin).strip()}")
+        if getattr(company, "gstin", None) and str(company.gstin).strip():
+            statutory_parts_rl.append(f"GSTIN: {str(company.gstin).strip()}")
+        if getattr(company, "pan", None) and str(company.pan).strip():
+            statutory_parts_rl.append(f"PAN: {str(company.pan).strip()}")
+
     header_left_text = [
         Paragraph(f"<b>{company_name.upper()}</b>", company_title_style),
         Spacer(1, 1),
         Paragraph(company_addr, company_sub_style),
-        Paragraph("CIN: U72200KA2024PTC123456 • GSTIN: 29TURTU1234F1Z5 • PAN: TURTU1234F", company_sub_style),
     ]
+    if statutory_parts_rl:
+        header_left_text.append(Paragraph(" • ".join(statutory_parts_rl), company_sub_style))
 
     logo_path = os.path.abspath("static/images/icon.jpeg")
     if not os.path.exists(logo_path):
@@ -685,17 +710,17 @@ def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> Byte
     emp_name = employee.name if employee and hasattr(employee, 'name') and employee.name else "Employee"
     emp_id_val = f"#{employee.id:04d}" if employee and hasattr(employee, 'id') and employee.id else "#0001"
     
-    dept_name = "Operations"
+    dept_name = "—"
     if employee and hasattr(employee, 'department') and employee.department:
         dept_name = employee.department.name if hasattr(employee.department, 'name') else str(employee.department)
         
-    desig_title = "Staff"
+    desig_title = "—"
     if employee and hasattr(employee, 'designation') and employee.designation:
         desig_title = employee.designation.title if hasattr(employee.designation, 'title') else str(employee.designation)
         
-    emp_bank = "HDFC Bank"
-    emp_acc = "N/A"
-    emp_ifsc = "HDFC0001092"
+    emp_bank = "—"
+    emp_acc = "—"
+    emp_ifsc = "—"
     if employee and hasattr(employee, 'bank_account') and employee.bank_account:
         if employee.bank_account.bank_name:
             emp_bank = employee.bank_account.bank_name
@@ -708,9 +733,15 @@ def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> Byte
     if employee and hasattr(employee, 'joining_date') and employee.joining_date:
         emp_doj = str(employee.joining_date)
         
-    emp_pan = "ABCDE1234F"
+    emp_pan = "—"
     if employee and hasattr(employee, 'profile') and employee.profile and employee.profile.pan_number:
         emp_pan = employee.profile.pan_number
+
+    emp_uan = "—"
+    if employee and hasattr(employee, 'profile') and employee.profile and getattr(employee.profile, 'uan_number', None):
+        emp_uan = employee.profile.uan_number
+    elif employee and hasattr(employee, 'uan_number') and employee.uan_number:
+        emp_uan = employee.uan_number
 
     meta_left = [
         [Paragraph("<b>EMPLOYEE IDENTIFICATION</b>", section_subhead_style), Paragraph("", cell_value_style)],
@@ -726,7 +757,7 @@ def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> Byte
         [Paragraph("Bank Account No:", cell_label_style), Paragraph(str(emp_acc), cell_mono_bold)],
         [Paragraph("IFSC Code:", cell_label_style), Paragraph(str(emp_ifsc), cell_mono_bold)],
         [Paragraph("PAN Number:", cell_label_style), Paragraph(str(emp_pan), cell_mono_bold)],
-        [Paragraph("PF / UAN No:", cell_label_style), Paragraph("100982348123", cell_mono_bold)],
+        [Paragraph("PF / UAN No:", cell_label_style), Paragraph(str(emp_uan), cell_mono_bold)],
     ]
 
     t_meta_left = Table(meta_left, colWidths=[88, 175])
@@ -894,7 +925,7 @@ def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> Byte
     # 7. Footer
     disclaimer = [
         Paragraph("<b>Official Authenticated Statement</b>", ParagraphStyle('DisclH', parent=cell_value_bold, textColor=c_teal)),
-        Paragraph("*Computer-generated official salary certificate issued by TURTU HRMS. Does not require physical signature.", footer_text_style),
+        Paragraph(f"*Computer-generated official salary certificate issued by {company_name}. Does not require physical signature.", footer_text_style),
         Paragraph(f"HASH: AUTH-PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}-VERIFIED", ParagraphStyle('SecHash', parent=footer_text_style, fontName=f_mono, fontSize=5.5))
     ]
     signatory = [
