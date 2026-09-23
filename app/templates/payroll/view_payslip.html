@@ -5,32 +5,88 @@
 {% block content %}
 <style>
 @media print {
-    /* Hide non-printable web chrome */
-    aside, header, #sidebar, #sidebar-menu, .no-print, nav, .flash-message, button, .action-bar {
-        display: none !important;
-    }
-    body, main, #main-content {
-        background: white !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    .payslip-sheet {
-        border: 1px solid #cbd5e1 !important;
-        box-shadow: none !important;
-        padding: 20px !important;
-        margin: 0 auto !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        border-radius: 0 !important;
-    }
+    /* 1. Page Configuration: Locked to A4 Portrait with zero browser margins */
     @page {
         size: A4 portrait;
-        margin: 8mm 10mm 8mm 10mm;
+        margin: 0 !important; /* Strips browser default header/footer URLs, timestamps, and page titles */
+    }
+
+    /* 2. Enforce Background Graphics Across All Browsers */
+    *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* 3. Hide web app shell chrome */
+    aside, header, #sidebar, #sidebar-menu, #sidebar-backdrop, .no-print, nav, .flash-message, button, .action-bar, #pdfErrorAlert {
+        display: none !important;
+    }
+
+    /* 4. Reset Body and Container Canvas to exact A4 Dimensions */
+    html, body {
+        background: #ffffff !important;
+        color: #0F172A !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        max-height: 297mm !important;
+        overflow: hidden !important;
+    }
+
+    main, #main-content, .space-y-5 {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* 5. Printable Payslip Sheet: Symmetrical 8mm Margins on all 4 sides, No Side Overflow, Fits 1 Page */
+    .payslip-sheet {
+        box-sizing: border-box !important;
+        width: 194mm !important;          /* 210mm width - (8mm left + 8mm right) = 194mm */
+        max-width: 194mm !important;
+        margin: 8mm auto !important;      /* Exactly 8mm Top, 8mm Bottom, 8mm Left, 8mm Right */
+        padding: 5mm 6mm !important;      /* Symmetrical inner padding */
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 6px !important;
+        box-shadow: none !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: avoid !important;
+    }
+
+    /* High-Density Print Typography and Spacing */
+    .payslip-sheet > div + div {
+        margin-top: 2.5mm !important;
+    }
+    .payslip-sheet table {
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+    .payslip-sheet th, .payslip-sheet td {
+        padding-top: 1.5mm !important;
+        padding-bottom: 1.5mm !important;
     }
 }
 </style>
 
 <div class="space-y-5">
+
+    <!-- Error Alert Banner (Hidden by default) -->
+    <div id="pdfErrorAlert" class="hidden bg-rose-50 border border-rose-200 rounded-lg p-3.5 shadow-sm flex items-start space-x-3">
+        <div class="p-1 rounded-md bg-rose-100 text-rose-700 shrink-0">
+            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+        </div>
+        <div class="flex-1 text-xs font-medium text-rose-800 self-center" id="pdfErrorMessage">
+            Failed to generate PDF payslip. Please try again.
+        </div>
+        <button onclick="document.getElementById('pdfErrorAlert').classList.add('hidden')" class="text-rose-500 hover:text-rose-700 p-0.5">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+    </div>
 
     <!-- Top Action Toolbar (Hidden on Print) -->
     <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-xl border border-slate-200 p-4 shadow-card">
@@ -67,9 +123,10 @@
             <button onclick="window.print()" class="inline-flex items-center px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs">
                 <i data-lucide="printer" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Print
             </button>
-            <a href="/payroll/{{ payslip.id }}/pdf" target="_blank" class="inline-flex items-center px-3.5 py-2 border border-transparent rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-xs transition-colors">
-                <i data-lucide="download" class="w-3.5 h-3.5 mr-1.5"></i> Download PDF
-            </a>
+            <button id="downloadPdfBtn" onclick="downloadPayslipPdf({{ payslip.id }}, '{{ pdf_filename }}')" class="inline-flex items-center px-3.5 py-2 border border-transparent rounded-lg text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 active:scale-95 shadow-sm transition-all">
+                <i data-lucide="download" id="downloadPdfIcon" class="w-3.5 h-3.5 mr-1.5"></i>
+                <span id="downloadPdfText">Download PDF</span>
+            </button>
         </div>
     </div>
 
@@ -303,4 +360,77 @@
     </div>
 
 </div>
+
+<script>
+    async function downloadPayslipPdf(payslipId, fallbackFilename) {
+        const btn = document.getElementById('downloadPdfBtn');
+        const icon = document.getElementById('downloadPdfIcon');
+        const text = document.getElementById('downloadPdfText');
+        const errorAlert = document.getElementById('pdfErrorAlert');
+
+        if (errorAlert) errorAlert.classList.add('hidden');
+        
+        // Enter Loading State
+        btn.disabled = true;
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+        if (icon) {
+            icon.setAttribute('data-lucide', 'loader-2');
+            icon.classList.add('animate-spin');
+            lucide.createIcons();
+        }
+        if (text) text.textContent = 'Generating PDF...';
+
+        try {
+            const response = await fetch(`/payroll/${payslipId}/pdf`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/pdf'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server returned status ${response.status}`);
+            }
+
+            // Determine filename from Content-Disposition header if available
+            let filename = fallbackFilename || `Payslip_${payslipId}.pdf`;
+            const disposition = response.headers.get('Content-Disposition');
+            if (disposition && disposition.includes('filename=')) {
+                const match = disposition.match(/filename=["']?([^"';]+)["']?/i);
+                if (match && match[1]) {
+                    filename = match[1].trim();
+                }
+            }
+
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+
+        } catch (err) {
+            console.error('PDF Download Error:', err);
+            if (errorAlert) {
+                errorAlert.classList.remove('hidden');
+                document.getElementById('pdfErrorMessage').textContent = 'Failed to generate PDF payslip. Please try again or use browser Print.';
+            } else {
+                alert('Failed to generate PDF payslip. Please try again.');
+            }
+        } finally {
+            // Restore Button State
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            if (icon) {
+                icon.setAttribute('data-lucide', 'download');
+                icon.classList.remove('animate-spin');
+                lucide.createIcons();
+            }
+            if (text) text.textContent = 'Download PDF';
+        }
+    }
+</script>
 {% endblock %}

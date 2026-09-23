@@ -79,3 +79,26 @@ def number_to_words(num: float, currency_symbol: str = "$") -> str:
         return words
     except Exception:
         return f"{num:.2f} Only"
+
+
+def get_payslip_pdf_filename(payslip) -> str:
+    """
+    Generates a standardized, meaningful filename for downloaded payslip PDFs.
+    Example: Payslip_Rahul_Kumar_August_2026.pdf
+    """
+    import re
+    emp_name = "Employee"
+    if payslip and hasattr(payslip, "employee") and payslip.employee and payslip.employee.name:
+        emp_name = payslip.employee.name.strip()
+    
+    # Replace whitespace and special characters with underscores
+    clean_name = re.sub(r'[^a-zA-Z0-9]+', '_', emp_name).strip('_')
+    if not clean_name:
+        clean_name = "Employee"
+        
+    month = getattr(payslip, "month", 1)
+    year = getattr(payslip, "year", 2026)
+    month_name = get_month_name(month)
+    
+    return f"Payslip_{clean_name}_{month_name}_{year}.pdf"
+

@@ -11,6 +11,7 @@ from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.services.payroll_calculator import generate_draft_payslip
 from app.services.pdf_generator import generate_payslip_pdf
+from app.services.formatters import get_payslip_pdf_filename
 from app.schemas.payroll import (
     GenerateDraftRequest,
     GenerateBulkDraftRequest,
@@ -302,9 +303,10 @@ async def download_payslip_pdf(
 
     company = db.query(Company).first()
     pdf_buffer = generate_payslip_pdf(payslip, company, payslip.employee)
+    filename = get_payslip_pdf_filename(payslip)
 
     headers = {
-        "Content-Disposition": f'attachment; filename="payslip_{payslip.month}_{payslip.year}.pdf"'
+        "Content-Disposition": f'attachment; filename="{filename}"'
     }
     return Response(
         content=pdf_buffer.read(),

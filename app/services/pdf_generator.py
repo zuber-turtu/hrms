@@ -65,32 +65,41 @@ def get_font_name(preferred: str, fallback: str = "Helvetica") -> str:
     return fallback
 
 
-def generate_payslip_pdf(payslip, company, employee):
+def generate_payslip_pdf(payslip, company=None, employee=None):
+    """
+    Generates a production-quality, vector-sharp PDF of the employee payslip.
+    Accurately mirrors the layout, typography, colors, and structure of the web dashboard.
+    """
     register_brand_fonts()
 
+    if employee is None:
+        employee = getattr(payslip, "employee", None)
+
     buffer = BytesIO()
-    # A4 standard portrait layout with standard margins (26pt)
+    # A4 standard portrait layout with exact 24pt margins
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=26,
-        leftMargin=26,
-        topMargin=26,
-        bottomMargin=26
+        rightMargin=24,
+        leftMargin=24,
+        topMargin=24,
+        bottomMargin=24
     )
     
-    # TURTU Brand Color Palette
-    c_dark = colors.HexColor("#004444")        # Dark Forest (Headers, Ribbon)
-    c_teal = colors.HexColor("#008080")        # Primary Teal (Accents, Totals, Borders)
-    c_forest = colors.HexColor("#005050")      # Teal Forest
+    # TURTU Brand & Dashboard Color Palette
+    c_dark = colors.HexColor("#0F172A")        # Slate-900 (Ribbon, Headers)
+    c_teal = colors.HexColor("#008080")        # TURTU Primary Teal
+    c_teal_dark = colors.HexColor("#005050")   # Teal Forest
     c_mist = colors.HexColor("#E0F4F4")        # Teal Mist (Highlight fills, badges)
-    c_light = colors.HexColor("#B3E3E3")       # Teal Light (Dividers, borders)
-    c_wash = colors.HexColor("#F4F7F7")        # Teal Wash (Alternating rows, container fills)
-    c_text_primary = colors.HexColor("#1C2B2B") # Deep Forest (Headings & Body)
-    c_text_secondary = colors.HexColor("#6B7F7F") # Teal Slate (Labels & Muted copy)
-    c_rose_bg = colors.HexColor("#FFE8E8")     # Alert Rose Fill
-    c_rose_text = colors.HexColor("#E53E3E")   # Alert Rose Text
-    c_emerald_text = colors.HexColor("#047857")# Positive / Present green
+    c_light = colors.HexColor("#CBD5E1")       # Slate-300 (Dividers, borders)
+    c_border = colors.HexColor("#E2E8F0")      # Slate-200 (Subtle borders)
+    c_wash = colors.HexColor("#F8FAFC")        # Slate-50 (Row fills, container backgrounds)
+    c_text_primary = colors.HexColor("#0F172A") # Deep Slate / Forest
+    c_text_secondary = colors.HexColor("#64748B") # Slate-500
+    c_rose_bg = colors.HexColor("#FFF1F2")     # Alert Rose / Red light bg
+    c_rose_text = colors.HexColor("#BE123C")   # Alert Rose / Red text (Rose-700)
+    c_emerald_text = colors.HexColor("#047857")# Positive / Present green (Emerald-700)
+    c_amber_text = colors.HexColor("#B45309")  # Amber-700 for draft status
 
     # Font Families with fallback support
     f_body = get_font_name("Nunito", "Helvetica")
@@ -104,8 +113,8 @@ def generate_payslip_pdf(payslip, company, employee):
     company_title_style = ParagraphStyle(
         'CompTitle',
         fontName=f_heading,
-        fontSize=13,
-        leading=16,
+        fontSize=12.5,
+        leading=15,
         textColor=c_text_primary,
         alignment=TA_LEFT
     )
@@ -152,17 +161,17 @@ def generate_payslip_pdf(payslip, company, employee):
     table_header_style = ParagraphStyle(
         'TableHead',
         fontName=f_heading,
-        fontSize=8,
+        fontSize=7.5,
         leading=10,
-        textColor=colors.white,
+        textColor=c_text_primary,
         alignment=TA_LEFT
     )
     table_header_right = ParagraphStyle(
         'TableHeadR',
         fontName=f_heading,
-        fontSize=8,
+        fontSize=7.5,
         leading=10,
-        textColor=colors.white,
+        textColor=c_text_primary,
         alignment=TA_RIGHT
     )
     section_subhead_style = ParagraphStyle(
@@ -170,11 +179,11 @@ def generate_payslip_pdf(payslip, company, employee):
         fontName=f_heading,
         fontSize=7,
         leading=9,
-        textColor=c_teal
+        textColor=c_text_secondary
     )
     cell_label_style = ParagraphStyle(
         'CellLbl',
-        fontName=f_bold,
+        fontName=f_body,
         fontSize=7,
         leading=9,
         textColor=c_text_secondary
@@ -220,7 +229,7 @@ def generate_payslip_pdf(payslip, company, employee):
         fontName=f_mono_bold,
         fontSize=8.5,
         leading=11,
-        textColor=c_teal,
+        textColor=c_text_primary,
         alignment=TA_RIGHT
     )
     subtotal_amt_deduct = ParagraphStyle(
@@ -236,7 +245,7 @@ def generate_payslip_pdf(payslip, company, employee):
         fontName=f_heading,
         fontSize=8.5,
         leading=11,
-        textColor=c_teal,
+        textColor=c_text_primary,
         alignment=TA_LEFT
     )
     net_box_sub = ParagraphStyle(
@@ -260,7 +269,7 @@ def generate_payslip_pdf(payslip, company, employee):
         fontName=f_mono_bold,
         fontSize=15,
         leading=18,
-        textColor=c_teal,
+        textColor=c_text_primary,
         alignment=TA_RIGHT
     )
     footer_text_style = ParagraphStyle(
@@ -293,8 +302,7 @@ def generate_payslip_pdf(payslip, company, employee):
         Paragraph(f"<b>{company_name.upper()}</b>", company_title_style),
         Spacer(1, 1),
         Paragraph(company_addr, company_sub_style),
-        Paragraph("CIN: U72200KA2024PTC123456 • GSTIN/TAX: 29TURTU1234F1Z5 • PAN: TURTU1234F", company_sub_style),
-        Paragraph("Corporate HR & Payroll Division • support@turtu.in", company_sub_style)
+        Paragraph("CIN: U72200KA2024PTC123456 • GSTIN: 29TURTU1234F1Z5 • PAN: TURTU1234F", company_sub_style),
     ]
 
     logo_path = os.path.abspath("static/images/icon.jpeg")
@@ -303,8 +311,8 @@ def generate_payslip_pdf(payslip, company, employee):
 
     if os.path.exists(logo_path):
         try:
-            logo_img = RLImage(logo_path, width=44, height=44)
-            brand_table = Table([[logo_img, header_left_text]], colWidths=[52, 285])
+            logo_img = RLImage(logo_path, width=42, height=42)
+            brand_table = Table([[logo_img, header_left_text]], colWidths=[48, 290])
             brand_table.setStyle(TableStyle([
                 ('VALIGN', (0,0), (-1,-1), 'TOP'),
                 ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -318,16 +326,25 @@ def generate_payslip_pdf(payslip, company, employee):
     else:
         header_left = header_left_text
     
-    disbursement_str = payslip.generated_on.strftime('%B %d, %Y') if hasattr(payslip.generated_on, 'strftime') and payslip.generated_on else (str(payslip.generated_on) if payslip.generated_on else "End of Month")
+    if hasattr(payslip.generated_on, 'strftime') and payslip.generated_on:
+        date_str = payslip.generated_on.strftime('%b %d, %Y')
+    elif payslip.generated_on:
+        date_str = str(payslip.generated_on)
+    else:
+        date_str = "—"
+
+    status_str = getattr(payslip, "status", "draft").upper()
+    status_color = c_teal if status_str == "FINALIZED" else (c_emerald_text if status_str == "PAID" else c_amber_text)
+    
     header_right = [
-        Paragraph("<b>CONFIDENTIAL SALARY STATEMENT</b>", statement_title_style),
+        Paragraph("<b>SALARY STATEMENT</b>", statement_title_style),
         Spacer(1, 1),
-        Paragraph(f"<b>Slip No:</b> {slip_no}", statement_meta_style),
-        Paragraph(f"<b>Disbursement:</b> {disbursement_str}", statement_date_style),
-        Paragraph(f"<b>Status:</b> {payslip.status.upper()}", statement_date_style)
+        Paragraph(f"<b>Slip #{slip_no}</b>", statement_meta_style),
+        Paragraph(f"<b>Date:</b> {date_str}", statement_date_style),
+        Paragraph(f"<b>Status:</b> <font color='{status_color.hexval()}'><b>{status_str}</b></font>", statement_date_style)
     ]
     
-    header_table = Table([[header_left, header_right]], colWidths=[337, 206])
+    header_table = Table([[header_left, header_right]], colWidths=[338, 209])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
@@ -337,11 +354,11 @@ def generate_payslip_pdf(payslip, company, employee):
     ]))
     elements.append(header_table)
     elements.append(Spacer(1, 4))
-    elements.append(HRFlowable(width="100%", thickness=2, color=c_dark, spaceBefore=0, spaceAfter=5))
+    elements.append(HRFlowable(width="100%", thickness=1, color=c_light, spaceBefore=0, spaceAfter=5))
 
-    # 2. Payslip Month Banner (Gradient Look / Dark Forest)
+    # 2. Payslip Month Banner (Slate-900 Dashboard Bar)
     ribbon_data = [[Paragraph(f"PAYSLIP FOR THE MONTH OF {month_name.upper()} {payslip.year}", ribbon_style)]]
-    ribbon_table = Table(ribbon_data, colWidths=[543])
+    ribbon_table = Table(ribbon_data, colWidths=[547])
     ribbon_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), c_dark),
         ('TOPPADDING', (0,0), (-1,-1), 3.5),
@@ -351,19 +368,41 @@ def generate_payslip_pdf(payslip, company, employee):
     elements.append(ribbon_table)
     elements.append(Spacer(1, 4))
 
-    # 3. Employee and Bank Metadata Grid (2-Column Dashboard Box Style)
-    dept_name = employee.department.name if employee.department else (employee.department or "Operations")
-    desig_title = employee.designation.title if employee.designation else (employee.designation or "Staff")
-    emp_bank = employee.bank_account.bank_name if employee.bank_account and employee.bank_account.bank_name else "HDFC Bank"
-    emp_acc = mask_account_number(employee.bank_account.account_number if employee.bank_account else "")
-    emp_ifsc = employee.bank_account.ifsc_code if employee.bank_account and employee.bank_account.ifsc_code else "HDFC0001092"
-    emp_doj = str(employee.joining_date) if employee.joining_date else "N/A"
-    emp_pan = employee.profile.pan_number if employee.profile and employee.profile.pan_number else "ABCDE1234F"
+    # 3. Employee and Bank Metadata Grid
+    emp_name = employee.name if employee and hasattr(employee, 'name') and employee.name else "Employee"
+    emp_id_val = f"#{employee.id:04d}" if employee and hasattr(employee, 'id') and employee.id else "#0001"
+    
+    dept_name = "Operations"
+    if employee and hasattr(employee, 'department') and employee.department:
+        dept_name = employee.department.name if hasattr(employee.department, 'name') else str(employee.department)
+        
+    desig_title = "Staff"
+    if employee and hasattr(employee, 'designation') and employee.designation:
+        desig_title = employee.designation.title if hasattr(employee.designation, 'title') else str(employee.designation)
+        
+    emp_bank = "HDFC Bank"
+    emp_acc = "N/A"
+    emp_ifsc = "HDFC0001092"
+    if employee and hasattr(employee, 'bank_account') and employee.bank_account:
+        if employee.bank_account.bank_name:
+            emp_bank = employee.bank_account.bank_name
+        if employee.bank_account.account_number:
+            emp_acc = mask_account_number(employee.bank_account.account_number)
+        if employee.bank_account.ifsc_code:
+            emp_ifsc = employee.bank_account.ifsc_code
+            
+    emp_doj = "—"
+    if employee and hasattr(employee, 'joining_date') and employee.joining_date:
+        emp_doj = str(employee.joining_date)
+        
+    emp_pan = "ABCDE1234F"
+    if employee and hasattr(employee, 'profile') and employee.profile and employee.profile.pan_number:
+        emp_pan = employee.profile.pan_number
 
     meta_left = [
         [Paragraph("<b>EMPLOYEE IDENTIFICATION</b>", section_subhead_style), Paragraph("", cell_value_style)],
-        [Paragraph("Employee Name:", cell_label_style), Paragraph(f"<b>{employee.name}</b>", cell_value_bold)],
-        [Paragraph("Employee ID:", cell_label_style), Paragraph(f"EMP-{employee.id:04d}", cell_mono_bold)],
+        [Paragraph("Employee Name:", cell_label_style), Paragraph(f"<b>{emp_name}</b>", cell_value_bold)],
+        [Paragraph("Employee ID:", cell_label_style), Paragraph(str(emp_id_val), cell_mono_bold)],
         [Paragraph("Department:", cell_label_style), Paragraph(str(dept_name), cell_value_style)],
         [Paragraph("Designation:", cell_label_style), Paragraph(str(desig_title), cell_value_style)],
         [Paragraph("Date of Joining:", cell_label_style), Paragraph(str(emp_doj), cell_value_style)],
@@ -372,12 +411,12 @@ def generate_payslip_pdf(payslip, company, employee):
         [Paragraph("<b>PAYMENT & STATUTORY DETAILS</b>", section_subhead_style), Paragraph("", cell_value_style)],
         [Paragraph("Bank Name:", cell_label_style), Paragraph(str(emp_bank), cell_value_style)],
         [Paragraph("Bank Account No:", cell_label_style), Paragraph(str(emp_acc), cell_mono_bold)],
-        [Paragraph("IFSC / Branch Code:", cell_label_style), Paragraph(str(emp_ifsc), cell_mono_bold)],
-        [Paragraph("PAN / Tax ID:", cell_label_style), Paragraph(str(emp_pan), cell_mono_bold)],
+        [Paragraph("IFSC Code:", cell_label_style), Paragraph(str(emp_ifsc), cell_mono_bold)],
+        [Paragraph("PAN Number:", cell_label_style), Paragraph(str(emp_pan), cell_mono_bold)],
         [Paragraph("PF / UAN No:", cell_label_style), Paragraph("100982348123", cell_mono_bold)],
     ]
 
-    t_meta_left = Table(meta_left, colWidths=[90, 175])
+    t_meta_left = Table(meta_left, colWidths=[88, 175])
     t_meta_left.setStyle(TableStyle([
         ('TOPPADDING', (0,0), (-1,-1), 1.5),
         ('BOTTOMPADDING', (0,0), (-1,-1), 1.5),
@@ -386,7 +425,7 @@ def generate_payslip_pdf(payslip, company, employee):
         ('LINEBELOW', (0,0), (-1,0), 0.5, c_light),
     ]))
 
-    t_meta_right = Table(meta_right, colWidths=[90, 175])
+    t_meta_right = Table(meta_right, colWidths=[88, 175])
     t_meta_right.setStyle(TableStyle([
         ('TOPPADDING', (0,0), (-1,-1), 1.5),
         ('BOTTOMPADDING', (0,0), (-1,-1), 1.5),
@@ -395,11 +434,11 @@ def generate_payslip_pdf(payslip, company, employee):
         ('LINEBELOW', (0,0), (-1,0), 0.5, c_light),
     ]))
 
-    meta_container = Table([[t_meta_left, t_meta_right]], colWidths=[271.5, 271.5])
+    meta_container = Table([[t_meta_left, t_meta_right]], colWidths=[273.5, 273.5])
     meta_container.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), c_wash),
-        ('BOX', (0,0), (-1,-1), 0.75, c_light),
-        ('INNERGRID', (0,0), (-1,-1), 0.5, c_light),
+        ('BOX', (0,0), (-1,-1), 0.75, c_border),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, c_border),
         ('TOPPADDING', (0,0), (-1,-1), 3),
         ('BOTTOMPADDING', (0,0), (-1,-1), 3),
         ('LEFTPADDING', (0,0), (-1,-1), 4),
@@ -409,24 +448,27 @@ def generate_payslip_pdf(payslip, company, employee):
     elements.append(Spacer(1, 4))
 
     # 4. Attendance Summary Ribbon
-    lop_days = max(0.0, payslip.payable_days - payslip.days_worked)
+    payable_days = payslip.payable_days if payslip.payable_days is not None else 22
+    days_worked = payslip.days_worked if payslip.days_worked is not None else 0.0
+    lop_days = max(0.0, payable_days - days_worked)
+
     att_label_style = ParagraphStyle('AttLbl', fontName=f_bold, fontSize=6.5, leading=8.5, textColor=c_text_secondary, alignment=TA_CENTER)
     att_val_style = ParagraphStyle('AttVal', fontName=f_mono_bold, fontSize=8, leading=10, textColor=c_text_primary, alignment=TA_CENTER)
     att_val_worked = ParagraphStyle('AttValW', fontName=f_mono_bold, fontSize=8, leading=10, textColor=c_emerald_text, alignment=TA_CENTER)
     att_val_lop = ParagraphStyle('AttValL', fontName=f_mono_bold, fontSize=8, leading=10, textColor=c_rose_text, alignment=TA_CENTER)
-    att_val_mode = ParagraphStyle('AttValM', fontName=f_bold, fontSize=7.5, leading=10, textColor=c_teal, alignment=TA_CENTER)
+    att_val_mode = ParagraphStyle('AttValM', fontName=f_bold, fontSize=7.5, leading=10, textColor=c_text_primary, alignment=TA_CENTER)
 
     att_data = [[
-        [Paragraph("STANDARD WORKING DAYS", att_label_style), Paragraph(str(payslip.payable_days), att_val_style)],
-        [Paragraph("DAYS WORKED / PRESENT", att_label_style), Paragraph(f"{payslip.days_worked:.1f}", att_val_worked)],
-        [Paragraph("LOSS OF PAY (LOP) / LEAVE", att_label_style), Paragraph(f"{lop_days:.1f}", att_val_lop)],
-        [Paragraph("PAYMENT MODE", att_label_style), Paragraph("Direct Bank Transfer", att_val_mode)],
+        [Paragraph("PAYABLE DAYS", att_label_style), Paragraph(str(payable_days), att_val_style)],
+        [Paragraph("DAYS WORKED", att_label_style), Paragraph(f"{days_worked:.1f}", att_val_worked)],
+        [Paragraph("LOSS OF PAY (LOP)", att_label_style), Paragraph(f"{lop_days:.1f}", att_val_lop)],
+        [Paragraph("PAYMENT MODE", att_label_style), Paragraph("Direct Transfer", att_val_mode)],
     ]]
-    att_table = Table(att_data, colWidths=[135.75, 135.75, 135.75, 135.75])
+    att_table = Table(att_data, colWidths=[136.75, 136.75, 136.75, 136.75])
     att_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), c_mist),
-        ('BOX', (0,0), (-1,-1), 0.5, c_light),
-        ('INNERGRID', (0,0), (-1,-1), 0.5, c_light),
+        ('BACKGROUND', (0,0), (-1,-1), c_wash),
+        ('BOX', (0,0), (-1,-1), 0.5, c_border),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, c_border),
         ('TOPPADDING', (0,0), (-1,-1), 2.5),
         ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
         ('LEFTPADDING', (0,0), (-1,-1), 3),
@@ -436,9 +478,17 @@ def generate_payslip_pdf(payslip, company, employee):
     elements.append(att_table)
     elements.append(Spacer(1, 4))
 
-    # 5. Earnings & Deductions Tables (Two-Column Side-by-Side)
-    total_earnings = payslip.basic + payslip.hra + payslip.allowances + payslip.bonus
-    total_deductions = payslip.pf + payslip.tax + payslip.other_deductions
+    # 5. Earnings & Deductions Tables
+    basic = payslip.basic or 0.0
+    hra = payslip.hra or 0.0
+    allowances = payslip.allowances or 0.0
+    bonus = payslip.bonus or 0.0
+    pf = payslip.pf or 0.0
+    tax = payslip.tax or 0.0
+    other_deductions = payslip.other_deductions or 0.0
+
+    total_earnings = basic + hra + allowances + bonus
+    total_deductions = pf + tax + other_deductions
 
     breakdown_data = [
         # Table Header
@@ -451,49 +501,47 @@ def generate_payslip_pdf(payslip, company, employee):
         # Rows
         [
             Paragraph("Basic Salary", cell_value_style),
-            Paragraph(f"{payslip.basic:,.2f}", cell_mono_right),
-            Paragraph("Employee Provident Fund (PF)", cell_value_style),
-            Paragraph(f"{payslip.pf:,.2f}", cell_mono_right)
+            Paragraph(f"{basic:,.2f}", cell_mono_right),
+            Paragraph("Provident Fund (PF)", cell_value_style),
+            Paragraph(f"{pf:,.2f}", cell_mono_right)
         ],
         [
             Paragraph("House Rent Allowance (HRA)", cell_value_style),
-            Paragraph(f"{payslip.hra:,.2f}", cell_mono_right),
-            Paragraph("Professional Tax (PT) / TDS", cell_value_style),
-            Paragraph(f"{payslip.tax:,.2f}", cell_mono_right)
+            Paragraph(f"{hra:,.2f}", cell_mono_right),
+            Paragraph("Tax Withholding (TDS)", cell_value_style),
+            Paragraph(f"{tax:,.2f}", cell_mono_right)
         ],
         [
-            Paragraph("Special & Conveyance Allowance", cell_value_style),
-            Paragraph(f"{payslip.allowances:,.2f}", cell_mono_right),
-            Paragraph("Other Recoveries / Advance", cell_value_style),
-            Paragraph(f"{payslip.other_deductions:,.2f}", cell_mono_right)
+            Paragraph("Special & Other Allowances", cell_value_style),
+            Paragraph(f"{allowances:,.2f}", cell_mono_right),
+            Paragraph("Other Deductions / Advances", cell_value_style),
+            Paragraph(f"{other_deductions:,.2f}", cell_mono_right)
         ],
         [
-            Paragraph("Performance Incentive / Bonus", cell_value_style),
-            Paragraph(f"{payslip.bonus:,.2f}", cell_mono_right),
+            Paragraph("Performance Bonus", cell_value_style),
+            Paragraph(f"{bonus:,.2f}", cell_mono_right),
             Paragraph("—", ParagraphStyle('Dash', fontName=f_body, fontSize=7.5, textColor=c_text_secondary)),
             Paragraph("0.00", ParagraphStyle('DashAmt', fontName=f_mono_bold, fontSize=7.5, textColor=c_text_secondary, alignment=TA_RIGHT))
         ],
         # Subtotals Row
         [
-            Paragraph("<b>TOTAL GROSS EARNINGS (A)</b>", subtotal_label),
+            Paragraph("<b>GROSS EARNINGS (A)</b>", subtotal_label),
             Paragraph(f"<b>{currency} {total_earnings:,.2f}</b>", subtotal_amt_earn),
             Paragraph("<b>TOTAL DEDUCTIONS (B)</b>", ParagraphStyle('DeductHead', parent=subtotal_label, textColor=c_rose_text)),
             Paragraph(f"<b>{currency} {total_deductions:,.2f}</b>", subtotal_amt_deduct)
         ]
     ]
 
-    breakdown_table = Table(breakdown_data, colWidths=[191.5, 80, 191.5, 80])
+    breakdown_table = Table(breakdown_data, colWidths=[193.5, 80, 193.5, 80])
     breakdown_table.setStyle(TableStyle([
         # Headers
-        ('BACKGROUND', (0,0), (1,0), c_dark),
-        ('BACKGROUND', (2,0), (3,0), c_dark),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#F1F5F9")),
         ('TOPPADDING', (0,0), (-1,0), 3.5),
         ('BOTTOMPADDING', (0,0), (-1,0), 3.5),
         
         # Rows
         ('BACKGROUND', (0,1), (-1,-2), colors.white),
-        ('ROWBACKGROUNDS', (0,1), (1,-2), [colors.white, c_wash]),
-        ('ROWBACKGROUNDS', (2,1), (3,-2), [colors.white, c_wash]),
+        ('ROWBACKGROUNDS', (0,1), (-1,-2), [colors.white, c_wash]),
         ('TOPPADDING', (0,1), (-1,-2), 3),
         ('BOTTOMPADDING', (0,1), (-1,-2), 3),
 
@@ -504,16 +552,16 @@ def generate_payslip_pdf(payslip, company, employee):
         ('BOTTOMPADDING', (0,-1), (-1,-1), 4),
 
         # Grid lines
-        ('BOX', (0,0), (-1,-1), 0.75, c_light),
-        ('INNERGRID', (0,0), (-1,-1), 0.5, c_light),
+        ('BOX', (0,0), (-1,-1), 0.75, c_border),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, c_border),
         ('LEFTPADDING', (0,0), (-1,-1), 6),
         ('RIGHTPADDING', (0,0), (-1,-1), 6),
     ]))
     elements.append(breakdown_table)
     elements.append(Spacer(1, 4))
 
-    # 6. Net Take-Home Salary Highlight Box (Exact Turtu Theme Styling)
-    words = number_to_words(payslip.net_salary, currency)
+    # 6. Net Take-Home Salary Highlight Box
+    words = number_to_words(payslip.net_salary or 0.0, currency)
     net_content = [
         [
             [
@@ -523,14 +571,14 @@ def generate_payslip_pdf(payslip, company, employee):
                 Paragraph(f"<b>Amount in Words:</b> <i>{words}</i>", net_box_words)
             ],
             [
-                Paragraph(f"<b>{currency} {payslip.net_salary:,.2f}</b>", net_box_amount),
+                Paragraph(f"<b>{currency} {(payslip.net_salary or 0.0):,.2f}</b>", net_box_amount),
             ]
         ]
     ]
-    net_table = Table(net_content, colWidths=[363, 180])
+    net_table = Table(net_content, colWidths=[367, 180])
     net_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), c_mist),
-        ('BOX', (0,0), (-1,-1), 1.25, c_teal),
+        ('BACKGROUND', (0,0), (-1,-1), c_wash),
+        ('BOX', (0,0), (-1,-1), 1.0, c_light),
         ('TOPPADDING', (0,0), (-1,-1), 5),
         ('BOTTOMPADDING', (0,0), (-1,-1), 5),
         ('LEFTPADDING', (0,0), (-1,-1), 7),
@@ -542,18 +590,17 @@ def generate_payslip_pdf(payslip, company, employee):
 
     # 7. Official Footer & Authorized Signatory Block
     disclaimer = [
-        Paragraph("<b>Official Verified Document</b>", ParagraphStyle('DisclH', parent=cell_value_bold, textColor=c_teal)),
-        Paragraph("*This is a computer-generated official salary certificate issued by the TURTU HRMS platform. "
-                  "It does not require a physical handwritten signature.", footer_text_style),
-        Paragraph(f"SECURITY REF: AUTH-PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}-VERIFIED", ParagraphStyle('SecHash', parent=footer_text_style, fontName=f_mono, fontSize=5.5))
+        Paragraph("<b>Official Authenticated Statement</b>", ParagraphStyle('DisclH', parent=cell_value_bold, textColor=c_teal)),
+        Paragraph("*Computer-generated official salary certificate issued by TURTU HRMS. Does not require physical signature.", footer_text_style),
+        Paragraph(f"HASH: AUTH-PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}-VERIFIED", ParagraphStyle('SecHash', parent=footer_text_style, fontName=f_mono, fontSize=5.5))
     ]
     signatory = [
         Paragraph("____________________________", footer_sign_style),
         Paragraph("<b>Authorized Signatory</b>", footer_sign_style),
-        Paragraph(f"For {company_name}", ParagraphStyle('SubComp', parent=footer_sign_style, fontSize=6.5, textColor=c_text_secondary))
+        Paragraph(f"{company_name}", ParagraphStyle('SubComp', parent=footer_sign_style, fontSize=6.5, textColor=c_text_secondary))
     ]
 
-    footer_table = Table([[disclaimer, signatory]], colWidths=[363, 180])
+    footer_table = Table([[disclaimer, signatory]], colWidths=[367, 180])
     footer_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
