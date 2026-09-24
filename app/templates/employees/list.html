@@ -38,37 +38,37 @@
     {% endif %}
 
     <!-- Top Action Toolbar -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
         <div>
             <div class="flex items-center space-x-2.5">
-                <h2 class="text-lg sm:text-xl font-bold font-heading text-slate-900 tracking-tight">Staff Directory</h2>
+                <h2 class="text-base sm:text-xl font-bold font-heading text-slate-900 tracking-tight">Staff Directory</h2>
                 <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200" id="emp-count-badge">
                     {{ employees|length }}
                 </span>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">Manage employee dossiers, access roles, and compensation slabs</p>
+            <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Manage employee dossiers, access roles, and compensation slabs</p>
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center space-x-2.5 self-start sm:self-auto">
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             {% if user.role in ['admin', 'hr_admin'] %}
             <!-- Generate Payslip Trigger -->
-            <button onclick="openGeneratePayslipModal()" class="inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 transition-colors shadow-xs">
-                <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Generate Payslip
+            <button onclick="openGeneratePayslipModal()" class="flex-1 sm:flex-initial inline-flex items-center justify-center px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 active:scale-95 transition-all shadow-xs">
+                <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> <span class="truncate">Payslip</span>
             </button>
 
             <!-- Import Excel -->
-            <form action="/employees/import" method="POST" enctype="multipart/form-data" class="inline-flex">
-                <label for="excel_file" class="inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 cursor-pointer transition-colors shadow-xs group">
+            <form action="/employees/import" method="POST" enctype="multipart/form-data" class="flex-1 sm:flex-initial inline-flex">
+                <label for="excel_file" class="w-full inline-flex items-center justify-center px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 active:scale-95 cursor-pointer transition-all shadow-xs group">
                     <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 mr-1.5 text-emerald-600"></i>
-                    <span>Import Excel</span>
+                    <span class="truncate">Import</span>
                     <input type="file" id="excel_file" name="file" accept=".xlsx" class="hidden" onchange="this.form.submit()">
                 </label>
             </form>
 
             <!-- Add Employee -->
-            <a href="/employees/create" class="inline-flex items-center px-3.5 py-2 border border-transparent rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
-                <i data-lucide="user-plus" class="w-3.5 h-3.5 mr-1.5"></i> Add Employee
+            <a href="/employees/create" class="flex-1 sm:flex-initial inline-flex items-center justify-center px-3.5 py-2 border border-transparent rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 active:scale-95 transition-all shadow-xs">
+                <i data-lucide="user-plus" class="w-3.5 h-3.5 mr-1.5"></i> <span class="truncate">Add Staff</span>
             </a>
             {% endif %}
         </div>
@@ -77,26 +77,26 @@
     <!-- Search, Filter & A-Z Ribbon -->
     <div class="space-y-2.5">
         <!-- Filter Bar -->
-        <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-card flex flex-col md:flex-row gap-2.5 items-stretch md:items-center justify-between">
+        <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-card flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
             <!-- Search Input -->
             <div class="relative flex-1">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i data-lucide="search" class="w-4 h-4"></i>
                 </div>
                 <input type="text" id="employeeSearch" name="q" value="{{ current_q }}" onkeyup="filterEmployees()"
-                    placeholder="Search by name, email, department, role, or ID..."
+                    placeholder="Search name, email, role, or ID..."
                     class="w-full pl-9 pr-9 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                 <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-2">
                 <!-- Role Filter -->
-                <div class="flex items-center space-x-1.5">
-                    <label for="roleFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Role:</label>
+                <div class="flex-1 sm:flex-initial flex items-center space-x-1.5">
+                    <label for="roleFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 hidden xs:inline">Role:</label>
                     <select id="roleFilter" name="role" onchange="filterEmployees()"
-                        class="py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
+                        class="w-full sm:w-auto py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
                         <option value="all" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
                         <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Admin</option>
                         <option value="hr_admin" {% if current_role == 'hr_admin' %}selected{% endif %}>HR Admin</option>
@@ -107,13 +107,13 @@
                 </div>
 
                 <!-- Sort Selector -->
-                <div class="flex items-center space-x-1.5">
-                    <label for="sortSelector" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Sort:</label>
+                <div class="flex-1 sm:flex-initial flex items-center space-x-1.5">
+                    <label for="sortSelector" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 hidden xs:inline">Sort:</label>
                     <select id="sortSelector" onchange="changeSort(this.value)"
-                        class="py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
-                        <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name (A ➔ Z)</option>
-                        <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name (Z ➔ A)</option>
-                        <option value="dept_asc" {% if current_sort == 'dept_asc' %}selected{% endif %}>Department (A ➔ Z)</option>
+                        class="w-full sm:w-auto py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
+                        <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                        <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+                        <option value="dept_asc" {% if current_sort == 'dept_asc' %}selected{% endif %}>Department</option>
                         <option value="role_asc" {% if current_sort == 'role_asc' %}selected{% endif %}>Role</option>
                         <option value="id_desc" {% if current_sort == 'id_desc' %}selected{% endif %}>Recently Added</option>
                     </select>
@@ -121,11 +121,11 @@
             </div>
         </div>
 
-        <!-- A–Z Jump Ribbon -->
-        <div class="bg-white rounded-xl p-2 border border-slate-200 shadow-card flex items-center justify-between gap-1 overflow-x-auto select-none">
+        <!-- A–Z Jump Ribbon (Smooth touch swipe with hidden scrollbars) -->
+        <div class="bg-white rounded-xl p-2 border border-slate-200 shadow-card flex items-center justify-between gap-1 overflow-x-auto touch-scroll no-scrollbar select-none">
             <div class="flex items-center space-x-1 shrink-0">
                 <button type="button" onclick="selectLetter('ALL')" id="letter-btn-ALL" 
-                    class="letter-filter-btn px-2.5 py-1 rounded-lg text-xs font-bold transition-all {% if current_letter == 'ALL' %}bg-teal-700 text-white shadow-xs{% else %}bg-slate-100 text-slate-600 hover:bg-teal-50 hover:text-teal-800{% endif %}">
+                    class="letter-filter-btn px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all {% if current_letter == 'ALL' %}bg-teal-700 text-white shadow-xs{% else %}bg-slate-100 text-slate-600 hover:bg-teal-50 hover:text-teal-800{% endif %}">
                     ALL <span class="text-[10px] opacity-80">({{ total_employees_count or employees|length }})</span>
                 </button>
             </div>

@@ -23,8 +23,8 @@
         }
         /* Custom smooth thin scrollbars */
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
         }
         ::-webkit-scrollbar-track {
             background: transparent;
@@ -38,6 +38,32 @@
         }
         .sidebar-scroll::-webkit-scrollbar-thumb {
             background: #005050;
+        }
+        /* Hide scrollbar for clean touch swipe ribbons */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Touch momentum scrolling */
+        .touch-scroll {
+            -webkit-overflow-scrolling: touch;
+        }
+        /* Prevent iOS Safari Auto-Zoom on form input focus by standardizing mobile font size */
+        @media (max-width: 639px) {
+            input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]), 
+            select, 
+            textarea {
+                font-size: 16px !important;
+            }
+        }
+        /* Safe Area Padding for notch devices */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            .safe-bottom {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
         }
     </style>
 
@@ -264,55 +290,55 @@
     <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 min-w-0">
         
         <!-- Top Navigation Bar -->
-        <header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 shadow-xs">
-            <div class="flex items-center space-x-3 min-w-0">
+        <header class="h-14 sm:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 shrink-0 z-10 shadow-xs">
+            <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 mr-2">
                 {% if user %}
-                <button onclick="toggleMobileSidebar()" class="md:hidden p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg focus:outline-none">
+                <button onclick="toggleMobileSidebar()" class="md:hidden p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg focus:outline-none shrink-0 min-w-[40px] min-h-[40px] flex items-center justify-center active:scale-95 transition-all" aria-label="Toggle navigation menu">
                     <i data-lucide="menu" class="w-5 h-5"></i>
                 </button>
                 {% endif %}
-                <div class="min-w-0">
-                    <h1 class="text-sm sm:text-base font-semibold text-slate-900 tracking-tight truncate font-heading">
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-xs sm:text-base font-bold sm:font-semibold text-slate-900 tracking-tight truncate font-heading leading-tight">
                         {% block header_title %}HRMS Portal{% endblock %}
                     </h1>
                 </div>
             </div>
             
             {% if user and user.role != 'admin' %}
-            <div id="topbar-attendance-widget" class="flex items-center space-x-3">
+            <div id="topbar-attendance-widget" class="flex items-center space-x-2 shrink-0">
                 {% include "attendance/partials/_topbar_widget.html" %}
             </div>
             {% endif %}
         </header>
 
         <!-- Main Scrollable Body Content -->
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7">
-            <div class="max-w-7xl mx-auto space-y-6">
+        <div class="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7 touch-scroll">
+            <div class="max-w-7xl mx-auto space-y-5 sm:space-y-6">
                 
                 <!-- Global Flash Notifications -->
                 {% if request.query_params.get('success') %}
-                <div class="flash-message bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 shadow-xs flex items-start space-x-3 animate-fadeIn">
+                <div class="flash-message bg-emerald-50 border border-emerald-200 rounded-xl p-3 sm:p-3.5 shadow-xs flex items-start space-x-2.5 sm:space-x-3 animate-fadeIn">
                     <div class="p-1 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
                         <i data-lucide="check-circle-2" class="w-4 h-4"></i>
                     </div>
                     <div class="flex-1 text-xs sm:text-sm font-medium text-emerald-800 leading-snug pt-0.5">
                         {{ request.query_params.get('success') }}
                     </div>
-                    <button onclick="this.closest('.flash-message').remove()" class="text-emerald-600 hover:text-emerald-800 p-1 rounded-lg hover:bg-emerald-100 transition-colors">
+                    <button onclick="this.closest('.flash-message').remove()" class="text-emerald-600 hover:text-emerald-800 p-1 rounded-lg hover:bg-emerald-100 transition-colors shrink-0">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
                 {% endif %}
 
                 {% if request.query_params.get('error') %}
-                <div class="flash-message bg-rose-50 border border-rose-200 rounded-xl p-3.5 shadow-xs flex items-start space-x-3 animate-fadeIn">
+                <div class="flash-message bg-rose-50 border border-rose-200 rounded-xl p-3 sm:p-3.5 shadow-xs flex items-start space-x-2.5 sm:space-x-3 animate-fadeIn">
                     <div class="p-1 rounded-lg bg-rose-100 text-rose-700 shrink-0">
                         <i data-lucide="alert-triangle" class="w-4 h-4"></i>
                     </div>
                     <div class="flex-1 text-xs sm:text-sm font-medium text-rose-800 leading-snug pt-0.5">
                         {{ request.query_params.get('error') }}
                     </div>
-                    <button onclick="this.closest('.flash-message').remove()" class="text-rose-500 hover:text-rose-700 p-1 rounded-lg hover:bg-rose-100 transition-colors">
+                    <button onclick="this.closest('.flash-message').remove()" class="text-rose-500 hover:text-rose-700 p-1 rounded-lg hover:bg-rose-100 transition-colors shrink-0">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -338,18 +364,39 @@
           if (isHidden) {
               sidebar.classList.remove('-translate-x-full');
               backdrop.classList.remove('hidden');
+              document.body.classList.add('overflow-hidden');
           } else {
               sidebar.classList.add('-translate-x-full');
               backdrop.classList.add('hidden');
+              document.body.classList.remove('overflow-hidden');
           }
       }
 
-      // Active Navigation Link Highlighting
+      function closeMobileSidebar() {
+          const sidebar = document.getElementById('sidebar-menu');
+          const backdrop = document.getElementById('sidebar-backdrop');
+          if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+              sidebar.classList.add('-translate-x-full');
+          }
+          if (backdrop && !backdrop.classList.contains('hidden')) {
+              backdrop.classList.add('hidden');
+          }
+          document.body.classList.remove('overflow-hidden');
+      }
+
+      // Active Navigation Link Highlighting and Auto-Close on Mobile Click
       document.addEventListener('DOMContentLoaded', () => {
           const currentPath = window.location.pathname;
           const navLinks = document.querySelectorAll('.nav-item');
           
           navLinks.forEach(link => {
+              // Auto close sidebar on mobile navigation
+              link.addEventListener('click', () => {
+                  if (window.innerWidth < 768) {
+                      closeMobileSidebar();
+                  }
+              });
+
               const target = link.getAttribute('data-nav-link');
               if (!target) return;
               
