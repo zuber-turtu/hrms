@@ -73,6 +73,9 @@ async def api_check_in(
     """
     Clock in for today's work shift (supports mobile punch timestamps).
     """
+    if current_user.role == "admin":
+        return await api_get_attendance_status(db, current_user)
+
     today = get_ist_today()
     active_log = (
         db.query(Attendance)
@@ -104,6 +107,9 @@ async def api_check_out(
     """
     Clock out of the active work shift.
     """
+    if current_user.role == "admin":
+        return await api_get_attendance_status(db, current_user)
+
     today = get_ist_today()
     log = (
         db.query(Attendance)
@@ -148,6 +154,9 @@ async def api_get_attendance_logs(
         if employee_id:
             query = query.filter(Attendance.employee_id == employee_id)
     else:
+        query = query.join(Employee, Attendance.employee_id == Employee.id).filter(
+            Employee.role != "admin"
+        )
         if employee_id:
             query = query.filter(Attendance.employee_id == employee_id)
 

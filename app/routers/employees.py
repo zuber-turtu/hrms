@@ -383,63 +383,64 @@ async def view_employee(
         .all()
     )
 
-    # 2. Fetch and group attendance logs for this employee
-    raw_logs = (
-        db.query(Attendance)
-        .filter(Attendance.employee_id == emp_id)
-        .order_by(Attendance.date.desc(), Attendance.check_in.asc())
-        .all()
-    )
-    grouped = defaultdict(list)
-    for log in raw_logs:
-        grouped[log.date].append(log)
-
+    # 2. Fetch and group attendance logs for this employee (only for non-admin workforce)
     attendance_data = []
-    today = get_ist_today()
-    now_ist = get_ist_now()
-    for date, group_logs in grouped.items():
-        total_seconds = 0
-        sessions = []
-        is_overridden = False
-        override_reason = ""
-        is_missed = False
-        for log in group_logs:
-            if log.is_overridden:
-                is_overridden = True
-                override_reason = log.override_reason
-            start = log.check_in
-            if log.check_out:
-                end = log.check_out
-                out_str = log.check_out.strftime('%I:%M %p')
-            else:
-                if log.date < today:
-                    end = log.check_in
-                    out_str = "Missed"
-                    is_missed = True
-                else:
-                    end = now_ist
-                    out_str = "Active"
-            diff = (end - start).total_seconds()
-            total_seconds += max(0, diff)
-            in_str = log.check_in.strftime('%I:%M %p')
-            sessions.append(f"{in_str} - {out_str}")
-            
-        hrs = int(total_seconds // 3600)
-        mins = int((total_seconds % 3600) // 60)
-        secs = int(total_seconds % 60)
-        total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
+    if employee.role != "admin":
+        raw_logs = (
+            db.query(Attendance)
+            .filter(Attendance.employee_id == emp_id)
+            .order_by(Attendance.date.desc(), Attendance.check_in.asc())
+            .all()
+        )
+        grouped = defaultdict(list)
+        for log in raw_logs:
+            grouped[log.date].append(log)
 
-        attendance_data.append({
-            "id": group_logs[0].id,
-            "date": date,
-            "sessions": ", ".join(sessions),
-            "total_active": f"{total_active_str} (Missed)" if is_missed else total_active_str,
-            "is_overridden": is_overridden,
-            "override_reason": override_reason,
-            "is_missed": is_missed,
-            "check_in": group_logs[0].check_in,
-            "check_out": group_logs[-1].check_out
-        })
+        today = get_ist_today()
+        now_ist = get_ist_now()
+        for date, group_logs in grouped.items():
+            total_seconds = 0
+            sessions = []
+            is_overridden = False
+            override_reason = ""
+            is_missed = False
+            for log in group_logs:
+                if log.is_overridden:
+                    is_overridden = True
+                    override_reason = log.override_reason
+                start = log.check_in
+                if log.check_out:
+                    end = log.check_out
+                    out_str = log.check_out.strftime('%I:%M %p')
+                else:
+                    if log.date < today:
+                        end = log.check_in
+                        out_str = "Missed"
+                        is_missed = True
+                    else:
+                        end = now_ist
+                        out_str = "Active"
+                diff = (end - start).total_seconds()
+                total_seconds += max(0, diff)
+                in_str = log.check_in.strftime('%I:%M %p')
+                sessions.append(f"{in_str} - {out_str}")
+                
+            hrs = int(total_seconds // 3600)
+            mins = int((total_seconds % 3600) // 60)
+            secs = int(total_seconds % 60)
+            total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
+
+            attendance_data.append({
+                "id": group_logs[0].id,
+                "date": date,
+                "sessions": ", ".join(sessions),
+                "total_active": f"{total_active_str} (Missed)" if is_missed else total_active_str,
+                "is_overridden": is_overridden,
+                "override_reason": override_reason,
+                "is_missed": is_missed,
+                "check_in": group_logs[0].check_in,
+                "check_out": group_logs[-1].check_out
+            })
         
     # 3. Fetch Document & KYC checklist
     from app.routers.documents import get_employee_document_checklist

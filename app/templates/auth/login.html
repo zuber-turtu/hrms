@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-100">
+<html lang="en" class="h-full bg-[#061118]">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - TURTU HRMS</title>
+    <title>Sign In — TURTU HRMS</title>
     
-    <!-- Google Fonts: Nunito (UI/Body), Poppins (Headings/Brand), JetBrains Mono (Code/Numbers), Noto Sans Kannada -->
+    <!-- Google Fonts: Poppins (Display/Headlines), Nunito (UI/Body), JetBrains Mono (Financials/Badges) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Kannada:wght@400;700&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,26 +21,42 @@
                         heading: ['"Poppins"', '"Nunito"', 'sans-serif'],
                         display: ['"Poppins"', '"Nunito"', 'sans-serif'],
                         mono: ['"JetBrains Mono"', 'monospace'],
-                        kannada: ['"Noto Sans Kannada"', '"Nunito"', 'sans-serif'],
                     },
                     colors: {
                         brand: {
-                            50: '#F4F7F7',
-                            100: '#E0F4F4',
-                            200: '#B3E3E3',
-                            300: '#80C7C7',
-                            400: '#4DB8B8',
-                            500: '#008080',
-                            600: '#006666',
-                            700: '#005050',
-                            800: '#004444',
-                            900: '#1C2B2B',
+                            50: '#F4F7F7',      /* Teal Wash - Light Neutral */
+                            100: '#E0F4F4',     /* Teal Mist - Light Accent */
+                            200: '#B3E3E3',     /* Teal Light - Border/Lines */
+                            300: '#80C7C7',     /* Mid-Light */
+                            400: '#4DB8B8',     /* Teal Mid - Bright Accent */
+                            500: '#008080',     /* TURTU Teal ★ - Primary */
+                            600: '#006666',     /* Teal Deep - Hover/Active */
+                            700: '#005050',     /* Dark Teal - Strong labels */
+                            800: '#004444',     /* Teal Dark - Dark Surfaces */
+                            900: '#1C2B2B',     /* Deep Forest - Typography */
+                        },
+                        turtu: {
+                            teal: '#008080',
+                            deep: '#006666',
+                            dark: '#004444',
+                            mid: '#4DB8B8',
+                            light: '#B3E3E3',
+                            mist: '#E0F4F4',
+                            wash: '#F4F7F7',
+                            mint: '#EAF7F5',
+                            forest: '#1C2B2B',
+                            slate: '#6B7F7F',
+                            saffron: '#FF8C42',
+                            turmeric: '#F2C94C',
+                            foam: '#E8F7F7',
+                            red: '#E53E3E'
                         }
                     }
                 }
             }
         }
     </script>
+
     <!-- Favicon / Tab Icon -->
     <link rel="icon" type="image/jpeg" href="/static/images/icon.jpeg">
     <link rel="shortcut icon" type="image/jpeg" href="/static/images/icon.jpeg">
@@ -48,8 +64,18 @@
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="/static/css/styles.css">
+
     <style>
+        .showcase-bg {
+            background-color: #061118;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                radial-gradient(circle at 20% 30%, rgba(0, 128, 128, 0.22) 0%, rgba(0, 68, 68, 0.12) 40%, rgba(6, 17, 24, 0.98) 75%);
+            background-size: 36px 36px, 36px 36px, 100% 100%;
+        }
+
+        /* Prevent iOS Safari Auto-Zoom on form input focus */
         @media (max-width: 639px) {
             input, select, textarea {
                 font-size: 16px !important;
@@ -57,90 +83,212 @@
         }
     </style>
 </head>
-<body class="h-full flex items-center justify-center p-4 sm:p-6 bg-slate-900 font-sans antialiased text-slate-900">
+<body class="h-full font-sans antialiased text-[#1C2B2B] selection:bg-[#008080] selection:text-white">
 
-    <div class="w-full max-w-md">
+    <div class="min-h-screen flex flex-col lg:grid lg:grid-cols-12 bg-[#061118]">
         
-        <!-- App Logo & Branding Header -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center p-1.5 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl mb-3.5">
-                <img src="/static/images/icon.jpeg" alt="TURTU Logo" class="w-12 h-12 object-contain rounded-xl">
-            </div>
-            <h1 class="text-2xl font-bold text-white tracking-tight font-heading">TURTU <span class="text-teal-400">HRMS</span></h1>
-            <p class="text-xs text-slate-400 mt-1">Enterprise Human Resource Management System</p>
-        </div>
-
-        <!-- Login Card -->
-        <div class="bg-white rounded-xl shadow-2xl p-7 sm:p-8 border border-slate-200">
-            <div class="mb-6 pb-4 border-b border-slate-100">
-                <h2 class="text-base font-bold text-slate-900 font-heading">Sign in to your account</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Enter your corporate credentials to continue</p>
-            </div>
+        <!-- LEFT SHOWCASE PANEL (Visible on Desktop / Tablets) -->
+        <div class="hidden lg:flex lg:col-span-7 flex-col justify-between p-12 xl:p-16 showcase-bg border-r border-[#004444]/60 relative overflow-hidden">
             
-            {% if error %}
-            <div class="mb-4 bg-rose-50 border border-rose-200 rounded-lg p-3 flex items-start space-x-2.5">
-                <div class="p-0.5 rounded text-rose-600 shrink-0">
-                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
+            <!-- Ambient Glow Effect -->
+            <div class="absolute -top-32 -left-32 w-96 h-96 bg-[#008080]/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-32 right-0 w-96 h-96 bg-[#006666]/15 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Top Brand -->
+            <div class="flex items-center space-x-3.5 z-10">
+                <div class="w-11 h-11 rounded-xl bg-[#004444] border border-[#006666] p-1.5 flex items-center justify-center shadow-lg shadow-black/30">
+                    <img src="/static/images/icon.jpeg" alt="TURTU Logo" class="w-full h-full object-contain rounded-lg">
                 </div>
-                <div class="text-xs font-semibold text-rose-700">
-                    {{ error }}
+                <div>
+                    <span class="text-2xl font-extrabold tracking-wider text-white font-display block leading-none">
+                        TURTU <span class="text-[#4DB8B8] font-bold">HRMS</span>
+                    </span>
+                    <span class="text-[11px] font-mono text-[#B3E3E3]/80 tracking-wide uppercase">Enterprise Workforce Cloud</span>
                 </div>
             </div>
-            {% endif %}
 
-            {% if success %}
-            <div class="mb-4 bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-start space-x-2.5">
-                <div class="p-0.5 rounded text-emerald-600 shrink-0">
-                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <!-- Main Value Proposition -->
+            <div class="my-auto py-12 max-w-xl z-10">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#004444]/80 border border-[#006666] text-xs font-semibold text-[#B3E3E3] mb-6 shadow-xs">
+                    <span class="w-2 h-2 rounded-full bg-[#4DB8B8] animate-ping"></span>
+                    <span>All-in-One HR &amp; Payroll Ecosystem</span>
                 </div>
-                <div class="text-xs font-semibold text-emerald-700">
-                    {{ success }}
+
+                <h1 class="text-4xl xl:text-5xl font-extrabold text-white font-heading tracking-tight leading-[1.15] mb-6">
+                    Streamlined workforce management, <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#4DB8B8] via-[#80C7C7] to-teal-200">built for speed.</span>
+                </h1>
+
+                <p class="text-base text-[#B3E3E3]/90 leading-relaxed font-normal mb-8">
+                    From automated payroll calculations with statutory EPF, ESI &amp; TDS compliance to real-time biometric attendance and employee lifecycle records.
+                </p>
+
+                <!-- Value Highlights Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 rounded-xl bg-[#081a24]/80 border border-[#004444] shadow-md backdrop-blur-xs">
+                        <div class="w-8 h-8 rounded-lg bg-[#004444] text-[#4DB8B8] flex items-center justify-center mb-3">
+                            <i data-lucide="calculator" class="w-4 h-4"></i>
+                        </div>
+                        <h3 class="text-sm font-bold text-white font-heading">Automated Payroll</h3>
+                        <p class="text-xs text-[#B3E3E3]/70 mt-1">One-click payslips, dynamic allowances &amp; formula-driven statutory deductions.</p>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-[#081a24]/80 border border-[#004444] shadow-md backdrop-blur-xs">
+                        <div class="w-8 h-8 rounded-lg bg-[#004444] text-[#4DB8B8] flex items-center justify-center mb-3">
+                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        </div>
+                        <h3 class="text-sm font-bold text-white font-heading">Audit &amp; Compliance</h3>
+                        <p class="text-xs text-[#B3E3E3]/70 mt-1">Role-based access control, tamper-evident audit logs &amp; document vaults.</p>
+                    </div>
                 </div>
             </div>
-            {% endif %}
 
-            <form action="/login" method="POST" class="space-y-4">
-                <div>
-                    <label for="email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Work Email</label>
-                    <div class="relative rounded-lg">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <i data-lucide="mail" class="w-4 h-4"></i>
-                        </div>
-                        <input type="email" name="email" id="email" required placeholder="name@company.com" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg pl-9 pr-3.5 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                    </div>
-                </div>
+            <!-- Bottom Footnote -->
+            <div class="flex items-center justify-between text-xs text-[#B3E3E3]/60 z-10 pt-6 border-t border-[#004444]/50 font-mono">
+                <span>© 2026 TURTU HRMS</span>
+                <span class="flex items-center space-x-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>System Operational</span>
+                </span>
+            </div>
 
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label for="password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Password</label>
-                    </div>
-                    <div class="relative rounded-lg">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <i data-lucide="lock" class="w-4 h-4"></i>
-                        </div>
-                        <input type="password" name="password" id="password" required placeholder="••••••••" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg pl-9 pr-9 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                        <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
-                            <i data-lucide="eye" id="password-toggle-icon" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="pt-2">
-                    <button type="submit" class="w-full flex items-center justify-center py-2 px-4 rounded-lg text-xs sm:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors active:scale-[0.98]">
-                        <i data-lucide="log-in" class="w-4 h-4 mr-2"></i> Sign In to Portal
-                    </button>
-                </div>
-            </form>
         </div>
 
-        <div class="text-center mt-6">
-            <p class="text-[11px] text-slate-400">© 2026 TURTU HRMS. Authenticated Session Protected.</p>
+        <!-- RIGHT AUTHENTICATION PANEL -->
+        <div class="flex-1 lg:col-span-5 flex flex-col justify-center items-center px-6 py-12 sm:px-12 xl:px-16 bg-[#061118] lg:bg-white min-h-screen lg:min-h-0">
+            
+            <div class="w-full max-w-[380px]">
+                
+                <!-- Mobile Brand Header (Hidden on Desktop) -->
+                <div class="lg:hidden flex items-center justify-center space-x-3 mb-8">
+                    <div class="w-10 h-10 rounded-xl bg-[#004444] border border-[#006666] p-1.5 flex items-center justify-center shadow-md shrink-0">
+                        <img src="/static/images/icon.jpeg" alt="TURTU Logo" class="w-full h-full object-contain rounded-lg">
+                    </div>
+                    <span class="text-2xl font-extrabold tracking-wider text-white font-display">
+                        TURTU <span class="text-[#4DB8B8] font-bold">HRMS</span>
+                    </span>
+                </div>
+
+                <!-- Form Card / Wrapper -->
+                <div class="bg-white rounded-2xl shadow-xl shadow-black/40 lg:shadow-none border border-slate-200 lg:border-none p-7 lg:p-0">
+                    
+                    <div class="mb-7">
+                        <h2 class="text-2xl font-bold text-[#1C2B2B] tracking-tight font-heading">
+                            Sign in
+                        </h2>
+                        <p class="text-sm text-[#6B7F7F] mt-1">
+                            Welcome back. Please enter your credentials.
+                        </p>
+                    </div>
+
+                    <!-- Error Flash Notification (#E53E3E Alert Red) -->
+                    {% set err_msg = error or request.query_params.get('error') %}
+                    {% if err_msg %}
+                    <div class="mb-5 bg-rose-50 border border-rose-200 rounded-lg p-3.5 flex items-start space-x-2.5 text-xs text-[#E53E3E] font-semibold">
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-[#E53E3E] shrink-0 mt-0.5"></i>
+                        <span class="flex-1 leading-relaxed">{{ err_msg }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Success Flash Notification (#E8F7F7 Foam Green + #005050 Dark Teal) -->
+                    {% set succ_msg = success or request.query_params.get('success') %}
+                    {% if succ_msg %}
+                    <div class="mb-5 bg-[#E8F7F7] border border-[#B3E3E3] rounded-lg p-3.5 flex items-start space-x-2.5 text-xs text-[#005050] font-semibold">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-[#008080] shrink-0 mt-0.5"></i>
+                        <span class="flex-1 leading-relaxed">{{ succ_msg }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Login Form -->
+                    <form id="loginForm" action="/login" method="POST" class="space-y-4" onsubmit="handleLoginSubmit(event)">
+                        
+                        <!-- Work Email -->
+                        <div>
+                            <label for="email" class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] mb-2 font-mono">
+                                Work Email
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
+                                    <i data-lucide="mail" class="w-4 h-4"></i>
+                                </div>
+                                <input 
+                                    type="email" 
+                                    name="email" 
+                                    id="email" 
+                                    required 
+                                    autocomplete="email" 
+                                    placeholder="name@company.com" 
+                                    class="w-full text-sm bg-slate-50 lg:bg-white border border-slate-300 hover:border-[#B3E3E3] rounded-xl pl-10 pr-4 py-3 text-[#1C2B2B] placeholder:text-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-4 focus:ring-[#008080]/10 transition-all font-sans">
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <label for="password" class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] mb-2 font-mono">
+                                Password
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
+                                    <i data-lucide="lock" class="w-4 h-4"></i>
+                                </div>
+                                <input 
+                                    type="password" 
+                                    name="password" 
+                                    id="password" 
+                                    required 
+                                    autocomplete="current-password" 
+                                    placeholder="••••••••" 
+                                    class="w-full text-sm bg-slate-50 lg:bg-white border border-slate-300 hover:border-[#B3E3E3] rounded-xl pl-10 pr-10 py-3 text-[#1C2B2B] placeholder:text-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-4 focus:ring-[#008080]/10 transition-all font-sans">
+                                <button 
+                                    type="button" 
+                                    onclick="togglePasswordVisibility()" 
+                                    aria-label="Toggle password visibility"
+                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#6B7F7F] hover:text-[#1C2B2B] focus:outline-none focus:text-[#008080] transition-colors">
+                                    <i data-lucide="eye" id="password-toggle-icon" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="pt-2">
+                            <button 
+                                type="submit" 
+                                id="submitBtn"
+                                class="w-full h-12 flex items-center justify-center py-3 px-5 rounded-xl text-sm font-bold tracking-wide text-white bg-[#008080] hover:bg-[#006666] active:bg-[#004444] shadow-md shadow-[#008080]/20 hover:shadow-lg hover:shadow-[#008080]/30 transition-all focus:outline-none focus:ring-4 focus:ring-[#008080]/30">
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="log-in" id="submitIcon" class="w-4 h-4 text-white"></i>
+                                    <svg id="submitSpinner" class="hidden animate-spin w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span id="submitText">Sign in to Account</span>
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Security Badge -->
+                    <div class="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center space-x-2 text-xs text-[#6B7F7F]">
+                        <i data-lucide="shield" class="w-3.5 h-3.5 text-[#008080]"></i>
+                        <span>Protected by enterprise grade security</span>
+                    </div>
+
+                </div>
+
+                <!-- Mobile Footer (Hidden on Desktop) -->
+                <div class="lg:hidden text-center mt-6 text-xs text-[#B3E3E3]/60 font-mono">
+                    <p>© 2026 TURTU HRMS. All rights reserved.</p>
+                </div>
+
+            </div>
+
         </div>
 
     </div>
 
     <script>
-        lucide.createIcons();
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
 
         function togglePasswordVisibility() {
             const passInput = document.getElementById('password');
@@ -153,6 +301,21 @@
                 icon.setAttribute('data-lucide', 'eye');
             }
             lucide.createIcons();
+        }
+
+        function handleLoginSubmit(event) {
+            const btn = document.getElementById('submitBtn');
+            const icon = document.getElementById('submitIcon');
+            const spinner = document.getElementById('submitSpinner');
+            const text = document.getElementById('submitText');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-80', 'cursor-not-allowed');
+            }
+            if (icon) icon.classList.add('hidden');
+            if (spinner) spinner.classList.remove('hidden');
+            if (text) text.textContent = 'Authenticating...';
         }
     </script>
 </body>

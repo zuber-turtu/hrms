@@ -52,7 +52,13 @@ async def attendance_log(
             .all()
         )
     else:
-        raw_logs = db.query(Attendance).order_by(Attendance.date.desc(), Attendance.check_in.asc()).all()
+        raw_logs = (
+            db.query(Attendance)
+            .join(Employee, Attendance.employee_id == Employee.id)
+            .filter(Employee.role != "admin")
+            .order_by(Attendance.date.desc(), Attendance.check_in.asc())
+            .all()
+        )
 
     # Group raw logs by (date, employee_id)
     grouped = defaultdict(list)
@@ -151,6 +157,12 @@ async def check_in(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
+    if current_user.role == "admin":
+        if request.headers.get("HX-Request"):
+            return HTMLResponse("")
+        safe_target = get_safe_redirect(request, default="/dashboard")
+        return RedirectResponse(url=safe_target, status_code=302)
+
     today = get_ist_today()
     # Check if there is an active check-in (check_out is None)
     active_log = db.query(Attendance).filter(
@@ -186,6 +198,12 @@ async def check_out(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
+    if current_user.role == "admin":
+        if request.headers.get("HX-Request"):
+            return HTMLResponse("")
+        safe_target = get_safe_redirect(request, default="/dashboard")
+        return RedirectResponse(url=safe_target, status_code=302)
+
     today = get_ist_today()
     # Find the active check-in log to checkout
     log = db.query(Attendance).filter(

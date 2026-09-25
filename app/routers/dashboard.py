@@ -33,20 +33,34 @@ async def dashboard(
     stats = {}
     recent_attendances = []
     if current_user.role in ['admin', 'hr_admin']:
-        stats['total_employees'] = db.query(Employee).filter(Employee.is_active == True).count()
-        stats['present_today'] = db.query(Attendance).filter(
-            Attendance.date == today,
-            Attendance.check_in.isnot(None)
-        ).count()
+        stats['total_employees'] = db.query(Employee).filter(Employee.is_active == True, Employee.role != 'admin').count()
+        stats['present_today'] = (
+            db.query(Attendance)
+            .join(Employee, Attendance.employee_id == Employee.id)
+            .filter(
+                Employee.role != 'admin',
+                Attendance.date == today,
+                Attendance.check_in.isnot(None)
+            )
+            .count()
+        )
         stats['pending_docs'] = db.query(EmployeeDocument).filter(
             EmployeeDocument.status == 'pending'
         ).count()
         stats['draft_payslips'] = db.query(Payslip).filter(
             Payslip.status == 'draft'
         ).count()
-        recent_attendances = db.query(Attendance).filter(
-            Attendance.date == today
-        ).order_by(Attendance.check_in.desc()).limit(5).all()
+        recent_attendances = (
+            db.query(Attendance)
+            .join(Employee, Attendance.employee_id == Employee.id)
+            .filter(
+                Employee.role != 'admin',
+                Attendance.date == today
+            )
+            .order_by(Attendance.check_in.desc())
+            .limit(5)
+            .all()
+        )
     else:
         # For regular employee, get personal monthly attendance count & latest payslip
         stats['my_present_days'] = db.query(Attendance).filter(

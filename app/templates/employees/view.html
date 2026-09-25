@@ -83,6 +83,7 @@
                 <i data-lucide="user" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i>
                 <span>Profile & Personal</span>
             </button>
+            {% if employee.role != 'admin' %}
             <button onclick="switchTab('attendance')" id="tab-btn-attendance" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold transition-all border border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap">
                 <i data-lucide="calendar-clock" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i>
                 <span>Attendance Logs</span>
@@ -90,6 +91,7 @@
                     {{ attendance_logs|length }}
                 </span>
             </button>
+            {% endif %}
             <button onclick="switchTab('payroll')" id="tab-btn-payroll" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold transition-all border border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap">
                 <i data-lucide="wallet-cards" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i>
                 <span>Payroll & Payslips</span>
@@ -276,6 +278,7 @@
     </div>
 
     <!-- ================= TAB 2: ATTENDANCE & TIME LOGS ================= -->
+    {% if employee.role != 'admin' %}
     <div id="tab-content-attendance" class="tab-content hidden space-y-5">
         
         <!-- Attendance Stats Header -->
@@ -392,6 +395,7 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
     <!-- ================= TAB 3: PAYROLL & COMPENSATION ================= -->
     <div id="tab-content-payroll" class="tab-content hidden space-y-5">
@@ -767,6 +771,7 @@
     </div>
 </div>
 
+{% if employee.role != 'admin' %}
 <!-- Modal: Attendance Override -->
 <div id="overrideModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -821,6 +826,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Modal: Admin Password Reset -->
 <div id="resetPasswordModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
