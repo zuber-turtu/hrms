@@ -42,6 +42,11 @@ async def update_company_profile(
     cin: str = Form(None),
     gstin: str = Form(None),
     pan: str = Form(None),
+    office_latitude: str = Form(None),
+    office_longitude: str = Form(None),
+    geofence_radius_meters: int = Form(200),
+    geofence_enabled: bool = Form(False),
+    geofence_strict_mode: bool = Form(False),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
@@ -57,6 +62,28 @@ async def update_company_profile(
     company.cin = cin.strip().upper() if cin and cin.strip() else None
     company.gstin = gstin.strip().upper() if gstin and gstin.strip() else None
     company.pan = pan.strip().upper() if pan and pan.strip() else None
+
+    # Geofence parameters
+    if office_latitude and office_latitude.strip():
+        try:
+            company.office_latitude = float(office_latitude.strip())
+        except ValueError:
+            company.office_latitude = None
+    else:
+        company.office_latitude = None
+
+    if office_longitude and office_longitude.strip():
+        try:
+            company.office_longitude = float(office_longitude.strip())
+        except ValueError:
+            company.office_longitude = None
+    else:
+        company.office_longitude = None
+
+    company.geofence_radius_meters = max(10, int(geofence_radius_meters))
+    company.geofence_enabled = geofence_enabled
+    company.geofence_strict_mode = geofence_strict_mode
+
     db.commit()
 
-    return RedirectResponse(url="/company/profile", status_code=302)
+    return RedirectResponse(url="/company/profile?success=Company+and+geofence+settings+saved+successfully", status_code=302)

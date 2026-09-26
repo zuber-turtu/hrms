@@ -44,21 +44,40 @@
         </span>
     </td>
 
-    <!-- Status Pill -->
+    <!-- Status & Geofence Verification Pill -->
     <td class="px-5 py-3.5 whitespace-nowrap">
-        {% if log.is_missed %}
-        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200" title="Missing Check-Out from a previous day">
-            <i data-lucide="alert-circle" class="w-3 h-3 mr-1 text-rose-600"></i> Missed Punch
-        </span>
-        {% elif log.is_overridden %}
-        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200" title="{{ log.override_reason }}">
-            <i data-lucide="edit-2" class="w-3 h-3 mr-1 text-amber-600"></i> Overridden
-        </span>
-        {% else %}
-        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Verified
-        </span>
-        {% endif %}
+        <div class="flex flex-col items-start gap-1">
+            {% if log.is_missed %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200" title="Missing Check-Out from a previous day">
+                <i data-lucide="alert-circle" class="w-3 h-3 mr-1 text-rose-600"></i> Missed Punch
+            </span>
+            {% elif log.is_overridden %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200" title="{{ log.override_reason }}">
+                <i data-lucide="edit-2" class="w-3 h-3 mr-1 text-amber-600"></i> Overridden
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Verified
+            </span>
+            {% endif %}
+
+            <!-- Geofence Perimeter Location Badge -->
+            {% if log.is_exempt %}
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200/80" title="Exempt remote/field staff">
+                <i data-lucide="map-pin-off" class="w-2.5 h-2.5 mr-1 text-purple-600"></i> Remote Exempt
+            </span>
+            {% elif log.distance_m is not none %}
+                {% if log.in_range %}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80" title="Punched within office perimeter ({{ log.distance_m|round|int }}m)">
+                    <i data-lucide="map-pin" class="w-2.5 h-2.5 mr-1 text-emerald-600"></i> Office ({{ log.distance_m|round|int }}m)
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200/80" title="Outside office perimeter ({{ log.distance_m|round|int }}m)">
+                    <i data-lucide="map-pin" class="w-2.5 h-2.5 mr-1 text-amber-600"></i> Outside ({{ log.distance_m|round|int }}m)
+                </span>
+                {% endif %}
+            {% endif %}
+        </div>
     </td>
     
     <!-- Admin Edit Action -->

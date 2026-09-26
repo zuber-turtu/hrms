@@ -1,3 +1,5 @@
+import json
+from urllib.parse import quote_plus
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -10,6 +12,8 @@ from app.models.employee import Employee
 from app.models.attendance import Attendance
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
+from app.config import settings
+from app.utils.geofence import validate_punch_geofence
 
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
@@ -106,6 +110,10 @@ async def attendance_log(
         secs = int(total_seconds % 60)
         total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
         
+        latest_dist = group_logs[0].check_in_distance_m if group_logs[0].check_in_distance_m is not None else group_logs[-1].check_out_distance_m
+        latest_in_range = group_logs[0].check_in_in_range if group_logs[0].check_in_in_range is not None else group_logs[-1].check_out_in_range
+        is_exempt = bool(employee and employee.profile and employee.profile.is_geofence_exempt)
+
         item = {
             "id": group_logs[0].id,  # primary ID for override actions
             "date": date,
@@ -116,13 +124,16 @@ async def attendance_log(
             "override_reason": override_reason,
             "is_missed": is_missed,
             "check_in": group_logs[0].check_in,
-            "check_out": group_logs[-1].check_out
+            "check_out": group_logs[-1].check_out,
+            "distance_m": latest_dist,
+            "in_range": latest_in_range,
+            "is_exempt": is_exempt,
         }
 
         # Apply search filter (date or employee name)
         if q and q.strip():
             query_lower = q.strip().lower()
-            emp_name = (employee.name or "").lower()
+            emp_name = (employee.name or "").lower() if employee else ""
             date_str = str(date).lower()
             if query_lower not in emp_name and query_lower not in date_str:
                 continue
@@ -154,6 +165,8 @@ async def attendance_log(
 @router.post("/check-in")
 async def check_in(
     request: Request,
+    lat: Optional[float] = Form(None),
+    lon: Optional[float] = Form(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -162,6 +175,30 @@ async def check_in(
             return HTMLResponse("")
         safe_target = get_safe_redirect(request, default="/dashboard")
         return RedirectResponse(url=safe_target, status_code=302)
+
+    # 1. Validate Geofence
+    is_allowed, geofence_msg, dist_m, is_exempt, company = validate_punch_geofence(
+        db, current_user, lat, lon
+    )
+
+    if not is_allowed:
+        if request.headers.get("HX-Request"):
+            error_data = json.dumps({"message": geofence_msg or "Check-in outside office perimeter blocked.", "type": "error"})
+            headers = {"HX-Trigger": f'{{"showErrorToast": {error_data}}}'}
+            update_attendance_request_state(db, current_user, request)
+            return templates.TemplateResponse(
+                request,
+                "attendance/partials/_topbar_widget.html",
+                {"user": current_user, "punch_error": geofence_msg},
+                headers=headers
+            )
+
+        safe_target = get_safe_redirect(request, default="/dashboard")
+        separator = "&" if "?" in safe_target else "?"
+        return RedirectResponse(
+            url=f"{safe_target}{separator}error={quote_plus(geofence_msg or 'Punch outside allowed perimeter')}",
+            status_code=302
+        )
 
     today = get_ist_today()
     # Check if there is an active check-in (check_out is None)
@@ -172,10 +209,19 @@ async def check_in(
     ).first()
 
     if not active_log:
+        allowed_radius = company.geofence_radius_meters or settings.GEOFENCE_DEFAULT_RADIUS_METERS
+        in_range = True
+        if dist_m is not None:
+            in_range = (dist_m <= allowed_radius)
+
         log = Attendance(
             employee_id=current_user.id,
             date=today,
             check_in=get_ist_now(),
+            check_in_lat=lat,
+            check_in_lon=lon,
+            check_in_distance_m=dist_m,
+            check_in_in_range=in_range,
         )
         db.add(log)
         db.commit()
@@ -195,6 +241,8 @@ async def check_in(
 @router.post("/check-out")
 async def check_out(
     request: Request,
+    lat: Optional[float] = Form(None),
+    lon: Optional[float] = Form(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -203,6 +251,30 @@ async def check_out(
             return HTMLResponse("")
         safe_target = get_safe_redirect(request, default="/dashboard")
         return RedirectResponse(url=safe_target, status_code=302)
+
+    # 1. Validate Geofence
+    is_allowed, geofence_msg, dist_m, is_exempt, company = validate_punch_geofence(
+        db, current_user, lat, lon
+    )
+
+    if not is_allowed:
+        if request.headers.get("HX-Request"):
+            error_data = json.dumps({"message": geofence_msg or "Check-out outside office perimeter blocked.", "type": "error"})
+            headers = {"HX-Trigger": f'{{"showErrorToast": {error_data}}}'}
+            update_attendance_request_state(db, current_user, request)
+            return templates.TemplateResponse(
+                request,
+                "attendance/partials/_topbar_widget.html",
+                {"user": current_user, "punch_error": geofence_msg},
+                headers=headers
+            )
+
+        safe_target = get_safe_redirect(request, default="/dashboard")
+        separator = "&" if "?" in safe_target else "?"
+        return RedirectResponse(
+            url=f"{safe_target}{separator}error={quote_plus(geofence_msg or 'Punch outside allowed perimeter')}",
+            status_code=302
+        )
 
     today = get_ist_today()
     # Find the active check-in log to checkout
@@ -213,7 +285,16 @@ async def check_out(
     ).order_by(Attendance.check_in.desc()).first()
 
     if log:
+        allowed_radius = company.geofence_radius_meters or settings.GEOFENCE_DEFAULT_RADIUS_METERS
+        in_range = True
+        if dist_m is not None:
+            in_range = (dist_m <= allowed_radius)
+
         log.check_out = get_ist_now()
+        log.check_out_lat = lat
+        log.check_out_lon = lon
+        log.check_out_distance_m = dist_m
+        log.check_out_in_range = in_range
         db.commit()
 
     if request.headers.get("HX-Request"):

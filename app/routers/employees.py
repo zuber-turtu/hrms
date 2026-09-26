@@ -246,6 +246,7 @@ async def create_employee(
     bank_name: str = Form(None),
     account_number: str = Form(None),
     ifsc_code: str = Form(None),
+    is_geofence_exempt: bool = Form(False),
     photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
@@ -308,6 +309,7 @@ async def create_employee(
         aadhar_number=aadhar_number,
         pan_number=pan_number,
         uan_number=uan_number,
+        is_geofence_exempt=is_geofence_exempt,
     )
     db.add(profile)
 
@@ -430,6 +432,10 @@ async def view_employee(
             secs = int(total_seconds % 60)
             total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
 
+            latest_dist = group_logs[0].check_in_distance_m if group_logs[0].check_in_distance_m is not None else group_logs[-1].check_out_distance_m
+            latest_in_range = group_logs[0].check_in_in_range if group_logs[0].check_in_in_range is not None else group_logs[-1].check_out_in_range
+            is_exempt = bool(employee and employee.profile and employee.profile.is_geofence_exempt)
+
             attendance_data.append({
                 "id": group_logs[0].id,
                 "date": date,
@@ -439,7 +445,10 @@ async def view_employee(
                 "override_reason": override_reason,
                 "is_missed": is_missed,
                 "check_in": group_logs[0].check_in,
-                "check_out": group_logs[-1].check_out
+                "check_out": group_logs[-1].check_out,
+                "distance_m": latest_dist,
+                "in_range": latest_in_range,
+                "is_exempt": is_exempt,
             })
         
     # 3. Fetch Document & KYC checklist
@@ -524,6 +533,7 @@ async def edit_employee(
     bank_name: str = Form(None),
     account_number: str = Form(None),
     ifsc_code: str = Form(None),
+    is_geofence_exempt: bool = Form(False),
     photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
@@ -618,6 +628,9 @@ async def edit_employee(
     employee.profile.aadhar_number = aadhar_number
     employee.profile.pan_number = pan_number
     employee.profile.uan_number = uan_number
+    
+    if current_user.role in ["admin", "hr_admin"]:
+        employee.profile.is_geofence_exempt = is_geofence_exempt
 
     # Handle Photo Upload if present
     if photo and photo.filename:

@@ -10,9 +10,12 @@ from app.models.attendance import Attendance
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.utils.timezone import get_ist_today, get_ist_now
+from app.utils.geofence import validate_punch_geofence
+from app.config import settings
 from app.schemas.attendance import (
     AttendanceStatusOut,
     AttendanceCheckInRequest,
+    AttendanceCheckOutRequest,
     AttendanceLogItem,
     AttendanceOverrideRequest,
 )
@@ -71,10 +74,24 @@ async def api_check_in(
     current_user: Employee = Depends(require_auth),
 ):
     """
-    Clock in for today's work shift (supports mobile punch timestamps).
+    Clock in for today's work shift (supports mobile punch timestamps and GPS coordinates).
     """
     if current_user.role == "admin":
         return await api_get_attendance_status(db, current_user)
+
+    lat = payload.latitude if payload else None
+    lon = payload.longitude if payload else None
+
+    # Validate Geofence
+    is_allowed, geofence_msg, dist_m, is_exempt, company = validate_punch_geofence(
+        db, current_user, lat, lon
+    )
+
+    if not is_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=geofence_msg or "Check-in blocked: Outside permitted office location.",
+        )
 
     today = get_ist_today()
     active_log = (
@@ -88,10 +105,19 @@ async def api_check_in(
     )
 
     if not active_log:
+        allowed_radius = company.geofence_radius_meters or settings.GEOFENCE_DEFAULT_RADIUS_METERS
+        in_range = True
+        if dist_m is not None:
+            in_range = (dist_m <= allowed_radius)
+
         log = Attendance(
             employee_id=current_user.id,
             date=today,
             check_in=get_ist_now(),
+            check_in_lat=lat,
+            check_in_lon=lon,
+            check_in_distance_m=dist_m,
+            check_in_in_range=in_range,
         )
         db.add(log)
         db.commit()
@@ -101,14 +127,29 @@ async def api_check_in(
 
 @router.post("/check-out", response_model=AttendanceStatusOut)
 async def api_check_out(
+    payload: Optional[AttendanceCheckOutRequest] = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
     """
-    Clock out of the active work shift.
+    Clock out of the active work shift (supports GPS coordinates).
     """
     if current_user.role == "admin":
         return await api_get_attendance_status(db, current_user)
+
+    lat = payload.latitude if payload else None
+    lon = payload.longitude if payload else None
+
+    # Validate Geofence
+    is_allowed, geofence_msg, dist_m, is_exempt, company = validate_punch_geofence(
+        db, current_user, lat, lon
+    )
+
+    if not is_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=geofence_msg or "Check-out blocked: Outside permitted office location.",
+        )
 
     today = get_ist_today()
     log = (
@@ -123,7 +164,16 @@ async def api_check_out(
     )
 
     if log:
+        allowed_radius = company.geofence_radius_meters or settings.GEOFENCE_DEFAULT_RADIUS_METERS
+        in_range = True
+        if dist_m is not None:
+            in_range = (dist_m <= allowed_radius)
+
         log.check_out = get_ist_now()
+        log.check_out_lat = lat
+        log.check_out_lon = lon
+        log.check_out_distance_m = dist_m
+        log.check_out_in_range = in_range
         db.commit()
 
     return await api_get_attendance_status(db, current_user)
@@ -228,6 +278,10 @@ async def api_get_attendance_logs(
             elif sf == "normal" and (is_missed or is_overridden):
                 continue
 
+        latest_dist = group_logs[0].check_in_distance_m if group_logs[0].check_in_distance_m is not None else group_logs[-1].check_out_distance_m
+        latest_in_range = group_logs[0].check_in_in_range if group_logs[0].check_in_in_range is not None else group_logs[-1].check_out_in_range
+        is_exempt = bool(employee.profile and employee.profile.is_geofence_exempt) if employee.profile else False
+
         logs_data.append(
             AttendanceLogItem(
                 id=group_logs[0].id,
@@ -243,6 +297,9 @@ async def api_get_attendance_logs(
                 override_reason=override_reason,
                 check_in=group_logs[0].check_in,
                 check_out=group_logs[-1].check_out,
+                distance_m=latest_dist,
+                in_range=latest_in_range,
+                is_exempt=is_exempt,
             )
         )
 

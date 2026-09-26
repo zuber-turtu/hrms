@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-[#061118]">
+<html lang="en" class="h-full bg-[#F4F7F7]">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — TURTU HRMS</title>
     
-    <!-- Google Fonts: Poppins (Display/Headlines), Nunito (UI/Body), JetBrains Mono (Financials/Badges) -->
+    <!-- TURTU Brand Fonts (From Design Spec): Poppins (Headings/Brand), Nunito (Body/UI), JetBrains Mono (Codes) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -23,33 +23,22 @@
                         mono: ['"JetBrains Mono"', 'monospace'],
                     },
                     colors: {
-                        brand: {
-                            50: '#F4F7F7',      /* Teal Wash - Light Neutral */
-                            100: '#E0F4F4',     /* Teal Mist - Light Accent */
-                            200: '#B3E3E3',     /* Teal Light - Border/Lines */
-                            300: '#80C7C7',     /* Mid-Light */
-                            400: '#4DB8B8',     /* Teal Mid - Bright Accent */
-                            500: '#008080',     /* TURTU Teal ★ - Primary */
-                            600: '#006666',     /* Teal Deep - Hover/Active */
-                            700: '#005050',     /* Dark Teal - Strong labels */
-                            800: '#004444',     /* Teal Dark - Dark Surfaces */
-                            900: '#1C2B2B',     /* Deep Forest - Typography */
-                        },
+                        // Official TURTU Brand Color Palette (From Turtu color & font plan.xlsx)
                         turtu: {
-                            teal: '#008080',
-                            deep: '#006666',
-                            dark: '#004444',
-                            mid: '#4DB8B8',
-                            light: '#B3E3E3',
-                            mist: '#E0F4F4',
-                            wash: '#F4F7F7',
-                            mint: '#EAF7F5',
-                            forest: '#1C2B2B',
-                            slate: '#6B7F7F',
-                            saffron: '#FF8C42',
-                            turmeric: '#F2C94C',
-                            foam: '#E8F7F7',
-                            red: '#E53E3E'
+                            teal: '#008080',     // TURTU Teal ★ (Primary CTA / Brand)
+                            deep: '#006666',     // Teal Deep (Hover / Active State)
+                            dark: '#004444',     // Teal Dark (Dark accents)
+                            mid: '#4DB8B8',      // Teal Mid (Icon accents)
+                            light: '#B3E3E3',    // Teal Light (Card borders & Dividers)
+                            mist: '#E0F4F4',     // Teal Mist (Tags / Focus ring fill)
+                            wash: '#F4F7F7',     // Teal Wash (App background 60%)
+                            mint: '#EAF7F5',     // Mint Teal Wash
+                            forest: '#1C2B2B',   // Deep Forest (Primary Headlines & Labels)
+                            slate: '#6B7F7F',    // Slate (Secondary text & Placeholders)
+                            saffron: '#FF8C42',  // Saffron Orange
+                            turmeric: '#F2C94C', // Turmeric
+                            foam: '#E8F7F7',     // Foam Green (Success State)
+                            red: '#E53E3E',      // Alert Red (Error State)
                         }
                     }
                 }
@@ -57,234 +46,163 @@
         }
     </script>
 
-    <!-- Favicon / Tab Icon -->
+    <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="/static/images/icon.jpeg">
     <link rel="shortcut icon" type="image/jpeg" href="/static/images/icon.jpeg">
-    <link rel="apple-touch-icon" href="/static/images/icon.jpeg">
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        .showcase-bg {
-            background-color: #061118;
-            background-image: 
-                linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-                radial-gradient(circle at 20% 30%, rgba(0, 128, 128, 0.22) 0%, rgba(0, 68, 68, 0.12) 40%, rgba(6, 17, 24, 0.98) 75%);
-            background-size: 36px 36px, 36px 36px, 100% 100%;
-        }
-
-        /* Prevent iOS Safari Auto-Zoom on form input focus */
+        /* Prevent iOS Safari auto-zoom on input focus */
         @media (max-width: 639px) {
-            input, select, textarea {
+            input {
                 font-size: 16px !important;
             }
         }
     </style>
 </head>
-<body class="h-full font-sans antialiased text-[#1C2B2B] selection:bg-[#008080] selection:text-white">
+<body class="h-full flex flex-col justify-center py-10 sm:py-16 sm:px-6 lg:px-8 bg-[#F4F7F7] text-[#1C2B2B] font-sans antialiased selection:bg-[#008080] selection:text-white">
 
-    <div class="min-h-screen flex flex-col lg:grid lg:grid-cols-12 bg-[#061118]">
+    <!-- Central Wrapper -->
+    <div class="sm:mx-auto sm:w-full sm:max-w-[420px] px-4 sm:px-0">
         
-        <!-- LEFT SHOWCASE PANEL (Visible on Desktop / Tablets) -->
-        <div class="hidden lg:flex lg:col-span-7 flex-col justify-between p-12 xl:p-16 showcase-bg border-r border-[#004444]/60 relative overflow-hidden">
+        <!-- Brand Header Section -->
+        <div class="text-center mb-6">
+            <!-- Logo Container with Teal Border (#B3E3E3) -->
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-[#B3E3E3] shadow-xs mb-3.5 p-2">
+                <img src="/static/images/icon.jpeg" alt="TURTU Logo" class="w-full h-full object-contain rounded-xl">
+            </div>
             
-            <!-- Ambient Glow Effect -->
-            <div class="absolute -top-32 -left-32 w-96 h-96 bg-[#008080]/15 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-32 right-0 w-96 h-96 bg-[#006666]/15 rounded-full blur-3xl pointer-events-none"></div>
+            <!-- Headline: Poppins ExtraBold with TURTU Teal (#008080) and Deep Forest (#1C2B2B) -->
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[#1C2B2B] font-heading">
+                TURTU <span class="text-[#008080]">HRMS</span>
+            </h1>
+            
+            <!-- Subtitle: Slate (#6B7F7F) -->
+            <p class="text-xs sm:text-sm text-[#6B7F7F] mt-1 font-medium">
+                Enterprise Workforce &amp; Payroll Portal
+            </p>
+        </div>
 
-            <!-- Top Brand -->
-            <div class="flex items-center space-x-3.5 z-10">
-                <div class="w-11 h-11 rounded-xl bg-[#004444] border border-[#006666] p-1.5 flex items-center justify-center shadow-lg shadow-black/30">
-                    <img src="/static/images/icon.jpeg" alt="TURTU Logo" class="w-full h-full object-contain rounded-lg">
-                </div>
-                <div>
-                    <span class="text-2xl font-extrabold tracking-wider text-white font-display block leading-none">
-                        TURTU <span class="text-[#4DB8B8] font-bold">HRMS</span>
-                    </span>
-                    <span class="text-[11px] font-mono text-[#B3E3E3]/80 tracking-wide uppercase">Enterprise Workforce Cloud</span>
-                </div>
-            </div>
-
-            <!-- Main Value Proposition -->
-            <div class="my-auto py-12 max-w-xl z-10">
-                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#004444]/80 border border-[#006666] text-xs font-semibold text-[#B3E3E3] mb-6 shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-[#4DB8B8] animate-ping"></span>
-                    <span>All-in-One HR &amp; Payroll Ecosystem</span>
-                </div>
-
-                <h1 class="text-4xl xl:text-5xl font-extrabold text-white font-heading tracking-tight leading-[1.15] mb-6">
-                    Streamlined workforce management, <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#4DB8B8] via-[#80C7C7] to-teal-200">built for speed.</span>
-                </h1>
-
-                <p class="text-base text-[#B3E3E3]/90 leading-relaxed font-normal mb-8">
-                    From automated payroll calculations with statutory EPF, ESI &amp; TDS compliance to real-time biometric attendance and employee lifecycle records.
+        <!-- Main Login Card: Pure White with Teal Light Border (#B3E3E3) -->
+        <div class="bg-white py-7 px-6 sm:px-8 rounded-2xl border border-[#B3E3E3] shadow-sm">
+            
+            <div class="mb-5 pb-3.5 border-b border-[#F4F7F7]">
+                <h2 class="text-lg font-bold text-[#1C2B2B] font-heading">
+                    Sign In
+                </h2>
+                <p class="text-xs text-[#6B7F7F] mt-0.5">
+                    Please enter your work credentials to access your account.
                 </p>
-
-                <!-- Value Highlights Grid -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="p-4 rounded-xl bg-[#081a24]/80 border border-[#004444] shadow-md backdrop-blur-xs">
-                        <div class="w-8 h-8 rounded-lg bg-[#004444] text-[#4DB8B8] flex items-center justify-center mb-3">
-                            <i data-lucide="calculator" class="w-4 h-4"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-white font-heading">Automated Payroll</h3>
-                        <p class="text-xs text-[#B3E3E3]/70 mt-1">One-click payslips, dynamic allowances &amp; formula-driven statutory deductions.</p>
-                    </div>
-
-                    <div class="p-4 rounded-xl bg-[#081a24]/80 border border-[#004444] shadow-md backdrop-blur-xs">
-                        <div class="w-8 h-8 rounded-lg bg-[#004444] text-[#4DB8B8] flex items-center justify-center mb-3">
-                            <i data-lucide="shield-check" class="w-4 h-4"></i>
-                        </div>
-                        <h3 class="text-sm font-bold text-white font-heading">Audit &amp; Compliance</h3>
-                        <p class="text-xs text-[#B3E3E3]/70 mt-1">Role-based access control, tamper-evident audit logs &amp; document vaults.</p>
-                    </div>
-                </div>
             </div>
 
-            <!-- Bottom Footnote -->
-            <div class="flex items-center justify-between text-xs text-[#B3E3E3]/60 z-10 pt-6 border-t border-[#004444]/50 font-mono">
-                <span>© 2026 TURTU HRMS</span>
-                <span class="flex items-center space-x-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>System Operational</span>
-                </span>
+            <!-- Error Flash Notification: Alert Red (#E53E3E) -->
+            {% set err_msg = error or request.query_params.get('error') %}
+            {% if err_msg %}
+            <div class="mb-4 bg-rose-50 border border-[#E53E3E]/40 rounded-xl p-3.5 flex items-start space-x-2.5 text-xs text-[#E53E3E] font-semibold">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-[#E53E3E] shrink-0 mt-0.5"></i>
+                <span class="flex-1 leading-relaxed">{{ err_msg }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Success Flash Notification: Foam Green (#E8F7F7) + Dark Teal (#005050) -->
+            {% set succ_msg = success or request.query_params.get('success') %}
+            {% if succ_msg %}
+            <div class="mb-4 bg-[#E8F7F7] border border-[#B3E3E3] rounded-xl p-3.5 flex items-start space-x-2.5 text-xs text-[#005050] font-semibold">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-[#008080] shrink-0 mt-0.5"></i>
+                <span class="flex-1 leading-relaxed">{{ succ_msg }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Login Form -->
+            <form id="loginForm" action="/login" method="POST" class="space-y-4" onsubmit="handleLoginSubmit(event)">
+                
+                <!-- Work Email Field -->
+                <div>
+                    <label for="email" class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] mb-1.5 font-sans">
+                        Work Email
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                        </div>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            id="email" 
+                            required 
+                            autocomplete="email" 
+                            placeholder="name@company.com" 
+                            class="w-full text-xs sm:text-sm bg-white border border-[#B3E3E3] hover:border-[#80C7C7] rounded-xl pl-10 pr-3.5 py-2.5 text-[#1C2B2B] placeholder:text-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-3 focus:ring-[#E0F4F4] transition-all font-sans">
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password" class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] mb-1.5 font-sans">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                        </div>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            id="password" 
+                            required 
+                            autocomplete="current-password" 
+                            placeholder="••••••••" 
+                            class="w-full text-xs sm:text-sm bg-white border border-[#B3E3E3] hover:border-[#80C7C7] rounded-xl pl-10 pr-10 py-2.5 text-[#1C2B2B] placeholder:text-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-3 focus:ring-[#E0F4F4] transition-all font-sans">
+                        <button 
+                            type="button" 
+                            onclick="togglePasswordVisibility()" 
+                            tabindex="-1"
+                            aria-label="Toggle password visibility"
+                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#6B7F7F] hover:text-[#1C2B2B] focus:outline-none transition-colors">
+                            <i data-lucide="eye" id="password-toggle-icon" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit Button: TURTU Teal (#008080) -> Hover Teal Deep (#006666) -->
+                <div class="pt-2">
+                    <button 
+                        type="submit" 
+                        id="submitBtn"
+                        class="w-full h-11 flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-bold tracking-wide text-white bg-[#008080] hover:bg-[#006666] active:bg-[#004444] shadow-sm shadow-[#008080]/20 hover:shadow transition-all focus:outline-none focus:ring-3 focus:ring-[#E0F4F4] cursor-pointer">
+                        <span id="submitText" class="flex items-center space-x-2">
+                            <i data-lucide="log-in" id="submitIcon" class="w-4 h-4 mr-1"></i>
+                            <span>Sign In</span>
+                        </span>
+                        <span id="submitSpinner" class="hidden flex items-center space-x-2">
+                            <svg class="animate-spin w-4 h-4 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Signing in...</span>
+                        </span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Card Bottom Note: Teal Mist (#E0F4F4) with Deep Forest (#1C2B2B) -->
+            <div class="mt-6 pt-4 border-t border-[#F4F7F7] flex items-center justify-center space-x-2 text-xs text-[#6B7F7F]">
+                <div class="w-2 h-2 rounded-full bg-[#008080]"></div>
+                <span>Secured with role-based access control</span>
             </div>
 
         </div>
 
-        <!-- RIGHT AUTHENTICATION PANEL -->
-        <div class="flex-1 lg:col-span-5 flex flex-col justify-center items-center px-6 py-12 sm:px-12 xl:px-16 bg-[#061118] lg:bg-white min-h-screen lg:min-h-0">
-            
-            <div class="w-full max-w-[380px]">
-                
-                <!-- Mobile Brand Header (Hidden on Desktop) -->
-                <div class="lg:hidden flex items-center justify-center space-x-3 mb-8">
-                    <div class="w-10 h-10 rounded-xl bg-[#004444] border border-[#006666] p-1.5 flex items-center justify-center shadow-md shrink-0">
-                        <img src="/static/images/icon.jpeg" alt="TURTU Logo" class="w-full h-full object-contain rounded-lg">
-                    </div>
-                    <span class="text-2xl font-extrabold tracking-wider text-white font-display">
-                        TURTU <span class="text-[#4DB8B8] font-bold">HRMS</span>
-                    </span>
-                </div>
-
-                <!-- Form Card / Wrapper -->
-                <div class="bg-white rounded-2xl shadow-xl shadow-black/40 lg:shadow-none border border-slate-200 lg:border-none p-7 lg:p-0">
-                    
-                    <div class="mb-7">
-                        <h2 class="text-2xl font-bold text-[#1C2B2B] tracking-tight font-heading">
-                            Sign in
-                        </h2>
-                        <p class="text-sm text-[#6B7F7F] mt-1">
-                            Welcome back. Please enter your credentials.
-                        </p>
-                    </div>
-
-                    <!-- Error Flash Notification (#E53E3E Alert Red) -->
-                    {% set err_msg = error or request.query_params.get('error') %}
-                    {% if err_msg %}
-                    <div class="mb-5 bg-rose-50 border border-rose-200 rounded-lg p-3.5 flex items-start space-x-2.5 text-xs text-[#E53E3E] font-semibold">
-                        <i data-lucide="alert-circle" class="w-4 h-4 text-[#E53E3E] shrink-0 mt-0.5"></i>
-                        <span class="flex-1 leading-relaxed">{{ err_msg }}</span>
-                    </div>
-                    {% endif %}
-
-                    <!-- Success Flash Notification (#E8F7F7 Foam Green + #005050 Dark Teal) -->
-                    {% set succ_msg = success or request.query_params.get('success') %}
-                    {% if succ_msg %}
-                    <div class="mb-5 bg-[#E8F7F7] border border-[#B3E3E3] rounded-lg p-3.5 flex items-start space-x-2.5 text-xs text-[#005050] font-semibold">
-                        <i data-lucide="check-circle" class="w-4 h-4 text-[#008080] shrink-0 mt-0.5"></i>
-                        <span class="flex-1 leading-relaxed">{{ succ_msg }}</span>
-                    </div>
-                    {% endif %}
-
-                    <!-- Login Form -->
-                    <form id="loginForm" action="/login" method="POST" class="space-y-4" onsubmit="handleLoginSubmit(event)">
-                        
-                        <!-- Work Email -->
-                        <div>
-                            <label for="email" class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] mb-2 font-mono">
-                                Work Email
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
-                                    <i data-lucide="mail" class="w-4 h-4"></i>
-                                </div>
-                                <input 
-                                    type="email" 
-                                    name="email" 
-                                    id="email" 
-                                    required 
-                                    autocomplete="email" 
-                                    placeholder="name@company.com" 
-                                    class="w-full text-sm bg-slate-50 lg:bg-white border border-slate-300 hover:border-[#B3E3E3] rounded-xl pl-10 pr-4 py-3 text-[#1C2B2B] placeholder:text-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-4 focus:ring-[#008080]/10 transition-all font-sans">
-                            </div>
-                        </div>
-
-                        <!-- Password -->
-                        <div>
-                            <label for="password" class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] mb-2 font-mono">
-                                Password
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
-                                    <i data-lucide="lock" class="w-4 h-4"></i>
-                                </div>
-                                <input 
-                                    type="password" 
-                                    name="password" 
-                                    id="password" 
-                                    required 
-                                    autocomplete="current-password" 
-                                    placeholder="••••••••" 
-                                    class="w-full text-sm bg-slate-50 lg:bg-white border border-slate-300 hover:border-[#B3E3E3] rounded-xl pl-10 pr-10 py-3 text-[#1C2B2B] placeholder:text-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-4 focus:ring-[#008080]/10 transition-all font-sans">
-                                <button 
-                                    type="button" 
-                                    onclick="togglePasswordVisibility()" 
-                                    aria-label="Toggle password visibility"
-                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#6B7F7F] hover:text-[#1C2B2B] focus:outline-none focus:text-[#008080] transition-colors">
-                                    <i data-lucide="eye" id="password-toggle-icon" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <div class="pt-2">
-                            <button 
-                                type="submit" 
-                                id="submitBtn"
-                                class="w-full h-12 flex items-center justify-center py-3 px-5 rounded-xl text-sm font-bold tracking-wide text-white bg-[#008080] hover:bg-[#006666] active:bg-[#004444] shadow-md shadow-[#008080]/20 hover:shadow-lg hover:shadow-[#008080]/30 transition-all focus:outline-none focus:ring-4 focus:ring-[#008080]/30">
-                                <div class="flex items-center space-x-2">
-                                    <i data-lucide="log-in" id="submitIcon" class="w-4 h-4 text-white"></i>
-                                    <svg id="submitSpinner" class="hidden animate-spin w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span id="submitText">Sign in to Account</span>
-                                </div>
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Security Badge -->
-                    <div class="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center space-x-2 text-xs text-[#6B7F7F]">
-                        <i data-lucide="shield" class="w-3.5 h-3.5 text-[#008080]"></i>
-                        <span>Protected by enterprise grade security</span>
-                    </div>
-
-                </div>
-
-                <!-- Mobile Footer (Hidden on Desktop) -->
-                <div class="lg:hidden text-center mt-6 text-xs text-[#B3E3E3]/60 font-mono">
-                    <p>© 2026 TURTU HRMS. All rights reserved.</p>
-                </div>
-
-            </div>
-
+        <!-- Bottom Footer: Slate (#6B7F7F) with JetBrains Mono font -->
+        <div class="text-center mt-6 text-xs text-[#6B7F7F] font-mono">
+            <p>© 2026 TURTU HRMS. All rights reserved.</p>
         </div>
 
     </div>
 
+    <!-- Scripts -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
@@ -293,6 +211,8 @@
         function togglePasswordVisibility() {
             const passInput = document.getElementById('password');
             const icon = document.getElementById('password-toggle-icon');
+            if (!passInput || !icon) return;
+
             if (passInput.type === 'password') {
                 passInput.type = 'text';
                 icon.setAttribute('data-lucide', 'eye-off');
@@ -305,17 +225,15 @@
 
         function handleLoginSubmit(event) {
             const btn = document.getElementById('submitBtn');
-            const icon = document.getElementById('submitIcon');
-            const spinner = document.getElementById('submitSpinner');
             const text = document.getElementById('submitText');
+            const spinner = document.getElementById('submitSpinner');
 
             if (btn) {
                 btn.disabled = true;
                 btn.classList.add('opacity-80', 'cursor-not-allowed');
             }
-            if (icon) icon.classList.add('hidden');
+            if (text) text.classList.add('hidden');
             if (spinner) spinner.classList.remove('hidden');
-            if (text) text.textContent = 'Authenticating...';
         }
     </script>
 </body>

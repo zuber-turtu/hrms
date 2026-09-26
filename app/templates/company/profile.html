@@ -74,6 +74,69 @@
                         <input type="text" name="pan" id="pan" value="{{ company.pan or '' }}" placeholder="e.g. TURTU1234F" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                     </div>
                 </div>
+            <!-- Geofencing & Office Location Section -->
+            <div class="pt-4 border-t border-slate-100">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h4 class="text-xs font-bold font-heading text-slate-900 uppercase tracking-wider flex items-center">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1.5 text-teal-600"></i> Geofencing &amp; Office Perimeter
+                        </h4>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Restrict workforce check-in and check-out to verified office GPS boundaries.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="geofence_enabled" value="true" {% if company.geofence_enabled %}checked{% endif %} class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
+                        <span class="ml-2 text-xs font-semibold text-slate-700">Enable</span>
+                    </label>
+                </div>
+
+                <div class="bg-slate-50/80 border border-slate-200 rounded-xl p-4 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="office_latitude" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Office Latitude</label>
+                            <input type="number" step="any" name="office_latitude" id="office_latitude" value="{{ company.office_latitude if (company.office_latitude is not none) else '' }}" placeholder="e.g. 15.8497" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                        </div>
+                        <div>
+                            <label for="office_longitude" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Office Longitude</label>
+                            <input type="number" step="any" name="office_longitude" id="office_longitude" value="{{ company.office_longitude if (company.office_longitude is not none) else '' }}" placeholder="e.g. 74.4977" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                        <button type="button" onclick="detectCurrentLocation()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100 transition-colors shadow-2xs">
+                            <i data-lucide="crosshair" class="w-3.5 h-3.5 mr-1.5 text-teal-600"></i>
+                            <span>📍 Use My Current Location</span>
+                        </button>
+                        <span id="geo-status-msg" class="text-[11px] text-slate-500 font-medium hidden"></span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200/80">
+                        <div>
+                            <label for="geofence_radius_meters" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Perimeter Radius (Meters)</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="number" min="10" max="50000" name="geofence_radius_meters" id="geofence_radius_meters" value="{{ company.geofence_radius_meters or 200 }}" required class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <span class="text-xs font-semibold text-slate-500">meters</span>
+                            </div>
+                            <div class="flex space-x-1.5 mt-2">
+                                <button type="button" onclick="document.getElementById('geofence_radius_meters').value=100" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">100m</button>
+                                <button type="button" onclick="document.getElementById('geofence_radius_meters').value=200" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">200m</button>
+                                <button type="button" onclick="document.getElementById('geofence_radius_meters').value=500" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">500m</button>
+                                <button type="button" onclick="document.getElementById('geofence_radius_meters').value=1000" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">1km</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Enforcement Mode</label>
+                            <label class="flex items-start space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-slate-300">
+                                <input type="checkbox" name="geofence_strict_mode" value="true" {% if company.geofence_strict_mode %}checked{% endif %} class="rounded text-teal-600 focus:ring-teal-500 mt-0.5">
+                                <div>
+                                    <span class="text-xs font-bold text-slate-800 block">Strict Mode (Block Punches)</span>
+                                    <span class="text-[11px] text-slate-500 block leading-snug">If checked, punch-in/out is blocked when outside perimeter. If unchecked, punches are allowed but logged with an audit flag.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="flex justify-end pt-3.5 border-t border-slate-100">
@@ -84,4 +147,44 @@
         </form>
     </div>
 </div>
+
+<script>
+    function detectCurrentLocation() {
+        const msg = document.getElementById('geo-status-msg');
+        if (msg) {
+            msg.textContent = 'Acquiring GPS location...';
+            msg.classList.remove('hidden', 'text-rose-600');
+            msg.classList.add('text-teal-600');
+        }
+
+        if (!navigator.geolocation) {
+            if (msg) {
+                msg.textContent = 'Geolocation is not supported by your browser.';
+                msg.classList.add('text-rose-600');
+            }
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude.toFixed(6);
+                const lon = position.coords.longitude.toFixed(6);
+                document.getElementById('office_latitude').value = lat;
+                document.getElementById('office_longitude').value = lon;
+                if (msg) {
+                    msg.textContent = `Captured: ${lat}, ${lon} (±${Math.round(position.coords.accuracy)}m)`;
+                    msg.classList.remove('text-rose-600');
+                    msg.classList.add('text-emerald-700');
+                }
+            },
+            (err) => {
+                if (msg) {
+                    msg.textContent = `Location access denied or unavailable (${err.message}).`;
+                    msg.classList.add('text-rose-600');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+</script>
 {% endblock %}

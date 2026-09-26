@@ -253,7 +253,7 @@ async def add_security_headers_middleware(request: Request, call_next):
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Permissions-Policy"] = "geolocation=(self), microphone=(), camera=()"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
 

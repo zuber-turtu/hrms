@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -44,6 +45,17 @@ class Settings:
     S3_ENDPOINT_URL: str = os.getenv("S3_ENDPOINT_URL", "")
     S3_PUBLIC_URL_PREFIX: str = os.getenv("S3_PUBLIC_URL_PREFIX", "")
     S3_REGION_NAME: str = os.getenv("S3_REGION_NAME", "auto")
+
+    # Geofencing Attendance Settings
+    GEOFENCE_ENABLED: bool = os.getenv("GEOFENCE_ENABLED", "true").lower() in ("true", "1", "yes")
+    GEOFENCE_DEFAULT_LAT: Optional[float] = (
+        float(os.getenv("GEOFENCE_DEFAULT_LAT")) if os.getenv("GEOFENCE_DEFAULT_LAT") else None
+    )
+    GEOFENCE_DEFAULT_LON: Optional[float] = (
+        float(os.getenv("GEOFENCE_DEFAULT_LON")) if os.getenv("GEOFENCE_DEFAULT_LON") else None
+    )
+    GEOFENCE_DEFAULT_RADIUS_METERS: int = int(os.getenv("GEOFENCE_DEFAULT_RADIUS_METERS", "200"))
+    GEOFENCE_STRICT_MODE: bool = os.getenv("GEOFENCE_STRICT_MODE", "true").lower() in ("true", "1", "yes")
 
 
 settings = Settings()

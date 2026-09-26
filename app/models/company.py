@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Float, Boolean
 from app.database import Base
 
 class Company(Base):
@@ -12,3 +12,10 @@ class Company(Base):
     cin = Column(String, nullable=True, default=None)
     gstin = Column(String, nullable=True, default=None)
     pan = Column(String, nullable=True, default=None)
+
+    # Geofencing & Office Location
+    office_latitude = Column(Float, nullable=True, default=None)
+    office_longitude = Column(Float, nullable=True, default=None)
+    geofence_radius_meters = Column(Integer, default=200)
+    geofence_enabled = Column(Boolean, default=True)
+    geofence_strict_mode = Column(Boolean, default=True)

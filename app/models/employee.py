@@ -131,8 +131,8 @@ class Employee(Base):
         return self.salary_structure.pf_deduction if self.salary_structure else 0.0
 
     @property
-    def tax_deduction(self):
-        return self.salary_structure.tax_deduction if self.salary_structure else 0.0
+    def is_geofence_exempt(self):
+        return self.profile.is_geofence_exempt if self.profile else False
 
 
 class EmployeeProfile(Base):
@@ -154,6 +154,9 @@ class EmployeeProfile(Base):
     uan_number = Column(String, nullable=True)
     avatar_url = Column(String, nullable=True)
     photo_file_id = Column(String, nullable=True)
+
+    # Remote / Field Staff Exemption
+    is_geofence_exempt = Column(Boolean, default=False)
 
     employee = orm_relationship("Employee", back_populates="profile")
 

@@ -17,6 +17,12 @@ class AttendanceCheckInRequest(BaseModel):
     longitude: Optional[float] = None
 
 
+class AttendanceCheckOutRequest(BaseModel):
+    notes: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+
 class AttendanceLogItem(BaseModel):
     id: int
     date: date
@@ -31,6 +37,9 @@ class AttendanceLogItem(BaseModel):
     override_reason: Optional[str] = None
     check_in: Optional[datetime] = None
     check_out: Optional[datetime] = None
+    distance_m: Optional[float] = None
+    in_range: Optional[bool] = None
+    is_exempt: bool = False
 
     class Config:
         from_attributes = True
