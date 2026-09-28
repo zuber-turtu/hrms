@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, cast, String, or_
@@ -26,6 +26,12 @@ from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
 from app.services.storage import get_storage_provider
 from app.templates_config import templates
+import secrets
+from app.services.email_service import (
+    send_admin_password_reset_email,
+    send_welcome_credentials_email,
+    send_password_reset_email,
+)
 
 router = APIRouter(prefix="/employees")
 
@@ -238,6 +244,7 @@ async def create_employee_form(
 @router.post("/create")
 async def create_employee(
     request: Request,
+    background_tasks: BackgroundTasks,
     name: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
@@ -366,9 +373,20 @@ async def create_employee(
         pf_deduction=pf_deduction,
         tax_deduction=tax_deduction,
     )
-    db.add(salary)
-
     db.commit()
+
+    # Dispatch welcome credentials email
+    base_url = settings.APP_BASE_URL.rstrip("/") if settings.APP_BASE_URL else str(request.base_url).rstrip("/")
+    login_url = f"{base_url}/login"
+    background_tasks.add_task(
+        send_welcome_credentials_email,
+        to_email=emp.email,
+        recipient_name=emp.name,
+        password=password,
+        login_url=login_url,
+        role=emp.role,
+    )
+
     return RedirectResponse(url="/employees", status_code=302)
 
 
@@ -848,7 +866,9 @@ async def import_employees(
 async def admin_reset_password(
     emp_id: int,
     request: Request,
-    new_password: str = Form(...),
+    background_tasks: BackgroundTasks,
+    reset_mode: str = Form("direct"),
+    new_password: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
@@ -863,9 +883,51 @@ async def admin_reset_password(
             detail="Operation not permitted: Only Admins can reset credentials for an Administrator account."
         )
 
+    base_url = settings.APP_BASE_URL.rstrip("/") if settings.APP_BASE_URL else str(request.base_url).rstrip("/")
+    safe_target = get_safe_redirect(request, default=f"/employees/{emp_id}/view")
+    separator = "&" if "?" in safe_target else "?"
+
+    # Higher Authority Option A: Send Password Reset Verification Link via Email
+    if reset_mode == "email_link" or not new_password:
+        token = secrets.token_urlsafe(32)
+        expire_minutes = settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
+        expiry = datetime.datetime.utcnow() + datetime.timedelta(minutes=expire_minutes)
+
+        employee.reset_token = token
+        employee.reset_token_expiry = expiry
+        db.commit()
+
+        reset_url = f"{base_url}/reset-password?token={token}"
+        background_tasks.add_task(
+            send_password_reset_email,
+            to_email=employee.email,
+            recipient_name=employee.name,
+            reset_url=reset_url,
+        )
+
+        audit = AuditLog(
+            actor_id=current_user.id,
+            actor_email=current_user.email,
+            action="ADMIN_SENT_PASSWORD_RESET_LINK",
+            entity="Employee",
+            entity_id=emp_id,
+            old_value=None,
+            new_value=f"Verification reset link dispatched to {employee.email}",
+        )
+        db.add(audit)
+        db.commit()
+
+        redirect_url = f"{safe_target}{separator}reset_email_sent=1"
+        return RedirectResponse(url=redirect_url, status_code=302)
+
+    # Higher Authority Option B: Directly Set New Password & Email Employee
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters long.")
+
     employee.hashed_password = get_password_hash(new_password)
+    employee.reset_token = None
+    employee.reset_token_expiry = None
     
-    # Record Audit Log
     audit = AuditLog(
         actor_id=current_user.id,
         actor_email=current_user.email,
@@ -878,8 +940,15 @@ async def admin_reset_password(
     db.add(audit)
     db.commit()
 
-    safe_target = get_safe_redirect(request, default=f"/employees/{emp_id}/view")
-    separator = "&" if "?" in safe_target else "?"
+    login_url = f"{base_url}/login"
+    background_tasks.add_task(
+        send_admin_password_reset_email,
+        to_email=employee.email,
+        recipient_name=employee.name,
+        new_password=new_password,
+        login_url=login_url,
+    )
+
     if "reset_success=1" not in safe_target:
         redirect_url = f"{safe_target}{separator}reset_success=1"
     else:

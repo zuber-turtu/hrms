@@ -35,7 +35,7 @@ def ensure_schema_columns(db_engine):
         inspector = inspect(db_engine)
         tables = inspector.get_table_names()
 
-        # Table-to-Columns Schema Migration Map
+        # Table-to-Columns Explicit Schema Migration Map
         schema_definitions = {
             "attendance": {
                 "is_overridden": "BOOLEAN DEFAULT FALSE",
@@ -43,14 +43,14 @@ def ensure_schema_columns(db_engine):
                 "check_in_lat": "FLOAT",
                 "check_in_lon": "FLOAT",
                 "check_in_distance_m": "FLOAT",
-                "check_in_in_range": "BOOLEAN",
+                "check_in_in_range": "BOOLEAN DEFAULT FALSE",
                 "check_out_lat": "FLOAT",
                 "check_out_lon": "FLOAT",
                 "check_out_distance_m": "FLOAT",
-                "check_out_in_range": "BOOLEAN",
+                "check_out_in_range": "BOOLEAN DEFAULT FALSE",
             },
             "company": {
-                "tagline": "VARCHAR(255) DEFAULT 'Enterprise Personnel & Payroll Platform'",
+                "tagline": "VARCHAR(255)",
                 "currency_code": "VARCHAR(10) DEFAULT 'INR'",
                 "support_email": "VARCHAR(255)",
                 "website": "VARCHAR(255)",
@@ -83,11 +83,13 @@ def ensure_schema_columns(db_engine):
                 "experience": "VARCHAR(200)",
                 "aadhar_number": "VARCHAR(100)",
                 "pan_number": "VARCHAR(100)",
+                "is_geofence_exempt": "BOOLEAN DEFAULT FALSE",
             },
             "employees": {
                 "department_id": "INTEGER",
                 "designation_id": "INTEGER",
                 "reset_token": "VARCHAR(255)",
+                "reset_token_expiry": "TIMESTAMP",
                 "is_active": "BOOLEAN DEFAULT TRUE",
                 "role": "VARCHAR(50) DEFAULT 'employee'",
                 "joining_date": "DATE",
@@ -132,6 +134,7 @@ def ensure_schema_columns(db_engine):
             },
         }
 
+        # 1. First run explicit mappings
         with db_engine.begin() as conn:
             for table_name, cols_dict in schema_definitions.items():
                 if table_name in tables:
@@ -143,6 +146,24 @@ def ensure_schema_columns(db_engine):
                                 print(f"[Schema Migration] Added column {col_name} to {table_name}")
                             except Exception as col_err:
                                 print(f"[Schema Migration Col Warning] {table_name}.{col_name}: {col_err}")
+
+        # 2. Automatically sync any model columns declared in Base.metadata
+        from app.database import Base
+        with db_engine.begin() as conn:
+            for table_name, table in Base.metadata.tables.items():
+                if table_name in tables:
+                    existing_cols = {c["name"] for c in inspector.get_columns(table_name)}
+                    for col in table.columns:
+                        if col.name not in existing_cols:
+                            try:
+                                col_type_str = col.type.compile(db_engine.dialect)
+                                default_str = ""
+                                if str(col.type).upper().startswith("BOOL"):
+                                    default_str = " DEFAULT FALSE"
+                                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col.name} {col_type_str}{default_str}"))
+                                print(f"[Dynamic Schema Migration] Added {table_name}.{col.name} ({col_type_str})")
+                            except Exception as col_err:
+                                print(f"[Dynamic Schema Migration Warning] {table_name}.{col.name}: {col_err}")
 
     except Exception as e:
         print(f"[Schema Migration Warning] {e}")

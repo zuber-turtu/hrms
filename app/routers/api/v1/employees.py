@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import cast, String, or_
 from typing import List, Optional
@@ -29,6 +29,11 @@ from app.schemas.employee import (
 )
 from app.routers.employees import resolve_dept_and_desig
 from app.services.storage import get_storage_provider
+from app.config import settings
+from app.services.email_service import (
+    send_admin_password_reset_email,
+    send_welcome_credentials_email,
+)
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
@@ -149,6 +154,8 @@ async def api_list_employees(
 @router.post("/", response_model=EmployeeOut, status_code=status.HTTP_201_CREATED)
 async def api_create_employee(
     payload: EmployeeCreate,
+    request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
@@ -263,6 +270,18 @@ async def api_create_employee(
     db.add(audit)
     db.commit()
     db.refresh(new_employee)
+
+    # Dispatch welcome credentials email
+    base_url = settings.APP_BASE_URL.rstrip("/") if settings.APP_BASE_URL else str(request.base_url).rstrip("/")
+    login_url = f"{base_url}/login"
+    background_tasks.add_task(
+        send_welcome_credentials_email,
+        to_email=new_employee.email,
+        recipient_name=new_employee.name,
+        password=payload.password,
+        login_url=login_url,
+        role=new_employee.role,
+    )
 
     return _format_employee_out(new_employee)
 
@@ -509,6 +528,8 @@ async def api_upload_employee_avatar(
 async def api_admin_reset_password(
     emp_id: int,
     payload: AdminPasswordReset,
+    request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
@@ -546,5 +567,16 @@ async def api_admin_reset_password(
     )
     db.add(audit)
     db.commit()
+
+    # Dispatch SMTP notification to employee
+    base_url = settings.APP_BASE_URL.rstrip("/") if settings.APP_BASE_URL else str(request.base_url).rstrip("/")
+    login_url = f"{base_url}/login"
+    background_tasks.add_task(
+        send_admin_password_reset_email,
+        to_email=employee.email,
+        recipient_name=employee.name,
+        new_password=payload.new_password,
+        login_url=login_url,
+    )
 
     return {"message": f"Password for {employee.name} reset successfully."}

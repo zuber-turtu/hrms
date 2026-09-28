@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
@@ -20,6 +20,8 @@ from app.schemas.auth import (
     ChangePasswordRequest,
 )
 from app.schemas.employee import EmployeeOut
+from app.services.email_service import send_password_changed_notification_email
+from app.utils.timezone import get_ist_now
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -89,6 +91,7 @@ async def api_get_current_user_profile(
 @router.post("/change-password")
 async def api_change_password(
     payload: ChangePasswordRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -120,4 +123,13 @@ async def api_change_password(
     db.add(audit)
     db.commit()
 
-    return {"message": "Password changed successfully."}
+    # Dispatch security notification email
+    timestamp_str = get_ist_now().strftime("%Y-%m-%d %I:%M %p IST")
+    background_tasks.add_task(
+        send_password_changed_notification_email,
+        to_email=current_user.email,
+        recipient_name=current_user.name,
+        changed_at=timestamp_str,
+    )
+
+    return {"message": "Password changed successfully. A security confirmation email has been sent."}

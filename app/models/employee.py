@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Date, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Date, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship as orm_relationship
 from app.database import Base
 from app.utils.timezone import get_ist_today
@@ -23,6 +23,7 @@ class Employee(Base):
     
     # Auth & Security details
     reset_token = Column(String, nullable=True)
+    reset_token_expiry = Column(DateTime, nullable=True)
 
     # Relational Mappings
     department = orm_relationship("Department", back_populates="employees")
