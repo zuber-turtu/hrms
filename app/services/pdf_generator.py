@@ -17,6 +17,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 from app.services.formatters import number_to_words, get_month_name, mask_account_number
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -108,9 +109,9 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
     if employee is None:
         employee = getattr(payslip, "employee", None)
         
-    company_name = company.name if company and company.name else "TURTU HRMS"
-    company_addr = company.address if company and company.address else "Karnataka, India"
-    currency = company.currency_symbol if company and company.currency_symbol else "₹"
+    company_name = company.name if company and company.name else settings.COMPANY_NAME
+    company_addr = company.address if company and company.address else settings.COMPANY_ADDRESS
+    currency = company.currency_symbol if company and company.currency_symbol else settings.COMPANY_CURRENCY_SYMBOL
     month_name = get_month_name(payslip.month)
     slip_no = f"PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}"
     
@@ -312,7 +313,7 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
         </div>
 
         <!-- 2. Payslip Period Title Ribbon -->
-        <div class="bg-slate-900 text-white text-center py-1.5 px-4 rounded-md font-heading font-bold text-xs uppercase tracking-wider">
+        <div class="bg-[#008080] text-white text-center py-1.5 px-4 rounded-md font-heading font-bold text-xs uppercase tracking-wider">
             Payslip for the Month of {month_name} {payslip.year}
         </div>
 
@@ -620,9 +621,9 @@ def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> Byte
 
     elements = []
     
-    company_name = company.name if company and company.name else "TURTU HRMS"
-    company_addr = company.address if company and company.address else "Karnataka, India"
-    currency = company.currency_symbol if company and company.currency_symbol else "₹"
+    company_name = company.name if company and company.name else settings.COMPANY_NAME
+    company_addr = company.address if company and company.address else settings.COMPANY_ADDRESS
+    currency = company.currency_symbol if company and company.currency_symbol else settings.COMPANY_CURRENCY_SYMBOL
     month_name = get_month_name(payslip.month)
     slip_no = f"PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}"
     
@@ -698,7 +699,7 @@ def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> Byte
     ribbon_data = [[Paragraph(f"PAYSLIP FOR THE MONTH OF {month_name.upper()} {payslip.year}", ribbon_style)]]
     ribbon_table = Table(ribbon_data, colWidths=[547])
     ribbon_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), c_dark),
+        ('BACKGROUND', (0,0), (-1,-1), c_teal),
         ('TOPPADDING', (0,0), (-1,-1), 3.5),
         ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),

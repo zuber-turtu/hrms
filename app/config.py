@@ -46,6 +46,21 @@ class Settings:
     S3_PUBLIC_URL_PREFIX: str = os.getenv("S3_PUBLIC_URL_PREFIX", "")
     S3_REGION_NAME: str = os.getenv("S3_REGION_NAME", "auto")
 
+    # Company & Platform Configurations (Configurable dynamically via .env or DB)
+    COMPANY_NAME: str = os.getenv("COMPANY_NAME", "Enterprise HRMS")
+    COMPANY_TAGLINE: str = os.getenv("COMPANY_TAGLINE", "Personnel & Payroll Platform")
+    COMPANY_ADDRESS: str = os.getenv("COMPANY_ADDRESS", "")
+    COMPANY_CURRENCY_SYMBOL: str = os.getenv("COMPANY_CURRENCY_SYMBOL", "₹")
+    COMPANY_CURRENCY_CODE: str = os.getenv("COMPANY_CURRENCY_CODE", "INR")
+    COMPANY_WORKING_DAYS_PER_MONTH: int = int(os.getenv("COMPANY_WORKING_DAYS_PER_MONTH", "22"))
+    COMPANY_STANDARD_HOURS_PER_DAY: float = float(os.getenv("COMPANY_STANDARD_HOURS_PER_DAY", "8.0"))
+    COMPANY_HALF_DAY_HOURS: float = float(os.getenv("COMPANY_HALF_DAY_HOURS", "4.0"))
+    APP_TIMEZONE: str = os.getenv("APP_TIMEZONE", "Asia/Kolkata")
+    TIMEZONE_OFFSET_MINUTES: int = int(os.getenv("TIMEZONE_OFFSET_MINUTES", "330"))
+    APP_COPYRIGHT_YEAR: Optional[int] = (
+        int(os.getenv("APP_COPYRIGHT_YEAR")) if os.getenv("APP_COPYRIGHT_YEAR") else None
+    )
+
     # Geofencing Attendance Settings
     GEOFENCE_ENABLED: bool = os.getenv("GEOFENCE_ENABLED", "true").lower() in ("true", "1", "yes")
     GEOFENCE_DEFAULT_LAT: Optional[float] = (

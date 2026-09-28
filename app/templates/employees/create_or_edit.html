@@ -378,27 +378,27 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
-                    <label for="base_salary" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Basic Pay (₹)</label>
+                    <label for="base_salary" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Basic Pay ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="base_salary" id="base_salary" value="{{ employee.base_salary if employee else 0 }}"
                         {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
                 <div>
-                    <label for="hra" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">HRA (₹)</label>
+                    <label for="hra" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">HRA ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="hra" id="hra" value="{{ employee.hra if employee else 0 }}"
                         {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
                 <div>
-                    <label for="custom_allowances" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Allowances (₹)</label>
+                    <label for="custom_allowances" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Allowances ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="custom_allowances" id="custom_allowances" value="{{ employee.custom_allowances if employee else 0 }}"
                         {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
                 <div>
-                    <label for="pf_deduction" class="block text-xs font-semibold text-rose-700 uppercase tracking-wider mb-1">PF Deduction (₹)</label>
+                    <label for="pf_deduction" class="block text-xs font-semibold text-rose-700 uppercase tracking-wider mb-1">PF Deduction ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="pf_deduction" id="pf_deduction" value="{{ employee.pf_deduction if employee else 0 }}"
                         {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-rose-700 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
                 <div>
-                    <label for="tax_deduction" class="block text-xs font-semibold text-rose-700 uppercase tracking-wider mb-1">Tax Deduction (₹)</label>
+                    <label for="tax_deduction" class="block text-xs font-semibold text-rose-700 uppercase tracking-wider mb-1">Tax Deduction ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="tax_deduction" id="tax_deduction" value="{{ employee.tax_deduction if employee else 0 }}"
                         {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-rose-700 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>

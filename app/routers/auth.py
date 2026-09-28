@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import timedelta
 import uuid
@@ -10,9 +9,9 @@ from app.models.employee import Employee
 from app.dependencies import verify_password, create_access_token, get_password_hash, require_auth
 from app.config import settings
 from app.utils.rate_limiter import login_rate_limiter
+from app.templates_config import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/login", response_class=HTMLResponse)

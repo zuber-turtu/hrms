@@ -1,22 +1,30 @@
-from typing import Optional
+from typing import Optional, List
 import datetime
-from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.employee import Employee
+from app.models.department import Department
 from app.models.payroll import Payslip
 from app.models.company import Company
 from app.models.audit import AuditLog
+from app.utils.timezone import get_ist_today
 from app.dependencies import require_auth, RoleChecker
-from app.services.payroll_calculator import generate_draft_payslip
+
+from app.services.payroll_calculator import (
+    generate_draft_payslip,
+    bulk_generate_payslips,
+    bulk_update_payslip_status,
+    bulk_delete_draft_payslips,
+    bulk_generate_payslips_zip,
+)
 from app.services.pdf_generator import generate_payslip_pdf
 from app.services.formatters import number_to_words, get_month_name, mask_account_number, get_payslip_pdf_filename
+from app.templates_config import templates
 
 router = APIRouter(prefix="/payroll")
-templates = Jinja2Templates(directory="app/templates")
 
 allow_hr_admin = RoleChecker(["admin", "hr_admin"])
 
@@ -25,26 +33,58 @@ allow_hr_admin = RoleChecker(["admin", "hr_admin"])
 @router.get("/", response_class=HTMLResponse)
 async def list_payroll(
     request: Request,
+    msg: Optional[str] = None,
+    msg_type: Optional[str] = "success",
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
     if current_user.role not in ["admin", "hr_admin"]:
         payslips = (
             db.query(Payslip)
-            .filter(Payslip.employee_id == current_user.id)
+            .filter(
+                Payslip.employee_id == current_user.id,
+                Payslip.status.in_(["finalized", "paid"])
+            )
             .order_by(Payslip.year.desc(), Payslip.month.desc())
             .all()
         )
     else:
         payslips = db.query(Payslip).order_by(Payslip.year.desc(), Payslip.month.desc()).all()
 
-    employees = db.query(Employee).all()
+
+    employees = db.query(Employee).filter(Employee.is_active == True, Employee.role != "admin").all()
+    departments = db.query(Department).all()
+
+    today = get_ist_today()
+    current_month = today.month
+    current_year = today.year
+    
+    db_years = set()
+    for p in payslips:
+        if p and p.year is not None:
+            try:
+                db_years.add(int(p.year))
+            except (ValueError, TypeError):
+                pass
+    db_years.update(range(current_year - 2, current_year + 3))
+    available_years = sorted(list(db_years), reverse=True)
 
     return templates.TemplateResponse(
         request,
         "payroll/list.html",
-        {"user": current_user, "payslips": payslips, "employees": employees},
+        {
+            "user": current_user,
+            "payslips": payslips,
+            "employees": employees,
+            "departments": departments,
+            "current_month": current_month,
+            "current_year": current_year,
+            "available_years": available_years,
+            "flash_msg": msg,
+            "flash_msg_type": msg_type,
+        },
     )
+
 
 
 @router.post("/generate-draft")
@@ -75,6 +115,104 @@ async def generate_draft(
         return RedirectResponse(url=f"/payroll/{payslip.id}/edit", status_code=302)
 
     return RedirectResponse(url="/payroll", status_code=302)
+
+
+@router.post("/bulk-generate")
+async def bulk_generate(
+    request: Request,
+    month: int = Form(...),
+    year: int = Form(...),
+    department_id: Optional[str] = Form(None),
+    overwrite_drafts: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    dept_id_int = int(department_id) if department_id and department_id.strip() and department_id != "all" else None
+    is_overwrite = bool(overwrite_drafts and overwrite_drafts.lower() in ["true", "1", "on", "yes"])
+
+    result = bulk_generate_payslips(
+        db=db,
+        month=month,
+        year=year,
+        department_id=dept_id_int,
+        overwrite_drafts=is_overwrite,
+        actor=current_user,
+    )
+
+    msg = (
+        f"Bulk payroll generated for {month}/{year}: {result['created']} draft(s) created, "
+        f"{result['updated']} draft(s) recalculated, {result['skipped_existing']} skipped, "
+        f"{result['skipped_finalized']} finalized/paid protected."
+    )
+    return RedirectResponse(url=f"/payroll?msg={msg}&msg_type=success", status_code=302)
+
+
+@router.post("/bulk-status")
+async def bulk_status_action(
+    request: Request,
+    payslip_ids: str = Form(...),
+    action: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    id_list = [int(x.strip()) for x in payslip_ids.split(",") if x.strip().isdigit()]
+    if not id_list:
+        return RedirectResponse(url="/payroll?msg=No payslips selected&msg_type=error", status_code=302)
+
+    if action not in ["draft", "finalized", "paid"]:
+        return RedirectResponse(url="/payroll?msg=Invalid status selected&msg_type=error", status_code=302)
+
+    res = bulk_update_payslip_status(db, id_list, action, actor=current_user)
+    msg = f"Successfully updated {res['updated_count']} payslip(s) to '{action.title()}' status."
+    return RedirectResponse(url=f"/payroll?msg={msg}&msg_type=success", status_code=302)
+
+
+@router.post("/bulk-delete")
+async def bulk_delete_action(
+    request: Request,
+    payslip_ids: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    id_list = [int(x.strip()) for x in payslip_ids.split(",") if x.strip().isdigit()]
+    if not id_list:
+        return RedirectResponse(url="/payroll?msg=No payslips selected&msg_type=error", status_code=302)
+
+    res = bulk_delete_draft_payslips(db, id_list, actor=current_user)
+    msg = f"Deleted {res['deleted_count']} draft payslip(s)."
+    if res["skipped_locked_count"] > 0:
+        msg += f" (Protected {res['skipped_locked_count']} finalized/paid records from deletion)"
+    return RedirectResponse(url=f"/payroll?msg={msg}&msg_type=info", status_code=302)
+
+
+@router.get("/bulk-export-zip")
+@router.post("/bulk-export-zip")
+async def bulk_export_zip(
+    request: Request,
+    ids: Optional[str] = Query(None),
+    payslip_ids: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    raw_ids = payslip_ids or ids or ""
+    id_list = [int(x.strip()) for x in raw_ids.split(",") if x.strip().isdigit()]
+    if not id_list:
+        all_payslips = db.query(Payslip.id).all()
+        id_list = [p[0] for p in all_payslips]
+
+    if not id_list:
+        return RedirectResponse(url="/payroll?msg=No payslips available to export&msg_type=error", status_code=302)
+
+    zip_stream = bulk_generate_payslips_zip(db, id_list)
+    timestamp = datetime.date.today().strftime("%Y%m%d")
+    headers = {
+        "Content-Disposition": f'attachment; filename="payslips_batch_{timestamp}.zip"'
+    }
+    return Response(
+        content=zip_stream.getvalue(),
+        media_type="application/zip",
+        headers=headers,
+    )
 
 
 @router.get("/{payslip_id}/edit", response_class=HTMLResponse)
@@ -158,8 +296,9 @@ async def view_payslip(
     if not payslip:
         raise HTTPException(status_code=404, detail="Payslip not found")
 
-    if current_user.role not in ["admin", "hr_admin"] and payslip.employee_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Unauthorized to view this payslip")
+    if current_user.role not in ["admin", "hr_admin"]:
+        if payslip.employee_id != current_user.id or payslip.status == "draft":
+            raise HTTPException(status_code=403, detail="Unauthorized to view this payslip (still in draft review)")
 
     company = db.query(Company).first()
     currency = company.currency_symbol if company and company.currency_symbol else "$"
@@ -196,8 +335,9 @@ async def download_payslip_pdf(
     if not payslip:
         return Response(status_code=404)
 
-    if current_user.role not in ["admin", "hr_admin"] and payslip.employee_id != current_user.id:
-        return Response(status_code=403)
+    if current_user.role not in ["admin", "hr_admin"]:
+        if payslip.employee_id != current_user.id or payslip.status == "draft":
+            return Response(status_code=403)
 
     company = db.query(Company).first()
     pdf_buffer = generate_payslip_pdf(payslip, company, payslip.employee)
@@ -207,3 +347,5 @@ async def download_payslip_pdf(
         "Content-Disposition": f'attachment; filename="{filename}"'
     }
     return Response(content=pdf_buffer.read(), media_type="application/pdf", headers=headers)
+
+

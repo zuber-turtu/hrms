@@ -1,16 +1,19 @@
 import datetime
 from typing import Optional
+from app.config import settings
 
-# Indian Standard Time (IST) is permanently UTC+05:30 with zero DST changes
-IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30), name="IST")
+# Dynamic Company Operational Timezone (Defaults to UTC+05:30 / Asia/Kolkata)
+_offset_minutes = getattr(settings, "TIMEZONE_OFFSET_MINUTES", 330)
+COMPANY_TZ = datetime.timezone(datetime.timedelta(minutes=_offset_minutes), name=getattr(settings, "APP_TIMEZONE", "IST"))
+IST = COMPANY_TZ  # Backward compatibility alias
 
 
 def get_ist_now() -> datetime.datetime:
     """
-    Returns the current date and time in Indian Standard Time (IST)
+    Returns the current date and time in the configured company operational timezone
     as a naive datetime (for seamless compatibility with standard SQLite / Postgres DateTime fields).
     """
-    return datetime.datetime.now(IST).replace(tzinfo=None)
+    return datetime.datetime.now(COMPANY_TZ).replace(tzinfo=None)
 
 
 def get_ist_now_aware() -> datetime.datetime:

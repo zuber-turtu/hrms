@@ -9,12 +9,22 @@ from app.models.payroll import Payslip
 from app.models.company import Company
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
-from app.services.payroll_calculator import generate_draft_payslip
+from app.services.payroll_calculator import (
+    generate_draft_payslip,
+    bulk_generate_payslips,
+    bulk_update_payslip_status,
+    bulk_delete_draft_payslips,
+    bulk_generate_payslips_zip,
+)
 from app.services.pdf_generator import generate_payslip_pdf
 from app.services.formatters import get_payslip_pdf_filename
 from app.schemas.payroll import (
     GenerateDraftRequest,
     GenerateBulkDraftRequest,
+    GenerateBulkPayrollRequest,
+    BulkStatusUpdateRequest,
+    BulkDeleteRequest,
+    BulkPayrollResult,
     PayslipOut,
     PayslipUpdate,
     PayrollSummary,
@@ -22,6 +32,7 @@ from app.schemas.payroll import (
 
 router = APIRouter(prefix="/payroll", tags=["Payroll"])
 allow_hr_admin = RoleChecker(["admin", "hr_admin"])
+
 
 
 def _format_payslip_out(payslip: Payslip) -> PayslipOut:
@@ -61,11 +72,12 @@ async def list_payslips(
 ):
     query = db.query(Payslip)
 
-    # Role-based scoping: normal employees can only see their own payslips
+    # Role-based scoping: normal employees can only see their own finalized or paid payslips
     if current_user.role not in ["admin", "hr_admin"]:
-        query = query.filter(Payslip.employee_id == current_user.id)
+        query = query.filter(Payslip.employee_id == current_user.id, Payslip.status.in_(["finalized", "paid"]))
     elif employee_id is not None:
         query = query.filter(Payslip.employee_id == employee_id)
+
 
     if month is not None:
         query = query.filter(Payslip.month == month)
@@ -159,35 +171,82 @@ async def create_draft_payslip(
     return _format_payslip_out(payslip)
 
 
-@router.post("/generate-bulk-draft", response_model=List[PayslipOut])
+@router.post("/bulk-generate", response_model=BulkPayrollResult)
+@router.post("/generate-bulk-draft", response_model=BulkPayrollResult)
 async def create_bulk_draft_payslips(
-    req: GenerateBulkDraftRequest,
+    req: GenerateBulkPayrollRequest,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
-    employees = db.query(Employee).all()
-    created_or_found = []
+    result = bulk_generate_payslips(
+        db=db,
+        month=req.month,
+        year=req.year,
+        department_id=req.department_id,
+        overwrite_drafts=req.overwrite_drafts,
+        actor=current_user,
+    )
+    return BulkPayrollResult(**result)
 
-    for emp in employees:
-        existing = db.query(Payslip).filter(
-            Payslip.employee_id == emp.id,
-            Payslip.month == req.month,
-            Payslip.year == req.year,
-        ).first()
 
-        if existing:
-            created_or_found.append(_format_payslip_out(existing))
-            continue
+@router.post("/bulk-status")
+async def batch_update_status(
+    req: BulkStatusUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    try:
+        res = bulk_update_payslip_status(
+            db=db,
+            payslip_ids=req.payslip_ids,
+            new_status=req.status,
+            actor=current_user,
+        )
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-        draft_data = generate_draft_payslip(db, emp.id, req.month, req.year)
-        if draft_data:
-            payslip = Payslip(**draft_data)
-            db.add(payslip)
-            db.commit()
-            db.refresh(payslip)
-            created_or_found.append(_format_payslip_out(payslip))
 
-    return created_or_found
+@router.post("/bulk-delete")
+async def batch_delete_drafts(
+    req: BulkDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    res = bulk_delete_draft_payslips(
+        db=db,
+        payslip_ids=req.payslip_ids,
+        actor=current_user,
+    )
+    return res
+
+
+@router.get("/bulk-export-zip")
+@router.post("/bulk-export-zip")
+async def batch_export_zip(
+    ids: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    id_list = [int(x.strip()) for x in ids.split(",") if x.strip().isdigit()] if ids else []
+    if not id_list:
+        all_payslips = db.query(Payslip.id).all()
+        id_list = [p[0] for p in all_payslips]
+
+    if not id_list:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No payslips available to export")
+
+    zip_stream = bulk_generate_payslips_zip(db, id_list)
+    timestamp = datetime.date.today().strftime("%Y%m%d")
+    headers = {
+        "Content-Disposition": f'attachment; filename="payslips_batch_{timestamp}.zip"'
+    }
+    return Response(
+        content=zip_stream.getvalue(),
+        media_type="application/zip",
+        headers=headers,
+    )
+
 
 
 @router.get("/payslips/{payslip_id}", response_model=PayslipOut)
@@ -203,11 +262,13 @@ async def get_payslip(
             detail=f"Payslip with ID {payslip_id} not found"
         )
 
-    if current_user.role not in ["admin", "hr_admin"] and payslip.employee_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Unauthorized to access this payslip"
-        )
+    if current_user.role not in ["admin", "hr_admin"]:
+        if payslip.employee_id != current_user.id or payslip.status == "draft":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorized to access this payslip (in draft review)"
+            )
+
 
     return _format_payslip_out(payslip)
 
@@ -295,11 +356,13 @@ async def download_payslip_pdf(
             detail=f"Payslip with ID {payslip_id} not found"
         )
 
-    if current_user.role not in ["admin", "hr_admin"] and payslip.employee_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Unauthorized to download this payslip"
-        )
+    if current_user.role not in ["admin", "hr_admin"]:
+        if payslip.employee_id != current_user.id or payslip.status == "draft":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorized to download this payslip (in draft review)"
+            )
+
 
     company = db.query(Company).first()
     pdf_buffer = generate_payslip_pdf(payslip, company, payslip.employee)

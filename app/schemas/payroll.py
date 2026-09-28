@@ -12,6 +12,37 @@ class GenerateDraftRequest(BaseModel):
 class GenerateBulkDraftRequest(BaseModel):
     month: int
     year: int
+    department_id: Optional[int] = None
+    overwrite_drafts: bool = False
+
+
+class GenerateBulkPayrollRequest(BaseModel):
+    month: int
+    year: int
+    department_id: Optional[int] = None
+    overwrite_drafts: bool = False
+
+
+class BulkStatusUpdateRequest(BaseModel):
+    payslip_ids: List[int]
+    status: str  # draft, finalized, paid
+
+
+class BulkDeleteRequest(BaseModel):
+    payslip_ids: List[int]
+
+
+class BulkPayrollResult(BaseModel):
+    total_eligible: int
+    created: int
+    updated: int
+    skipped_existing: int
+    skipped_finalized: int
+    month: int
+    year: int
+    department_id: Optional[int] = None
+    errors: List[str] = []
+
 
 
 class PayslipBase(BaseModel):

@@ -3,7 +3,49 @@
 {% block header_title %}Payroll Management{% endblock %}
 
 {% block content %}
-<div class="space-y-5">
+<div class="space-y-5 relative">
+
+    <!-- Flash Message Notification -->
+    {% if flash_msg %}
+    <div id="flashAlert" class="rounded-xl p-4 border flex items-start justify-between gap-3 shadow-xs transition-all duration-500 transform
+        {% if flash_msg_type == 'error' %} bg-red-50 border-red-200 text-red-900
+        {% elif flash_msg_type == 'info' %} bg-sky-50 border-sky-200 text-sky-900
+        {% else %} bg-teal-50 border-teal-200 text-teal-900 {% endif %}">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+                {% if flash_msg_type == 'error' %} bg-red-100 text-red-700
+                {% elif flash_msg_type == 'info' %} bg-sky-100 text-sky-700
+                {% else %} bg-teal-100 text-teal-800 {% endif %}">
+                <i data-lucide="{% if flash_msg_type == 'error' %}alert-triangle{% elif flash_msg_type == 'info' %}info{% else %}check-circle-2{% endif %}" class="w-4 h-4"></i>
+            </div>
+            <p class="text-xs sm:text-sm font-medium">{{ flash_msg }}</p>
+        </div>
+        <button type="button" onclick="dismissFlashAlert()" class="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors" title="Dismiss">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+    <script>
+        function dismissFlashAlert() {
+            const el = document.getElementById('flashAlert');
+            if (el) {
+                el.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => {
+                    if (el) el.remove();
+                }, 500);
+            }
+            // Clean up query param from URL without page reload
+            if (window.history.replaceState && window.location.search) {
+                const url = new URL(window.location);
+                url.searchParams.delete('msg');
+                url.searchParams.delete('msg_type');
+                window.history.replaceState({}, document.title, url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
+            }
+        }
+        // Auto-dismiss after 10 seconds
+        setTimeout(dismissFlashAlert, 10000);
+    </script>
+    {% endif %}
+
 
     <!-- Header Action Bar -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -14,130 +56,229 @@
                     {{ payslips|length }}
                 </span>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">Generate, audit, and disburse monthly compensation statements</p>
+            <p class="text-xs text-slate-500 mt-0.5">Generate, audit, finalize, and disburse monthly compensation statements</p>
         </div>
         
         {% if user.role in ['admin', 'hr_admin'] %}
-        <button onclick="document.getElementById('generateModal').classList.remove('hidden')" class="w-full sm:w-auto justify-center inline-flex items-center px-3.5 py-2.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-xs transition-colors">
-            <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1.5"></i> Generate Draft Payslip
-        </button>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="document.getElementById('generateModal').classList.remove('hidden')" class="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-2xs transition-colors">
+                <i data-lucide="user-plus" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Single Draft
+            </button>
+            <button onclick="document.getElementById('bulkModal').classList.remove('hidden')" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-xs transition-all hover:shadow-md">
+                <i data-lucide="layers" class="w-3.5 h-3.5 mr-1.5"></i> Run Bulk Payroll
+            </button>
+        </div>
         {% endif %}
     </div>
 
-    <!-- Search & Status Filter Bar -->
-    <div class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 shadow-card flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
-        <div class="relative flex-1">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <i data-lucide="search" class="w-4 h-4"></i>
+    <!-- Search, Filter & Month-Year Ribbon -->
+    <div class="space-y-2.5">
+        <!-- Top Bar: Search & Status Filter -->
+        <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-card flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+            <!-- Search Input with Clear Button -->
+            <div class="relative flex-1">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                </div>
+                <input type="text" id="payslipSearch" onkeyup="filterPayslips()" 
+                    placeholder="Search by employee name, ID (#0001), or period (MM/YYYY)..." 
+                    class="w-full pl-9 pr-9 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                <button type="button" id="clearPayslipSearchBtn" onclick="clearSearchInput()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
-            <input type="text" id="payslipSearch" onkeyup="filterPayslips()" placeholder="Search by employee name or period (MM/YYYY)..." 
-                class="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+
+            <!-- Status Filter -->
+            <div class="flex items-center space-x-2">
+                <label for="payrollStatusFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Status:</label>
+                <select id="payrollStatusFilter" onchange="filterPayslips()" 
+                    class="w-full sm:w-auto py-2 px-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
+                    <option value="all">All Statuses</option>
+                    <option value="draft">Draft (🟡 In Review)</option>
+                    <option value="finalized">Finalized (🔵 Approved)</option>
+                    <option value="paid">Paid (🟢 Disbursed)</option>
+                </select>
+            </div>
         </div>
 
-        <div class="flex items-center space-x-2">
-            <label for="payrollStatusFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Status:</label>
-            <select id="payrollStatusFilter" onchange="filterPayslips()" 
-                class="w-full sm:w-auto py-2 px-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
-                <option value="all">All Statuses</option>
-                <option value="draft">Draft</option>
-                <option value="finalized">Finalized</option>
-                <option value="paid">Paid</option>
-            </select>
+        <!-- Month & Year Jump Ribbon (matching Employee Directory A-Z Ribbon) -->
+        <div class="bg-white rounded-xl p-2 sm:p-2.5 border border-slate-200 shadow-card flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 select-none">
+            <!-- Left Side: Year Selector Dropdown -->
+            <div class="flex items-center space-x-2 shrink-0 px-1">
+                <label for="payrollYearFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center shrink-0">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-teal-700"></i> Year:
+                </label>
+                <select id="payrollYearFilter" onchange="onPayrollYearChange()" 
+                    class="py-1 px-2.5 text-xs font-bold bg-slate-100 hover:bg-slate-200/70 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 cursor-pointer transition-colors">
+                    <option value="ALL">All Years</option>
+                    {% for yr in (available_years or range(app_year + 2, app_year - 3, -1)) %}
+                    <option value="{{ yr }}" {% if yr == current_year %}selected{% endif %}>{{ yr }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="hidden md:block h-5 w-px bg-slate-200 shrink-0 mx-1"></div>
+
+            <!-- Right Side: Month Buttons (ALL + 12 Months) -->
+            <div class="flex items-center gap-1 sm:gap-1.5 flex-1 overflow-x-auto touch-scroll no-scrollbar py-0.5 px-0.5 justify-start md:justify-end" id="payrollMonthButtonsContainer">
+                <button type="button" onclick="selectPayrollMonth('ALL')" id="month-btn-ALL" 
+                    class="payroll-month-btn px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all bg-teal-700 text-white shadow-xs shrink-0 flex items-center space-x-1">
+                    <span>ALL</span>
+                    <span class="text-[10px] opacity-80" id="month-count-ALL">({{ payslips|length }})</span>
+                </button>
+
+                <div class="h-4 w-px bg-slate-200 mx-0.5 shrink-0"></div>
+
+                {% set month_abbrs = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"] %}
+                {% for m_num in range(1, 13) %}
+                {% set m_abbr = month_abbrs[m_num - 1] %}
+                <button type="button" onclick="selectPayrollMonth('{{ m_num }}')" id="month-btn-{{ m_num }}"
+                    data-month="{{ m_num }}"
+                    class="payroll-month-btn flex-1 min-w-[34px] sm:min-w-[40px] max-w-[54px] h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all relative bg-slate-100 text-slate-700 hover:bg-teal-50 hover:text-teal-800 shrink-0"
+                    title="{{ m_abbr }}">
+                    {{ m_abbr }}
+                    <span id="month-dot-{{ m_num }}" class="hidden absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Dynamic Filter Banner Indicator -->
+        <div id="activePayrollFilterBanner" class="hidden bg-teal-50/80 border border-teal-200 rounded-lg px-3.5 py-1.5 flex items-center justify-between text-xs text-teal-800">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="filter" class="w-3.5 h-3.5 text-teal-700"></i>
+                <span id="activePayrollFilterText" class="font-medium">Active filters</span>
+            </div>
+            <button type="button" onclick="clearAllPayrollFilters()" class="text-teal-700 font-bold hover:underline inline-flex items-center cursor-pointer">
+                <i data-lucide="rotate-ccw" class="w-3 h-3 mr-1"></i> Clear Filters
+            </button>
         </div>
     </div>
 
     <!-- Payslips Table Card -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
         <div class="overflow-x-auto touch-scroll">
-            <table class="min-w-full divide-y divide-slate-200" id="payslipsTable">
-                <thead class="bg-slate-50">
+            <table class="w-full border-collapse" id="payslipsTable">
+                <thead class="bg-slate-50 border-b border-slate-200">
                     <tr>
-                        <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
-                        <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Payroll Period</th>
-                        <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Net Payable</th>
-                        <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                        <th scope="col" class="px-5 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                        {% if user.role in ['admin', 'hr_admin'] %}
+                        <th scope="col" class="w-12 px-4 py-3.5 text-center">
+                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="w-4 h-4 rounded text-teal-700 focus:ring-teal-600 border-slate-300 cursor-pointer">
+                        </th>
+                        {% endif %}
+                        <th scope="col" class="min-w-[240px] px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
+                        <th scope="col" class="w-36 px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Payroll Period</th>
+                        <th scope="col" class="w-36 px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Days Worked</th>
+                        <th scope="col" class="w-36 px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Net Payable</th>
+                        <th scope="col" class="w-32 px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="w-48 px-5 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
                     {% for payslip in payslips %}
                     <tr class="hover:bg-slate-50/80 transition-colors payslip-row"
-                        data-emp="{{ payslip.employee.name|lower }}"
-                        data-period="{{ payslip.month }}/{{ payslip.year }}"
+                        data-id="{{ payslip.id }}"
+                        data-emp-id="{{ payslip.employee.id if payslip.employee else (payslip.employee_id or '') }}"
+                        data-emp-id-fmt="{{ '%04d' % (payslip.employee.id if payslip.employee else (payslip.employee_id or 0)) }}"
+                        data-slip-no="pay-{{ payslip.year }}{{ '%02d' % payslip.month }}-{{ '%04d' % payslip.id }}"
+                        data-emp="{{ payslip.employee.name|lower if payslip.employee else '' }}"
+                        data-email="{{ payslip.employee.email|lower if payslip.employee and payslip.employee.email else '' }}"
+                        data-dept="{{ (payslip.employee.department.name if payslip.employee and payslip.employee.department and payslip.employee.department.name else (payslip.employee.department if payslip.employee and payslip.employee.department else ''))|lower }}"
+                        data-month="{{ payslip.month }}"
+                        data-year="{{ payslip.year }}"
+                        data-period="{{ '%02d' % payslip.month }}/{{ payslip.year }}"
                         data-status="{{ payslip.status|lower }}">
                         
+                        {% if user.role in ['admin', 'hr_admin'] %}
+                        <!-- Selection Checkbox -->
+                        <td class="w-12 px-4 py-3.5 text-center whitespace-nowrap">
+                            <input type="checkbox" value="{{ payslip.id }}" data-status="{{ payslip.status }}" onchange="updateBatchToolbar()" class="payslip-row-checkbox w-4 h-4 rounded text-teal-700 focus:ring-teal-600 border-slate-300 cursor-pointer">
+                        </td>
+                        {% endif %}
+
                         <!-- Employee -->
-                        <td class="px-5 py-3.5 whitespace-nowrap">
-                            <div class="flex items-center space-x-2.5">
-                                {% if payslip.employee.avatar_url or (payslip.employee.profile and payslip.employee.profile.avatar_url) %}
-                                <img src="{{ payslip.employee.avatar_url or payslip.employee.profile.avatar_url }}" alt="{{ payslip.employee.name }}" class="w-7 h-7 rounded-lg object-cover ring-1 ring-slate-200 shrink-0" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
-                                <div class="w-7 h-7 rounded-lg bg-teal-700 text-white hidden flex items-center justify-center font-bold text-xs shrink-0">
-                                    {{ payslip.employee.name[0] if payslip.employee.name else 'E' }}
+                        <td class="min-w-[240px] px-5 py-3.5">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs shrink-0 relative overflow-hidden font-heading">
+                                    <span>{{ payslip.employee.name[0]|upper if payslip.employee and payslip.employee.name else 'E' }}</span>
+                                    {% if payslip.employee and (payslip.employee.avatar_url or (payslip.employee.profile and payslip.employee.profile.avatar_url)) %}
+                                    <img src="{{ payslip.employee.avatar_url or payslip.employee.profile.avatar_url }}" alt="{{ payslip.employee.name }}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
+                                    {% endif %}
                                 </div>
-                                {% else %}
-                                <div class="w-7 h-7 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                                    {{ payslip.employee.name[0] if payslip.employee.name else 'E' }}
+                                <div class="min-w-0 flex-1">
+                                    <a href="/employees/{{ payslip.employee.id }}/view#payroll" class="text-xs sm:text-sm font-bold text-slate-900 hover:text-teal-700 transition-colors block truncate" title="{{ payslip.employee.name if payslip.employee else 'Unknown' }}">
+                                        {{ payslip.employee.name if payslip.employee else 'Unknown Employee' }}
+                                    </a>
+                                    <span class="text-[11px] text-slate-500 font-medium block truncate">
+                                        <span class="font-mono text-slate-400 font-semibold mr-1">#{{ "%04d" % (payslip.employee.id if payslip.employee else (payslip.employee_id or 0)) }}</span>• {{ payslip.employee.department.name if payslip.employee and payslip.employee.department and payslip.employee.department.name else (payslip.employee.department if payslip.employee and payslip.employee.department else 'General') }}
+                                    </span>
                                 </div>
-                                {% endif %}
-                                <a href="/employees/{{ payslip.employee.id }}/view#payroll" class="text-xs sm:text-sm font-bold text-slate-900 hover:text-teal-700 transition-colors">
-                                    {{ payslip.employee.name }}
-                                </a>
                             </div>
                         </td>
 
                         <!-- Period -->
-                        <td class="px-5 py-3.5 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold font-mono">
-                                <i data-lucide="calendar" class="w-3 h-3 mr-1 text-slate-400"></i>
+                        <td class="w-36 px-5 py-3.5 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold font-mono">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i>
                                 {{ "%02d" % payslip.month }}/{{ payslip.year }}
                             </span>
                         </td>
 
+                        <!-- Days Worked -->
+                        <td class="w-36 px-5 py-3.5 whitespace-nowrap">
+                            <span class="text-xs text-slate-700 font-medium">
+                                <strong class="text-slate-900 font-bold">{{ payslip.days_worked or 0 }}</strong> / {{ payslip.payable_days or (company or get_company()).working_days_per_month }} days
+                            </span>
+                        </td>
+
                         <!-- Net Salary -->
-                        <td class="px-5 py-3.5 whitespace-nowrap">
-                            <span class="text-xs sm:text-sm font-bold font-mono text-emerald-700">₹ {{ "%.2f"|format(payslip.net_salary) }}</span>
+                        <td class="w-36 px-5 py-3.5 whitespace-nowrap">
+                            <span class="text-xs sm:text-sm font-bold font-mono text-emerald-700">{{ (company or get_company()).currency_symbol }} {{ "%.2f"|format(payslip.net_salary) }}</span>
                         </td>
 
                         <!-- Status -->
-                        <td class="px-5 py-3.5 whitespace-nowrap">
+                        <td class="w-32 px-5 py-3.5 whitespace-nowrap">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border
                                 {% if payslip.status == 'draft' %} bg-amber-50 text-amber-800 border-amber-200
                                 {% elif payslip.status == 'finalized' %} bg-teal-50 text-teal-800 border-teal-200
                                 {% elif payslip.status == 'paid' %} bg-emerald-50 text-emerald-800 border-emerald-200
                                 {% else %} bg-slate-100 text-slate-700 border-slate-200 {% endif %}">
-                                {{ payslip.status | title }}
+                                {% if payslip.status == 'draft' %}🟡 Draft
+                                {% elif payslip.status == 'finalized' %}🔵 Finalized
+                                {% elif payslip.status == 'paid' %}🟢 Paid
+                                {% else %}{{ payslip.status | title }}{% endif %}
                             </span>
                         </td>
 
                         <!-- Actions -->
-                        <td class="px-5 py-3.5 whitespace-nowrap text-right text-xs font-medium space-x-1">
+                        <td class="w-48 px-5 py-3.5 whitespace-nowrap text-right text-xs font-medium space-x-1.5">
                             <a href="/payroll/{{ payslip.id }}/view" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-2xs" title="View Payslip">
-                                <i data-lucide="eye" class="w-3 h-3 mr-1 text-slate-400"></i> View
+                                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> View
                             </a>
                             {% if user.role in ['admin', 'hr_admin'] %}
                             <a href="/payroll/{{ payslip.id }}/edit" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors" title="Edit Line Items">
-                                <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> Edit
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Edit
                             </a>
                             {% endif %}
                             <a href="/payroll/{{ payslip.id }}/pdf" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors" target="_blank" title="Download PDF">
-                                <i data-lucide="download" class="w-3 h-3 mr-1"></i> PDF
+                                <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> PDF
                             </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr id="server-empty-row">
-                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
                             <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5">
                                 <i data-lucide="receipt" class="w-5 h-5"></i>
                             </div>
                             <p class="text-xs sm:text-sm font-semibold text-slate-800">No payslips found</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Generate a draft payslip to begin monthly payroll calculations.</p>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Use "⚡ Run Bulk Payroll" to generate draft payslips for your team in one click.</p>
                         </td>
                     </tr>
                     {% endfor %}
 
                     <tr id="noResultsRow" class="hidden">
-                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
                             <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5">
                                 <i data-lucide="search-x" class="w-5 h-5"></i>
                             </div>
@@ -150,10 +291,134 @@
         </div>
     </div>
 
+{% if user.role in ['admin', 'hr_admin'] %}
+<!-- Floating Batch Action Toolbar -->
+<div id="batchActionBar" class="fixed bottom-6 inset-x-4 max-w-4xl mx-auto z-40 bg-slate-900 text-white rounded-2xl shadow-2xl p-3 sm:p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-3 transform translate-y-32 opacity-0 transition-all duration-300 pointer-events-none">
+
+    <div class="flex items-center space-x-3">
+        <span class="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold text-xs font-mono" id="selectedCountBadge">
+            0
+        </span>
+        <div>
+            <p class="text-xs sm:text-sm font-bold tracking-tight text-white" id="selectedCountText">0 Payslips Selected</p>
+            <p class="text-[11px] text-slate-400 hidden sm:block" id="selectedCountSubtext">Select records to perform bulk operations</p>
+        </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+        <button id="btnBatchFinalize" type="button" onclick="submitBatchStatus('finalized')" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-teal-600 hover:bg-teal-500 shadow-xs transition-colors">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchFinalize">Finalize Selected</span>
+        </button>
+        <button id="btnBatchMarkPaid" type="button" onclick="submitBatchStatus('paid')" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-xs transition-colors">
+            <i data-lucide="banknote" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchMarkPaid">Mark Paid</span>
+        </button>
+        <button id="btnBatchZip" type="button" onclick="submitBatchExportZip()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
+            <i data-lucide="download-cloud" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchZip">Download ZIP</span>
+        </button>
+        <button id="btnBatchDelete" type="button" onclick="submitBatchDelete()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-red-300 bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 transition-colors" title="Delete Drafts Only">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchDelete">Delete Drafts</span>
+        </button>
+        <button type="button" onclick="clearBatchSelection()" class="text-slate-400 hover:text-white p-1.5 rounded-lg transition-colors" title="Clear selection">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
 </div>
 
-{% if user.role in ['admin', 'hr_admin'] %}
-<!-- Modal: Generate Payslip -->
+<!-- Hidden Batch Form for Submission -->
+<form id="batchActionForm" method="POST" class="hidden">
+    <input type="hidden" name="payslip_ids" id="batchFormIds">
+    <input type="hidden" name="action" id="batchFormAction">
+</form>
+
+
+<!-- Modal: Bulk Generate Payslips -->
+<div id="bulkModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="document.getElementById('bulkModal').classList.add('hidden')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-200">
+            <div class="p-5 sm:p-6">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200">
+                            <i data-lucide="layers" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold font-heading text-slate-900">Run Bulk Payroll Generation</h3>
+                            <p class="text-xs text-slate-500">Auto-calculate monthly pro-rata payslips for workforce</p>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('bulkModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                
+                <!-- Bulk Form -->
+                <form action="/payroll/bulk-generate" method="POST" class="mt-4 space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="bulk_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Payroll Month</label>
+                            <select name="month" id="bulk_month" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}" {% if i == (current_month or get_today().month) %}selected{% endif %}>{{ "%02d" % i }} - {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="bulk_year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Payroll Year</label>
+                            <select name="year" id="bulk_year" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                                {% for yr in (available_years or range(app_year - 2, app_year + 3)) %}
+                                <option value="{{ yr }}" {% if yr == (current_year or app_year) %}selected{% endif %}>{{ yr }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="bulk_dept" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Target Department</label>
+                        <select name="department_id" id="bulk_dept" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <option value="all">Entire Company (All Active Staff)</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <label class="flex items-start space-x-2.5 cursor-pointer">
+                            <input type="checkbox" name="overwrite_drafts" value="true" class="mt-0.5 w-4 h-4 rounded text-teal-700 focus:ring-teal-600 border-slate-300">
+                            <div>
+                                <span class="text-xs font-bold text-slate-800 block">Recalculate Existing Drafts</span>
+                                <span class="text-[11px] text-slate-500 block leading-relaxed mt-0.5">
+                                    If checked, unfinalized drafts for this period will re-read attendance days and recalculate. <strong class="text-teal-800">Finalized and Paid records are always protected.</strong>
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Workflow Hint -->
+                    <div class="flex items-center space-x-2 text-[11px] text-slate-500 bg-teal-50/50 p-2.5 rounded-lg border border-teal-100">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-teal-700 shrink-0"></i>
+                        <span>New records are created in <strong>Draft</strong> mode so HR can audit prior to freezing/disbursing.</span>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="document.getElementById('bulkModal').classList.add('hidden')" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
+                            <i data-lucide="play" class="w-3.5 h-3.5 inline mr-1"></i> Start Bulk Generation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Generate Single Draft Payslip -->
 <div id="generateModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="document.getElementById('generateModal').classList.add('hidden')"></div>
@@ -168,7 +433,7 @@
                         </div>
                         <div>
                             <h3 class="text-base font-bold font-heading text-slate-900">Generate Draft Payslip</h3>
-                            <p class="text-xs text-slate-500">Pro-rata calculation from attendance logs</p>
+                            <p class="text-xs text-slate-500">Individual pro-rata calculation from attendance logs</p>
                         </div>
                     </div>
                     <button onclick="document.getElementById('generateModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
@@ -181,7 +446,7 @@
                         <label for="employee_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Select Employee</label>
                         <select name="employee_id" id="employee_id" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
                             {% for emp in employees %}
-                            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.department or 'General' }})</option>
+                            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.department.name if emp.department else 'General' }})</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -191,18 +456,20 @@
                             <label for="month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Month</label>
                             <select name="month" id="month" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
                                 {% for i in range(1, 13) %}
-                                <option value="{{ i }}" {% if i == 9 %}selected{% endif %}>{{ i }} ({{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }})</option>
+                                <option value="{{ i }}" {% if i == (current_month or get_today().month) %}selected{% endif %}>{{ "%02d" % i }} - {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div>
                             <label for="year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Year</label>
                             <select name="year" id="year" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
-                                <option value="2026" selected>2026</option>
-                                <option value="2027">2027</option>
+                                {% for yr in (available_years or range(app_year - 2, app_year + 3)) %}
+                                <option value="{{ yr }}" {% if yr == (current_year or app_year) %}selected{% endif %}>{{ yr }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>
+
                     
                     <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
                         <button type="button" onclick="document.getElementById('generateModal').classList.add('hidden')" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
@@ -219,21 +486,177 @@
 </div>
 
 <script>
+    let currentSelectedPayrollYear = 'ALL';
+    let currentSelectedPayrollMonth = 'ALL';
+    const monthNamesAbbr = ["", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+    function updateMonthIndicators() {
+        const rows = document.querySelectorAll('.payslip-row');
+        const monthCounts = {};
+        for (let i = 1; i <= 12; i++) monthCounts[i] = 0;
+        let yearTotal = 0;
+
+        rows.forEach(row => {
+            const rowYear = row.getAttribute('data-year');
+            const rowMonth = parseInt(row.getAttribute('data-month'), 10);
+            if (currentSelectedPayrollYear === 'ALL' || rowYear === currentSelectedPayrollYear) {
+                yearTotal++;
+                if (rowMonth >= 1 && rowMonth <= 12) {
+                    monthCounts[rowMonth] = (monthCounts[rowMonth] || 0) + 1;
+                }
+            }
+        });
+
+        const allCountBadge = document.getElementById('month-count-ALL');
+        if (allCountBadge) allCountBadge.textContent = `(${yearTotal})`;
+
+        for (let m = 1; m <= 12; m++) {
+            const dot = document.getElementById(`month-dot-${m}`);
+            const btn = document.getElementById(`month-btn-${m}`);
+            const cnt = monthCounts[m] || 0;
+            
+            if (dot) {
+                if (cnt > 0 && currentSelectedPayrollMonth !== String(m)) {
+                    dot.classList.remove('hidden');
+                } else {
+                    dot.classList.add('hidden');
+                }
+            }
+            if (btn && currentSelectedPayrollMonth !== String(m)) {
+                if (cnt > 0) {
+                    btn.className = "payroll-month-btn flex-1 min-w-[34px] sm:min-w-[40px] max-w-[54px] h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all relative bg-slate-100 text-slate-900 hover:bg-teal-50 hover:text-teal-800 hover:scale-105 active:scale-95 cursor-pointer shrink-0";
+                    btn.title = `${monthNamesAbbr[m]}: ${cnt} payslip${cnt > 1 ? 's' : ''}`;
+                } else {
+                    btn.className = "payroll-month-btn flex-1 min-w-[34px] sm:min-w-[40px] max-w-[54px] h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all relative bg-transparent text-slate-300 hover:text-slate-500 cursor-pointer shrink-0";
+                    btn.title = `${monthNamesAbbr[m]}: 0 payslips`;
+                }
+            }
+        }
+    }
+
+    function selectPayrollMonth(monthNumOrAll) {
+        currentSelectedPayrollMonth = String(monthNumOrAll);
+        
+        // Update active styles on month buttons
+        const allBtn = document.getElementById('month-btn-ALL');
+        if (allBtn) {
+            if (currentSelectedPayrollMonth === 'ALL') {
+                allBtn.className = "payroll-month-btn px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all bg-teal-700 text-white shadow-xs shrink-0 flex items-center space-x-1";
+            } else {
+                allBtn.className = "payroll-month-btn px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-teal-50 hover:text-teal-800 shrink-0 flex items-center space-x-1";
+            }
+        }
+
+        for (let m = 1; m <= 12; m++) {
+            const btn = document.getElementById(`month-btn-${m}`);
+            const dot = document.getElementById(`month-dot-${m}`);
+            if (btn) {
+                if (currentSelectedPayrollMonth === String(m)) {
+                    btn.className = "payroll-month-btn flex-1 min-w-[34px] sm:min-w-[40px] max-w-[54px] h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs transition-all relative bg-teal-700 text-white shadow-xs font-bold shrink-0";
+                    if (dot) dot.classList.add('hidden');
+                }
+            }
+        }
+
+        updateMonthIndicators();
+        filterPayslips();
+    }
+
+    function onPayrollYearChange() {
+        const yearSelect = document.getElementById('payrollYearFilter');
+        currentSelectedPayrollYear = yearSelect ? yearSelect.value : 'ALL';
+        updateMonthIndicators();
+        filterPayslips();
+    }
+
+    function clearSearchInput() {
+        const searchInput = document.getElementById('payslipSearch');
+        if (searchInput) {
+            searchInput.value = '';
+            filterPayslips();
+            searchInput.focus();
+        }
+    }
+
+    function clearAllPayrollFilters() {
+        const searchInput = document.getElementById('payslipSearch');
+        if (searchInput) searchInput.value = '';
+
+        const statusSelect = document.getElementById('payrollStatusFilter');
+        if (statusSelect) statusSelect.value = 'all';
+
+        const yearSelect = document.getElementById('payrollYearFilter');
+        if (yearSelect) yearSelect.value = 'ALL';
+        currentSelectedPayrollYear = 'ALL';
+
+        selectPayrollMonth('ALL');
+    }
+
     function filterPayslips() {
-        const query = document.getElementById('payslipSearch').value.toLowerCase().trim();
-        const statusFilter = document.getElementById('payrollStatusFilter').value.toLowerCase();
+        const searchInput = document.getElementById('payslipSearch');
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const statusSelect = document.getElementById('payrollStatusFilter');
+        const statusFilter = statusSelect ? statusSelect.value.toLowerCase() : 'all';
         const rows = document.querySelectorAll('.payslip-row');
         let visibleCount = 0;
 
+        const clearBtn = document.getElementById('clearPayslipSearchBtn');
+        if (clearBtn) {
+            if (query.length > 0) clearBtn.classList.remove('hidden');
+            else clearBtn.classList.add('hidden');
+        }
+
+        const cleanDigits = query.replace(/\D/g, '');
+        const cleanNoPrefix = query.replace(/^emp[-_#\s]*/i, '').replace(/^pay[-_#\s]*/i, '').replace(/[#\s]/g, '');
+        const isExplicitId = query.startsWith('#') || query.startsWith('emp') || query.startsWith('pay') || (cleanDigits.length > 1 && cleanDigits.startsWith('0'));
+
         rows.forEach(row => {
             const emp = row.getAttribute('data-emp') || '';
+            const email = row.getAttribute('data-email') || '';
+            const dept = row.getAttribute('data-dept') || '';
             const period = row.getAttribute('data-period') || '';
+            const rowMonth = row.getAttribute('data-month') || '';
+            const rowYear = row.getAttribute('data-year') || '';
             const status = row.getAttribute('data-status') || '';
+            const empId = row.getAttribute('data-emp-id') || '';
+            const empIdFmt = row.getAttribute('data-emp-id-fmt') || '';
+            const slipNo = (row.getAttribute('data-slip-no') || '').toLowerCase();
+            const payslipId = row.getAttribute('data-id') || '';
 
-            const matchesQuery = !query || emp.includes(query) || period.includes(query);
+            let matchesId = false;
+            if (query) {
+                if (isExplicitId) {
+                    if (empId === cleanNoPrefix || (cleanDigits && empId === String(parseInt(cleanDigits, 10)))) {
+                        matchesId = true;
+                    } else if (empIdFmt === cleanNoPrefix || (`#${empIdFmt}`) === query || (`emp${empIdFmt}`) === query.replace(/[-_#\s]/g, '')) {
+                        matchesId = true;
+                    } else if (slipNo === query || slipNo.includes(query) || payslipId === cleanNoPrefix) {
+                        matchesId = true;
+                    }
+                } else {
+                    if (empId === query || empId === cleanNoPrefix || (cleanDigits && empId === cleanDigits)) {
+                        matchesId = true;
+                    } else if (empIdFmt.includes(query) || (cleanNoPrefix && empIdFmt.includes(cleanNoPrefix)) || (`#${empIdFmt}`).includes(query)) {
+                        matchesId = true;
+                    } else if (`emp${empId}`.includes(query.replace(/[-_#\s]/g, '')) || `emp${empIdFmt}`.includes(query.replace(/[-_#\s]/g, ''))) {
+                        matchesId = true;
+                    } else if (slipNo.includes(query) || payslipId === query || (cleanDigits && payslipId === cleanDigits)) {
+                        matchesId = true;
+                    }
+                }
+            }
+
+            const matchesQuery = !query || 
+                                 emp.includes(query) || 
+                                 email.includes(query) || 
+                                 dept.includes(query) || 
+                                 period.includes(query) || 
+                                 matchesId;
             const matchesStatus = (statusFilter === 'all') || (status === statusFilter);
+            const matchesYear = (currentSelectedPayrollYear === 'ALL') || (rowYear === currentSelectedPayrollYear);
+            const matchesMonth = (currentSelectedPayrollMonth === 'ALL') || (rowMonth === currentSelectedPayrollMonth);
 
-            if (matchesQuery && matchesStatus) {
+            if (matchesQuery && matchesStatus && matchesYear && matchesMonth) {
                 row.style.display = '';
                 visibleCount++;
             } else {
@@ -242,9 +665,11 @@
         });
 
         const noResults = document.getElementById('noResultsRow');
+        const serverEmpty = document.getElementById('server-empty-row');
         if (noResults) {
             if (visibleCount === 0 && rows.length > 0) {
                 noResults.classList.remove('hidden');
+                if (serverEmpty) serverEmpty.classList.add('hidden');
             } else {
                 noResults.classList.add('hidden');
             }
@@ -254,8 +679,218 @@
         if (badge) {
             badge.textContent = visibleCount;
         }
+
+        // Dynamic Filter Banner
+        const banner = document.getElementById('activePayrollFilterBanner');
+        const bannerText = document.getElementById('activePayrollFilterText');
+        const isFiltered = query || statusFilter !== 'all' || currentSelectedPayrollYear !== 'ALL' || currentSelectedPayrollMonth !== 'ALL';
+
+        if (banner && bannerText) {
+            if (isFiltered) {
+                const parts = [];
+                if (currentSelectedPayrollYear !== 'ALL') parts.push(`Year <strong>"${currentSelectedPayrollYear}"</strong>`);
+                if (currentSelectedPayrollMonth !== 'ALL') {
+                    const mIdx = parseInt(currentSelectedPayrollMonth, 10);
+                    parts.push(`Month <strong>"${monthNamesAbbr[mIdx] || currentSelectedPayrollMonth}"</strong>`);
+                }
+                if (statusFilter !== 'all') parts.push(`Status <strong>"${statusFilter.toUpperCase()}"</strong>`);
+                if (query) parts.push(`Search <strong>"${query}"</strong>`);
+                
+                bannerText.innerHTML = `Showing <strong>${visibleCount}</strong> payslip record${visibleCount !== 1 ? 's' : ''} matching ` + parts.join(' • ');
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        if (typeof updateBatchToolbar === 'function') {
+            updateBatchToolbar();
+        }
     }
+
+    // Initialize month counts and indicators on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateMonthIndicators();
+    });
+    // Also run immediately
+    updateMonthIndicators();
+
+    function toggleSelectAll(masterCheckbox) {
+        const checkboxes = document.querySelectorAll('.payslip-row-checkbox');
+        checkboxes.forEach(cb => {
+            const row = cb.closest('.payslip-row');
+            if (row && row.style.display !== 'none') {
+                cb.checked = masterCheckbox.checked;
+            }
+        });
+        if (typeof updateBatchToolbar === 'function') {
+            updateBatchToolbar();
+        }
+    }
+
+    function updateBatchToolbar() {
+        const checkedBoxes = Array.from(document.querySelectorAll('.payslip-row-checkbox:checked'));
+        const count = checkedBoxes.length;
+        const bar = document.getElementById('batchActionBar');
+        
+        if (!bar) return;
+
+        if (count === 0) {
+            bar.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            bar.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
+            const master = document.getElementById('selectAllCheckbox');
+            if (master) master.checked = false;
+            return;
+        }
+
+        bar.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
+        bar.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+
+        let draftCount = 0;
+        let finalizedCount = 0;
+        let paidCount = 0;
+
+        checkedBoxes.forEach(cb => {
+            const st = (cb.getAttribute('data-status') || '').toLowerCase().trim();
+            if (st === 'draft') draftCount++;
+            else if (st === 'finalized') finalizedCount++;
+            else if (st === 'paid') paidCount++;
+            else draftCount++;
+        });
+
+        const badge = document.getElementById('selectedCountBadge');
+        const text = document.getElementById('selectedCountText');
+        const subtext = document.getElementById('selectedCountSubtext');
+
+        if (badge) badge.textContent = count;
+        if (text) text.textContent = `${count} Selected`;
+
+        if (subtext) {
+            const parts = [];
+            if (draftCount > 0) parts.push(`${draftCount} Draft`);
+            if (finalizedCount > 0) parts.push(`${finalizedCount} Finalized`);
+            if (paidCount > 0) parts.push(`${paidCount} Paid (Locked)`);
+            subtext.textContent = parts.length > 0 ? parts.join(' • ') : 'Select records to perform bulk operations';
+        }
+
+        // 1. Finalize Button: Only show if there are drafts to finalize
+        const btnFinalize = document.getElementById('btnBatchFinalize');
+        const lblFinalize = document.getElementById('lblBatchFinalize');
+        if (btnFinalize) {
+            if (draftCount > 0) {
+                btnFinalize.classList.remove('hidden');
+                if (lblFinalize) lblFinalize.textContent = `Finalize (${draftCount} Draft${draftCount > 1 ? 's' : ''})`;
+            } else {
+                btnFinalize.classList.add('hidden');
+            }
+        }
+
+        // 2. Mark Paid Button: Only show if there are unpaid items (drafts or finalized)
+        const btnMarkPaid = document.getElementById('btnBatchMarkPaid');
+        const lblMarkPaid = document.getElementById('lblBatchMarkPaid');
+        const unpaidCount = draftCount + finalizedCount;
+        if (btnMarkPaid) {
+            if (unpaidCount > 0) {
+                btnMarkPaid.classList.remove('hidden');
+                if (lblMarkPaid) lblMarkPaid.textContent = `Mark Paid (${unpaidCount})`;
+            } else {
+                btnMarkPaid.classList.add('hidden');
+            }
+        }
+
+        // 3. Delete Drafts Button: Only show if there are drafts to delete
+        const btnDelete = document.getElementById('btnBatchDelete');
+        const lblDelete = document.getElementById('lblBatchDelete');
+        if (btnDelete) {
+            if (draftCount > 0) {
+                btnDelete.classList.remove('hidden');
+                if (lblDelete) lblDelete.textContent = `Delete (${draftCount} Draft${draftCount > 1 ? 's' : ''})`;
+            } else {
+                btnDelete.classList.add('hidden');
+            }
+        }
+
+        // 4. Download ZIP Button: Always show
+        const btnZip = document.getElementById('btnBatchZip');
+        const lblZip = document.getElementById('lblBatchZip');
+        if (btnZip && lblZip) {
+            lblZip.textContent = `Download ZIP (${count})`;
+        }
+    }
+
+    function clearBatchSelection() {
+        const checkboxes = document.querySelectorAll('.payslip-row-checkbox');
+        checkboxes.forEach(cb => cb.checked = false);
+        const master = document.getElementById('selectAllCheckbox');
+        if (master) master.checked = false;
+        if (typeof updateBatchToolbar === 'function') {
+            updateBatchToolbar();
+        }
+    }
+
+    function getSelectedPayslipIds(statusFilter = null) {
+        const checkboxes = Array.from(document.querySelectorAll('.payslip-row-checkbox:checked'));
+        const filtered = statusFilter 
+            ? checkboxes.filter(cb => (cb.getAttribute('data-status') || '').toLowerCase().trim() === statusFilter)
+            : checkboxes;
+        return filtered.map(cb => cb.value);
+    }
+
+    function submitBatchStatus(targetStatus) {
+        let ids = [];
+        if (targetStatus === 'finalized') {
+            ids = getSelectedPayslipIds('draft');
+            if (ids.length === 0) {
+                alert('No unfinalized draft payslips selected.');
+                return;
+            }
+        } else if (targetStatus === 'paid') {
+            const checkboxes = Array.from(document.querySelectorAll('.payslip-row-checkbox:checked'));
+            ids = checkboxes
+                .filter(cb => (cb.getAttribute('data-status') || '').toLowerCase().trim() !== 'paid')
+                .map(cb => cb.value);
+            if (ids.length === 0) {
+                alert('All selected payslips are already marked as Paid.');
+                return;
+            }
+        } else {
+            ids = getSelectedPayslipIds();
+        }
+
+        if (ids.length === 0) return;
+
+        const form = document.getElementById('batchActionForm');
+        form.action = '/payroll/bulk-status';
+        document.getElementById('batchFormIds').value = ids.join(',');
+        document.getElementById('batchFormAction').value = targetStatus;
+        form.submit();
+    }
+
+    function submitBatchDelete() {
+        const ids = getSelectedPayslipIds('draft');
+        if (ids.length === 0) {
+            alert('No draft payslips selected. Finalized and Paid payslips cannot be deleted.');
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to delete ${ids.length} selected draft payslip(s)?`)) {
+            return;
+        }
+
+        const form = document.getElementById('batchActionForm');
+        form.action = '/payroll/bulk-delete';
+        document.getElementById('batchFormIds').value = ids.join(',');
+        form.submit();
+    }
+
+    function submitBatchExportZip() {
+        const ids = getSelectedPayslipIds();
+        if (ids.length === 0) return;
+        window.location.href = `/payroll/bulk-export-zip?ids=${ids.join(',')}`;
+    }
+
 </script>
 {% endif %}
 
 {% endblock %}
+

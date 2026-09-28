@@ -27,13 +27,19 @@ def calculate_distance_meters(lat1: float, lon1: float, lat2: float, lon2: float
 
 def get_or_create_company(db: Session) -> Company:
     """
-    Returns the primary company record or creates one with defaults.
+    Returns the primary company record or creates one with dynamic configuration defaults.
     """
     company = db.query(Company).first()
     if not company:
         company = Company(
-            name="TURTU",
-            address="Belagavi, Karnataka",
+            name=settings.COMPANY_NAME,
+            tagline=settings.COMPANY_TAGLINE,
+            address=settings.COMPANY_ADDRESS,
+            currency_symbol=settings.COMPANY_CURRENCY_SYMBOL,
+            currency_code=settings.COMPANY_CURRENCY_CODE,
+            working_days_per_month=settings.COMPANY_WORKING_DAYS_PER_MONTH,
+            standard_hours_per_day=settings.COMPANY_STANDARD_HOURS_PER_DAY,
+            half_day_threshold_hours=settings.COMPANY_HALF_DAY_HOURS,
             office_latitude=settings.GEOFENCE_DEFAULT_LAT,
             office_longitude=settings.GEOFENCE_DEFAULT_LON,
             geofence_radius_meters=settings.GEOFENCE_DEFAULT_RADIUS_METERS,

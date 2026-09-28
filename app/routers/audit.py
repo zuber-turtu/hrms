@@ -1,15 +1,14 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.employee import Employee
 from app.models.audit import AuditLog
 from app.dependencies import RoleChecker
+from app.templates_config import templates
 
 router = APIRouter(prefix="/audit")
-templates = Jinja2Templates(directory="app/templates")
 
 allow_admin = RoleChecker(["admin"])
 

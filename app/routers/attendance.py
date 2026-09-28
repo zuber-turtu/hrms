@@ -2,7 +2,6 @@ import json
 from urllib.parse import quote_plus
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
 import datetime
@@ -19,8 +18,9 @@ from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
 from app.utils.attendance import update_attendance_request_state
 
+from app.templates_config import templates
+
 router = APIRouter(prefix="/attendance")
-templates = Jinja2Templates(directory="app/templates")
 
 allow_hr_admin = RoleChecker(["admin", "hr_admin", "manager"])
 

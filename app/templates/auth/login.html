@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In — TURTU HRMS</title>
+    <title>Sign In — {{ (company or get_company()).name }}</title>
     
-    <!-- TURTU Brand Fonts (From Design Spec): Poppins (Headings/Brand), Nunito (Body/UI), JetBrains Mono (Codes) -->
+    <!-- Brand Fonts: Poppins (Headings/Brand), Nunito (Body/UI), JetBrains Mono (Codes) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -23,9 +23,8 @@
                         mono: ['"JetBrains Mono"', 'monospace'],
                     },
                     colors: {
-                        // Official TURTU Brand Color Palette (From Turtu color & font plan.xlsx)
                         turtu: {
-                            teal: '#008080',     // TURTU Teal ★ (Primary CTA / Brand)
+                            teal: '#008080',     // Teal ★ (Primary CTA / Brand)
                             deep: '#006666',     // Teal Deep (Hover / Active State)
                             dark: '#004444',     // Teal Dark (Dark accents)
                             mid: '#4DB8B8',      // Teal Mid (Icon accents)
@@ -47,8 +46,8 @@
     </script>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/jpeg" href="/static/images/icon.jpeg">
-    <link rel="shortcut icon" type="image/jpeg" href="/static/images/icon.jpeg">
+    <link rel="icon" type="image/jpeg" href="{{ (company or get_company()).logo_url or '/static/images/icon.jpeg' }}">
+    <link rel="shortcut icon" type="image/jpeg" href="{{ (company or get_company()).logo_url or '/static/images/icon.jpeg' }}">
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -71,17 +70,17 @@
         <div class="text-center mb-6">
             <!-- Logo Container with Teal Border (#B3E3E3) -->
             <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-[#B3E3E3] shadow-xs mb-3.5 p-2">
-                <img src="/static/images/icon.jpeg" alt="TURTU Logo" class="w-full h-full object-contain rounded-xl">
+                <img src="{{ (company or get_company()).logo_url or '/static/images/icon.jpeg' }}" alt="Logo" class="w-full h-full object-contain rounded-xl" onerror="this.src='/static/images/icon.jpeg'">
             </div>
             
-            <!-- Headline: Poppins ExtraBold with TURTU Teal (#008080) and Deep Forest (#1C2B2B) -->
+            <!-- Headline -->
             <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[#1C2B2B] font-heading">
-                TURTU <span class="text-[#008080]">HRMS</span>
+                {{ (company or get_company()).name }}
             </h1>
             
-            <!-- Subtitle: Slate (#6B7F7F) -->
+            <!-- Subtitle -->
             <p class="text-xs sm:text-sm text-[#6B7F7F] mt-1 font-medium">
-                Enterprise Workforce &amp; Payroll Portal
+                {{ (company or get_company()).tagline or 'Enterprise Workforce & Payroll Portal' }}
             </p>
         </div>
 
@@ -197,7 +196,7 @@
 
         <!-- Bottom Footer: Slate (#6B7F7F) with JetBrains Mono font -->
         <div class="text-center mt-6 text-xs text-[#6B7F7F] font-mono">
-            <p>© 2026 TURTU HRMS. All rights reserved.</p>
+            <p>© {{ app_year }} {{ (company or get_company()).name }}. All rights reserved.</p>
         </div>
 
     </div>

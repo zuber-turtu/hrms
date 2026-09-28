@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -9,9 +8,9 @@ from app.models.employee import Employee
 from app.models.department import Department, Designation
 from app.dependencies import RoleChecker
 from app.models.audit import AuditLog
+from app.templates_config import templates
 
 router = APIRouter(prefix="/departments")
-templates = Jinja2Templates(directory="app/templates")
 
 allow_hr_admin = RoleChecker(["admin", "hr_admin"])
 

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy import cast, String, or_
 from typing import List, Optional
 from io import BytesIO
 import openpyxl
@@ -103,7 +104,28 @@ async def api_list_employees(
         query = query.filter(Employee.department_id == department_id)
 
     if q and q.strip():
-        search_term = f"%{q.strip()}%"
+        search_raw = q.strip()
+        search_term = f"%{search_raw}%"
+        id_conditions = []
+        digits_only = "".join(filter(str.isdigit, search_raw))
+        is_explicit_id = (
+            search_raw.startswith("#") or 
+            search_raw.lower().startswith("emp") or 
+            search_raw.lower().startswith("pay") or
+            (digits_only and len(digits_only) > 1 and digits_only.startswith("0"))
+        )
+
+        if digits_only:
+            try:
+                id_conditions.append(Employee.id == int(digits_only))
+            except ValueError:
+                pass
+
+        if not is_explicit_id:
+            id_conditions.append(cast(Employee.id, String).ilike(search_term))
+            if digits_only and len(digits_only) < 4:
+                id_conditions.append(cast(Employee.id, String).ilike(f"%{digits_only.lstrip('0') or '0'}%"))
+
         query = (
             query.outerjoin(Department, Employee.department_id == Department.id)
             .outerjoin(Designation, Employee.designation_id == Designation.id)
@@ -112,6 +134,7 @@ async def api_list_employees(
                 | (Employee.email.ilike(search_term))
                 | (Department.name.ilike(search_term))
                 | (Designation.title.ilike(search_term))
+                | or_(*id_conditions)
             )
         )
 

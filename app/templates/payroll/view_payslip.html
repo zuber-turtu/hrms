@@ -140,18 +140,21 @@
         <!-- 1. Corporate Letterhead Header -->
         <div class="flex flex-col sm:flex-row justify-between items-start pb-4 border-b border-slate-300 gap-4">
             <div class="flex items-center space-x-3.5">
-                <img src="/static/images/icon.jpeg" alt="Logo" class="w-12 h-12 object-contain rounded-lg bg-slate-950 p-1 shadow-xs border border-slate-200 shrink-0">
+                <img src="{{ (company or get_company()).logo_url or '/static/images/icon.jpeg' }}" alt="Logo" class="w-12 h-12 object-contain rounded-lg bg-slate-950 p-1 shadow-xs border border-slate-200 shrink-0" onerror="this.src='/static/images/icon.jpeg'">
                 <div>
                     <h1 class="text-base sm:text-lg font-heading font-bold text-slate-900 tracking-tight uppercase leading-tight">
-                        {{ company.name if company and company.name else 'TURTU HRMS' }}
+                        {{ (company or get_company()).name }}
                     </h1>
+                    {% if (company or get_company()).address %}
                     <p class="text-xs text-slate-500 mt-0.5">
-                        {{ company.address if company and company.address else 'Karnataka, India' }}
+                        {{ (company or get_company()).address }}
                     </p>
+                    {% endif %}
                     {% set stat_parts = [] %}
-                    {% if company and company.cin %}{% set _ = stat_parts.append('CIN: ' ~ company.cin) %}{% endif %}
-                    {% if company and company.gstin %}{% set _ = stat_parts.append('GSTIN: ' ~ company.gstin) %}{% endif %}
-                    {% if company and company.pan %}{% set _ = stat_parts.append('PAN: ' ~ company.pan) %}{% endif %}
+                    {% set c_obj = company or get_company() %}
+                    {% if c_obj and c_obj.cin %}{% set _ = stat_parts.append('CIN: ' ~ c_obj.cin) %}{% endif %}
+                    {% if c_obj and c_obj.gstin %}{% set _ = stat_parts.append('GSTIN: ' ~ c_obj.gstin) %}{% endif %}
+                    {% if c_obj and c_obj.pan %}{% set _ = stat_parts.append('PAN: ' ~ c_obj.pan) %}{% endif %}
                     {% if stat_parts %}
                     <p class="text-[11px] text-slate-400 mt-0.5 font-mono">
                         {{ stat_parts | join(' • ') }}
@@ -173,7 +176,7 @@
         </div>
 
         <!-- 2. Payslip Period Title Ribbon -->
-        <div class="mt-4 bg-slate-900 text-white text-center py-2 px-4 rounded-lg font-heading font-bold text-xs uppercase tracking-wider">
+        <div class="mt-4 bg-[#008080] text-white text-center py-2 px-4 rounded-lg font-heading font-bold text-xs uppercase tracking-wider">
             Payslip for the Month of {{ month_name }} {{ payslip.year }}
         </div>
 
@@ -354,7 +357,7 @@
                     <span>Official Authenticated Statement</span>
                 </div>
                 <p class="text-[11px] text-slate-400 leading-relaxed">
-                    *Computer-generated official salary certificate issued by {{ company.name if company and company.name else 'TURTU HRMS' }}. Does not require physical signature.
+                    *Computer-generated official salary certificate issued by {{ (company or get_company()).name }}. Does not require physical signature.
                 </p>
                 <p class="text-[10px] text-slate-400 font-mono">HASH: AUTH-PAY-{{ payslip.year }}{{ "%02d" % payslip.month }}-{{ "%04d" % payslip.id }}-VERIFIED</p>
             </div>
@@ -365,7 +368,7 @@
                     <span class="inline-block text-[11px] font-serif italic text-slate-400">Authorized Signature</span>
                 </div>
                 <p class="text-xs font-bold text-slate-900">Authorized Signatory</p>
-                <p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">{{ company.name if company and company.name else 'TURTU HRMS' }}</p>
+                <p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">{{ (company or get_company()).name }}</p>
             </div>
         </div>
 

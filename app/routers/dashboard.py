@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import datetime
 
@@ -11,11 +10,10 @@ from app.models.attendance import Attendance
 from app.models.document import EmployeeDocument
 from app.models.payroll import Payslip
 from app.models.department import Department
-
 from app.utils.timezone import get_ist_today
+from app.templates_config import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/dashboard", response_class=HTMLResponse)

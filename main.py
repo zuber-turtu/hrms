@@ -29,28 +29,121 @@ from app.routers.api.v1 import api_v1_router
 
 
 def ensure_schema_columns(db_engine):
-    """Auto-migrate schema columns that were added after initial table creation."""
+    """Auto-migrate schema columns that were added after initial table creation across PostgreSQL & SQLite."""
     from sqlalchemy import inspect, text
     try:
         inspector = inspect(db_engine)
-        if "employee_profiles" in inspector.get_table_names():
-            existing_cols = {c["name"] for c in inspector.get_columns("employee_profiles")}
-            with db_engine.begin() as conn:
-                if "avatar_url" not in existing_cols:
-                    conn.execute(text("ALTER TABLE employee_profiles ADD COLUMN avatar_url VARCHAR(500)"))
-                if "photo_file_id" not in existing_cols:
-                    conn.execute(text("ALTER TABLE employee_profiles ADD COLUMN photo_file_id VARCHAR(255)"))
-                if "uan_number" not in existing_cols:
-                    conn.execute(text("ALTER TABLE employee_profiles ADD COLUMN uan_number VARCHAR(100)"))
-        if "company" in inspector.get_table_names():
-            existing_cols = {c["name"] for c in inspector.get_columns("company")}
-            with db_engine.begin() as conn:
-                if "cin" not in existing_cols:
-                    conn.execute(text("ALTER TABLE company ADD COLUMN cin VARCHAR(100)"))
-                if "gstin" not in existing_cols:
-                    conn.execute(text("ALTER TABLE company ADD COLUMN gstin VARCHAR(100)"))
-                if "pan" not in existing_cols:
-                    conn.execute(text("ALTER TABLE company ADD COLUMN pan VARCHAR(100)"))
+        tables = inspector.get_table_names()
+
+        # Table-to-Columns Schema Migration Map
+        schema_definitions = {
+            "attendance": {
+                "is_overridden": "BOOLEAN DEFAULT FALSE",
+                "override_reason": "VARCHAR(500)",
+                "check_in_lat": "FLOAT",
+                "check_in_lon": "FLOAT",
+                "check_in_distance_m": "FLOAT",
+                "check_in_in_range": "BOOLEAN",
+                "check_out_lat": "FLOAT",
+                "check_out_lon": "FLOAT",
+                "check_out_distance_m": "FLOAT",
+                "check_out_in_range": "BOOLEAN",
+            },
+            "company": {
+                "tagline": "VARCHAR(255) DEFAULT 'Enterprise Personnel & Payroll Platform'",
+                "currency_code": "VARCHAR(10) DEFAULT 'INR'",
+                "support_email": "VARCHAR(255)",
+                "website": "VARCHAR(255)",
+                "standard_hours_per_day": "FLOAT DEFAULT 8.0",
+                "half_day_threshold_hours": "FLOAT DEFAULT 4.5",
+                "cin": "VARCHAR(100)",
+                "gstin": "VARCHAR(100)",
+                "pan": "VARCHAR(100)",
+                "logo_url": "VARCHAR(500)",
+                "logo_file_id": "VARCHAR(255)",
+                "signature_url": "VARCHAR(500)",
+                "signature_file_id": "VARCHAR(255)",
+                "office_latitude": "FLOAT",
+                "office_longitude": "FLOAT",
+                "geofence_radius_meters": "INTEGER DEFAULT 200",
+                "geofence_enabled": "BOOLEAN DEFAULT TRUE",
+                "geofence_strict_mode": "BOOLEAN DEFAULT TRUE",
+            },
+            "employee_profiles": {
+                "avatar_url": "VARCHAR(500)",
+                "photo_file_id": "VARCHAR(255)",
+                "uan_number": "VARCHAR(100)",
+                "phone_number": "VARCHAR(50)",
+                "home_address": "VARCHAR(500)",
+                "city": "VARCHAR(100)",
+                "state": "VARCHAR(100)",
+                "country": "VARCHAR(100)",
+                "gender": "VARCHAR(50)",
+                "qualification": "VARCHAR(200)",
+                "experience": "VARCHAR(200)",
+                "aadhar_number": "VARCHAR(100)",
+                "pan_number": "VARCHAR(100)",
+            },
+            "employees": {
+                "department_id": "INTEGER",
+                "designation_id": "INTEGER",
+                "reset_token": "VARCHAR(255)",
+                "is_active": "BOOLEAN DEFAULT TRUE",
+                "role": "VARCHAR(50) DEFAULT 'employee'",
+                "joining_date": "DATE",
+            },
+            "payslips": {
+                "generated_on": "DATE",
+                "payable_days": "INTEGER DEFAULT 22",
+                "days_worked": "FLOAT DEFAULT 0.0",
+                "basic": "FLOAT DEFAULT 0.0",
+                "hra": "FLOAT DEFAULT 0.0",
+                "allowances": "FLOAT DEFAULT 0.0",
+                "bonus": "FLOAT DEFAULT 0.0",
+                "pf": "FLOAT DEFAULT 0.0",
+                "tax": "FLOAT DEFAULT 0.0",
+                "other_deductions": "FLOAT DEFAULT 0.0",
+                "net_salary": "FLOAT DEFAULT 0.0",
+                "status": "VARCHAR(50) DEFAULT 'draft'",
+            },
+            "document_types": {
+                "category": "VARCHAR(100) DEFAULT 'KYC'",
+                "is_mandatory": "BOOLEAN DEFAULT FALSE",
+                "who_uploads": "VARCHAR(50) DEFAULT 'employee'",
+                "allowed_extensions": "VARCHAR(200) DEFAULT 'pdf,jpg,jpeg,png,webp,docx'",
+                "max_file_size_mb": "INTEGER DEFAULT 10",
+                "department_id": "INTEGER",
+                "is_active": "BOOLEAN DEFAULT TRUE",
+                "display_order": "INTEGER DEFAULT 0",
+                "created_at": "TIMESTAMP",
+            },
+            "employee_documents": {
+                "document_type_id": "INTEGER",
+                "custom_title": "VARCHAR(200)",
+                "file_name": "VARCHAR(500)",
+                "file_url": "VARCHAR(1000)",
+                "file_size": "INTEGER DEFAULT 0",
+                "mime_type": "VARCHAR(100) DEFAULT 'application/pdf'",
+                "status": "VARCHAR(50) DEFAULT 'pending'",
+                "verified_by_id": "INTEGER",
+                "verified_at": "TIMESTAMP",
+                "rejection_reason": "TEXT",
+                "uploaded_at": "TIMESTAMP",
+            },
+        }
+
+        with db_engine.begin() as conn:
+            for table_name, cols_dict in schema_definitions.items():
+                if table_name in tables:
+                    existing_cols = {c["name"] for c in inspector.get_columns(table_name)}
+                    for col_name, col_type in cols_dict.items():
+                        if col_name not in existing_cols:
+                            try:
+                                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"))
+                                print(f"[Schema Migration] Added column {col_name} to {table_name}")
+                            except Exception as col_err:
+                                print(f"[Schema Migration Col Warning] {table_name}.{col_name}: {col_err}")
+
     except Exception as e:
         print(f"[Schema Migration Warning] {e}")
 
@@ -353,6 +446,36 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
     safe_target = get_safe_redirect(request, default="/dashboard")
     redirect_url = append_query_param(safe_target, "error", str(exc.detail))
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
+import traceback
+import logging
+
+logger = logging.getLogger("uvicorn.error")
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    tb = traceback.format_exc()
+    logger.error(f"[500 Error on {request.method} {request.url.path}]:\n{tb}")
+    print(f"[500 Error on {request.method} {request.url.path}]:\n{tb}", flush=True)
+
+    accept = request.headers.get("accept", "")
+    path = request.url.path
+    is_api = (
+        "application/json" in accept
+        or path.startswith("/api")
+        or "/api/" in path
+    )
+
+    if is_api:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "An internal server error occurred. Please check server logs."},
+        )
+
+    safe_target = get_safe_redirect(request, default="/dashboard")
+    redirect_url = append_query_param(safe_target, "error", f"Server error: {str(exc) or 'An unexpected error occurred.'}")
     return RedirectResponse(url=redirect_url, status_code=303)
 
 

@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, cast, String, or_
 from io import BytesIO
 from collections import defaultdict
 import datetime
@@ -26,9 +25,9 @@ from app.config import settings
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
 from app.services.storage import get_storage_provider
+from app.templates_config import templates
 
 router = APIRouter(prefix="/employees")
-templates = Jinja2Templates(directory="app/templates")
 
 allow_hr_admin = RoleChecker(["admin", "hr_admin"])
 
@@ -121,16 +120,40 @@ async def list_employees(
 
     query = base_query
 
-    # Search filter
+    # Search filter (Name, Email, Dept, Designation, Employee ID)
     if q and q.strip():
-        search_term = f"%{q.strip()}%"
+        search_raw = q.strip()
+        search_term = f"%{search_raw}%"
+        
+        id_conditions = []
+        digits_only = "".join(filter(str.isdigit, search_raw))
+        is_explicit_id = (
+            search_raw.startswith("#") or 
+            search_raw.lower().startswith("emp") or 
+            search_raw.lower().startswith("pay") or
+            (digits_only and len(digits_only) > 1 and digits_only.startswith("0"))
+        )
+
+        if digits_only:
+            try:
+                emp_id_num = int(digits_only)
+                id_conditions.append(Employee.id == emp_id_num)
+            except ValueError:
+                pass
+
+        if not is_explicit_id:
+            id_conditions.append(cast(Employee.id, String).ilike(search_term))
+            if digits_only and len(digits_only) < 4:
+                id_conditions.append(cast(Employee.id, String).ilike(f"%{digits_only.lstrip('0') or '0'}%"))
+
         query = query.outerjoin(Department, Employee.department_id == Department.id)\
                      .outerjoin(Designation, Employee.designation_id == Designation.id)\
                      .filter(
                          (Employee.name.ilike(search_term)) |
                          (Employee.email.ilike(search_term)) |
                          (Department.name.ilike(search_term)) |
-                         (Designation.title.ilike(search_term))
+                         (Designation.title.ilike(search_term)) |
+                         or_(*id_conditions)
                      )
 
     # Role filter

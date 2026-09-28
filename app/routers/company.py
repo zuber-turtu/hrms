@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.database import get_db
 from app.models.employee import Employee
 from app.models.company import Company
 from app.dependencies import require_auth, RoleChecker
+from app.templates_config import templates
 
 router = APIRouter(prefix="/company")
-templates = Jinja2Templates(directory="app/templates")
 
 allow_hr_admin = RoleChecker(["admin", "hr_admin"])
 
@@ -36,14 +36,21 @@ async def company_profile(
 async def update_company_profile(
     request: Request,
     name: str = Form("Acme Corp"),
+    tagline: Optional[str] = Form(None),
     address: str = Form(""),
+    support_email: Optional[str] = Form(None),
+    website: Optional[str] = Form(None),
+    logo_url: Optional[str] = Form(None),
     currency_symbol: str = Form("$"),
+    currency_code: str = Form("USD"),
     working_days_per_month: int = Form(22),
-    cin: str = Form(None),
-    gstin: str = Form(None),
-    pan: str = Form(None),
-    office_latitude: str = Form(None),
-    office_longitude: str = Form(None),
+    standard_hours_per_day: float = Form(8.0),
+    half_day_threshold_hours: float = Form(4.0),
+    cin: Optional[str] = Form(None),
+    gstin: Optional[str] = Form(None),
+    pan: Optional[str] = Form(None),
+    office_latitude: Optional[str] = Form(None),
+    office_longitude: Optional[str] = Form(None),
     geofence_radius_meters: int = Form(200),
     geofence_enabled: bool = Form(False),
     geofence_strict_mode: bool = Form(False),
@@ -56,9 +63,17 @@ async def update_company_profile(
         db.add(company)
 
     company.name = name.strip() if name else "Acme Corp"
+    company.tagline = tagline.strip() if tagline and tagline.strip() else None
     company.address = address.strip() if address else ""
+    company.support_email = support_email.strip() if support_email and support_email.strip() else None
+    company.website = website.strip() if website and website.strip() else None
+    if logo_url is not None:
+        company.logo_url = logo_url.strip() if logo_url.strip() else None
     company.currency_symbol = currency_symbol.strip() if currency_symbol else "$"
+    company.currency_code = currency_code.strip().upper() if currency_code else "USD"
     company.working_days_per_month = working_days_per_month
+    company.standard_hours_per_day = standard_hours_per_day
+    company.half_day_threshold_hours = half_day_threshold_hours
     company.cin = cin.strip().upper() if cin and cin.strip() else None
     company.gstin = gstin.strip().upper() if gstin and gstin.strip() else None
     company.pan = pan.strip().upper() if pan and pan.strip() else None

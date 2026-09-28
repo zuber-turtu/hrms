@@ -15,16 +15,12 @@
     <!-- Employee Name (Clickable to Employee Details) -->
     <td class="px-5 py-3.5 whitespace-nowrap">
         <a href="/employees/{{ log.employee.id }}/view#attendance" class="inline-flex items-center space-x-2.5 group cursor-pointer" title="View {{ log.employee.name }}'s details">
-            {% if log.employee.avatar_url or (log.employee.profile and log.employee.profile.avatar_url) %}
-            <img src="{{ log.employee.avatar_url or log.employee.profile.avatar_url }}" alt="{{ log.employee.name }}" class="w-7 h-7 rounded-lg object-cover ring-1 ring-slate-200 shadow-2xs shrink-0 group-hover:scale-105 transition-all" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
-            <div class="w-7 h-7 rounded-lg bg-teal-700 text-white hidden flex items-center justify-center font-bold text-xs shrink-0">
-                {{ log.employee.name[0] if log.employee.name else 'E' }}
+            <div class="w-7 h-7 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs shrink-0 relative overflow-hidden font-heading ring-1 ring-slate-200/50 shadow-2xs group-hover:scale-105 transition-all">
+                <span>{{ log.employee.name[0]|upper if log.employee.name else 'E' }}</span>
+                {% if log.employee.avatar_url or (log.employee.profile and log.employee.profile.avatar_url) %}
+                <img src="{{ log.employee.avatar_url or log.employee.profile.avatar_url }}" alt="{{ log.employee.name }}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
+                {% endif %}
             </div>
-            {% else %}
-            <div class="w-7 h-7 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                {{ log.employee.name[0] if log.employee.name else 'E' }}
-            </div>
-            {% endif %}
             <span class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors">{{ log.employee.name }}</span>
         </a>
     </td>

@@ -131,6 +131,10 @@ class Employee(Base):
         return self.salary_structure.pf_deduction if self.salary_structure else 0.0
 
     @property
+    def tax_deduction(self):
+        return self.salary_structure.tax_deduction if self.salary_structure else 0.0
+
+    @property
     def is_geofence_exempt(self):
         return self.profile.is_geofence_exempt if self.profile else False
 
