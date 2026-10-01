@@ -216,11 +216,11 @@ def run_tests():
     print(f"[OK] Fetched Company Profile: {comp_res.json()['name']} ({comp_res.json()['currency_symbol']})")
 
     update_comp_res = client.put("/api/v1/company/profile", headers=admin_headers, json={
-        "name": "TURTU Enterprise Systems",
+        "name": "company Enterprise Systems",
         "currency_symbol": "₹"
     })
     assert update_comp_res.status_code == 200
-    assert update_comp_res.json()["name"] == "TURTU Enterprise Systems"
+    assert update_comp_res.json()["name"] == "company Enterprise Systems"
     assert update_comp_res.json()["currency_symbol"] == "₹"
     print("[OK] Updated Company Profile successfully")
 

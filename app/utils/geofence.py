@@ -1,4 +1,5 @@
 import math
+import datetime
 from typing import Optional, Tuple
 from sqlalchemy.orm import Session
 from app.models.company import Company
@@ -52,14 +53,35 @@ def get_or_create_company(db: Session) -> Company:
     return company
 
 
+def get_active_wfh_request(db: Session, employee_id: int, target_date: Optional[datetime.date] = None):
+    """
+    Checks if the employee has an approved Work From Home (WFH) allocation on the target date.
+    """
+    from app.models.leave import WfhRequest
+    from app.utils.timezone import get_ist_today
+    
+    check_date = target_date or get_ist_today()
+    return (
+        db.query(WfhRequest)
+        .filter(
+            WfhRequest.employee_id == employee_id,
+            WfhRequest.status == "approved",
+            WfhRequest.start_date <= check_date,
+            WfhRequest.end_date >= check_date,
+        )
+        .first()
+    )
+
+
 def validate_punch_geofence(
     db: Session,
     employee: Employee,
     lat: Optional[float],
     lon: Optional[float],
+    punch_date: Optional[datetime.date] = None,
 ) -> Tuple[bool, Optional[str], Optional[float], bool, Company]:
     """
-    Validates whether an employee punch is allowed based on company geofencing rules.
+    Validates whether an employee punch is allowed based on company geofencing rules and WFH approvals.
     
     Returns:
         (is_allowed, message, distance_meters, is_exempt, company)
@@ -70,13 +92,18 @@ def validate_punch_geofence(
     if not company.geofence_enabled or not settings.GEOFENCE_ENABLED:
         return True, None, None, False, company
 
-    # 2. Check employee exemption (e.g. Remote / Field / WFH approved staff)
-    is_exempt = bool(employee.profile and employee.profile.is_geofence_exempt)
+    # 2. Check if employee has an approved Work From Home (WFH) allocation for today
+    wfh_req = get_active_wfh_request(db, employee.id, punch_date)
+    is_wfh_approved = wfh_req is not None
+
+    # 3. Check employee profile exemption (e.g. Remote / Field staff) or active WFH
+    is_profile_exempt = bool(employee.profile and employee.profile.is_geofence_exempt)
+    is_exempt = is_profile_exempt or is_wfh_approved
     
     office_lat = company.office_latitude if company.office_latitude is not None else settings.GEOFENCE_DEFAULT_LAT
     office_lon = company.office_longitude if company.office_longitude is not None else settings.GEOFENCE_DEFAULT_LON
 
-    # If employee is exempt, calculate distance if coords provided, and always allow
+    # If employee is exempt or on approved WFH, compute distance if coords provided and allow punch
     if is_exempt:
         dist = None
         if lat is not None and lon is not None and office_lat is not None and office_lon is not None:
@@ -84,19 +111,20 @@ def validate_punch_geofence(
                 dist = calculate_distance_meters(office_lat, office_lon, lat, lon)
             except Exception:
                 dist = None
-        return True, None, dist, True, company
+        msg = "🏠 Work From Home (Approved)" if is_wfh_approved else None
+        return True, msg, dist, True, company
 
-    # 3. If office coordinates are not configured in system, allow with warning
+    # 4. If office coordinates are not configured in system, allow with warning
     if office_lat is None or office_lon is None:
         return True, None, None, False, company
 
-    # 4. Check if punch coordinates are provided
+    # 5. Check if punch coordinates are provided
     if lat is None or lon is None:
         if company.geofence_strict_mode:
             return False, "GPS location is required to verify office presence. Please enable device location.", None, False, company
         return True, "No GPS location provided", None, False, company
 
-    # 5. Compute distance via Haversine
+    # 6. Compute distance via Haversine
     try:
         dist_m = calculate_distance_meters(office_lat, office_lon, lat, lon)
     except Exception as e:
@@ -106,7 +134,7 @@ def validate_punch_geofence(
 
     allowed_radius = company.geofence_radius_meters or settings.GEOFENCE_DEFAULT_RADIUS_METERS
 
-    # 6. Check perimeter range
+    # 7. Check perimeter range
     if dist_m <= allowed_radius:
         return True, None, dist_m, False, company
 

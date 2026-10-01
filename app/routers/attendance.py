@@ -12,7 +12,7 @@ from app.models.attendance import Attendance
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.config import settings
-from app.utils.geofence import validate_punch_geofence
+from app.utils.geofence import validate_punch_geofence, get_active_wfh_request
 
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
@@ -113,6 +113,7 @@ async def attendance_log(
         latest_dist = group_logs[0].check_in_distance_m if group_logs[0].check_in_distance_m is not None else group_logs[-1].check_out_distance_m
         latest_in_range = group_logs[0].check_in_in_range if group_logs[0].check_in_in_range is not None else group_logs[-1].check_out_in_range
         is_exempt = bool(employee and employee.profile and employee.profile.is_geofence_exempt)
+        work_mode = group_logs[0].work_mode or ("wfh" if group_logs[0].wfh_request_id else "office")
 
         item = {
             "id": group_logs[0].id,  # primary ID for override actions
@@ -128,6 +129,7 @@ async def attendance_log(
             "distance_m": latest_dist,
             "in_range": latest_in_range,
             "is_exempt": is_exempt,
+            "work_mode": work_mode,
         }
 
         # Apply search filter (date or employee name)
@@ -214,6 +216,10 @@ async def check_in(
         if dist_m is not None:
             in_range = (dist_m <= allowed_radius)
 
+        active_wfh = get_active_wfh_request(db, current_user.id, today)
+        mode = "wfh" if active_wfh else ("office" if not is_exempt else "remote")
+        wfh_id = active_wfh.id if active_wfh else None
+
         log = Attendance(
             employee_id=current_user.id,
             date=today,
@@ -222,6 +228,8 @@ async def check_in(
             check_in_lon=lon,
             check_in_distance_m=dist_m,
             check_in_in_range=in_range,
+            work_mode=mode,
+            wfh_request_id=wfh_id,
         )
         db.add(log)
         db.commit()

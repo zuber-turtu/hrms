@@ -40,6 +40,36 @@ def generate_draft_payslip(db: Session, employee_id: int, month: int, year: int)
 
     # Count distinct days attended
     distinct_dates = set([a.date for a in attendances if a.date])
+
+    # Factor in approved paid leaves for this month
+    from app.models.leave import LeaveApplication, LeaveType
+    import calendar
+    num_days = calendar.monthrange(year, month)[1]
+    start_of_month = datetime.date(year, month, 1)
+    end_of_month = datetime.date(year, month, num_days)
+
+    approved_paid_leaves = (
+        db.query(LeaveApplication)
+        .join(LeaveType, LeaveApplication.leave_type_id == LeaveType.id)
+        .filter(
+            LeaveApplication.employee_id == employee_id,
+            LeaveApplication.status == "approved",
+            LeaveType.is_paid == True,
+            LeaveApplication.start_date <= end_of_month,
+            LeaveApplication.end_date >= start_of_month,
+        )
+        .all()
+    )
+
+    for app in approved_paid_leaves:
+        overlap_start = max(app.start_date, start_of_month)
+        overlap_end = min(app.end_date, end_of_month)
+        if overlap_start <= overlap_end:
+            cur = overlap_start
+            while cur <= overlap_end:
+                distinct_dates.add(cur)
+                cur += datetime.timedelta(days=1)
+
     days_worked = float(len(distinct_dates))
 
     # Cap days worked at payable days

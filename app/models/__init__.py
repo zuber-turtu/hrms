@@ -12,3 +12,4 @@ from app.models.attendance import Attendance
 from app.models.payroll import Payslip
 from app.models.audit import AuditLog
 from app.models.document import DocumentType, EmployeeDocument
+from app.models.leave import LeaveType, LeaveBalance, LeaveApplication, WfhRequest

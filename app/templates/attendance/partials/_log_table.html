@@ -57,8 +57,12 @@
             </span>
             {% endif %}
 
-            <!-- Geofence Perimeter Location Badge -->
-            {% if log.is_exempt %}
+            <!-- Geofence Perimeter & Work Mode Location Badge -->
+            {% if log.work_mode == 'wfh' %}
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-200/80" title="Approved Work From Home (WFH)">
+                <i data-lucide="home" class="w-2.5 h-2.5 mr-1 text-teal-600"></i> 🏠 WFH (Approved)
+            </span>
+            {% elif log.is_exempt %}
             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200/80" title="Exempt remote/field staff">
                 <i data-lucide="map-pin-off" class="w-2.5 h-2.5 mr-1 text-purple-600"></i> Remote Exempt
             </span>

@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-[#F4F7F7]">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — {{ (company or get_company()).name }}</title>
-    
+
     <!-- Brand Fonts: Poppins (Headings/Brand), Nunito (Body/UI), JetBrains Mono (Codes) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -23,7 +26,7 @@
                         mono: ['"JetBrains Mono"', 'monospace'],
                     },
                     colors: {
-                        turtu: {
+                        company: {
                             teal: '#008080',     // Teal ★ (Primary CTA / Brand)
                             deep: '#006666',     // Teal Deep (Hover / Active State)
                             dark: '#004444',     // Teal Dark (Dark accents)
@@ -47,7 +50,8 @@
 
     <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="{{ (company or get_company()).logo_url or '/static/images/icon.jpeg' }}">
-    <link rel="shortcut icon" type="image/jpeg" href="{{ (company or get_company()).logo_url or '/static/images/icon.jpeg' }}">
+    <link rel="shortcut icon" type="image/jpeg"
+        href="{{ (company or get_company()).logo_url or '/static/images/icon.jpeg' }}">
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -61,23 +65,27 @@
         }
     </style>
 </head>
-<body class="h-full flex flex-col justify-center py-10 sm:py-16 sm:px-6 lg:px-8 bg-[#F4F7F7] text-[#1C2B2B] font-sans antialiased selection:bg-[#008080] selection:text-white">
+
+<body
+    class="h-full flex flex-col justify-center py-10 sm:py-16 sm:px-6 lg:px-8 bg-[#F4F7F7] text-[#1C2B2B] font-sans antialiased selection:bg-[#008080] selection:text-white">
 
     <!-- Central Wrapper -->
     <div class="sm:mx-auto sm:w-full sm:max-w-[420px] px-4 sm:px-0">
-        
+
         <!-- Brand Header Section -->
         <div class="text-center mb-6">
             <!-- Logo Container with Teal Border (#B3E3E3) -->
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-[#B3E3E3] shadow-xs mb-3.5 p-2">
-                <img src="{{ (company or get_company()).logo_url or '/static/images/icon.jpeg' }}" alt="Logo" class="w-full h-full object-contain rounded-xl" onerror="this.src='/static/images/icon.jpeg'">
+            <div
+                class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-[#B3E3E3] shadow-xs mb-3.5 p-2">
+                <img src="{{ (company or get_company()).logo_url or '/static/images/icon.jpeg' }}" alt="Logo"
+                    class="w-full h-full object-contain rounded-xl" onerror="this.src='/static/images/icon.jpeg'">
             </div>
-            
+
             <!-- Headline -->
             <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[#1C2B2B] font-heading">
                 {{ (company or get_company()).name }}
             </h1>
-            
+
             <!-- Subtitle -->
             <p class="text-xs sm:text-sm text-[#6B7F7F] mt-1 font-medium">
                 {{ (company or get_company()).tagline or 'Enterprise Workforce & Payroll Portal' }}
@@ -86,7 +94,7 @@
 
         <!-- Main Login Card: Pure White with Teal Light Border (#B3E3E3) -->
         <div class="bg-white py-7 px-6 sm:px-8 rounded-2xl border border-[#B3E3E3] shadow-sm">
-            
+
             <div class="mb-5 pb-3.5 border-b border-[#F4F7F7]">
                 <h2 class="text-lg font-bold text-[#1C2B2B] font-heading">
                     Sign In
@@ -99,7 +107,8 @@
             <!-- Error Flash Notification: Alert Red (#E53E3E) -->
             {% set err_msg = error or request.query_params.get('error') %}
             {% if err_msg %}
-            <div class="mb-4 bg-rose-50 border border-[#E53E3E]/40 rounded-xl p-3.5 flex items-start space-x-2.5 text-xs text-[#E53E3E] font-semibold">
+            <div
+                class="mb-4 bg-rose-50 border border-[#E53E3E]/40 rounded-xl p-3.5 flex items-start space-x-2.5 text-xs text-[#E53E3E] font-semibold">
                 <i data-lucide="alert-circle" class="w-4 h-4 text-[#E53E3E] shrink-0 mt-0.5"></i>
                 <span class="flex-1 leading-relaxed">{{ err_msg }}</span>
             </div>
@@ -108,7 +117,8 @@
             <!-- Success Flash Notification: Foam Green (#E8F7F7) + Dark Teal (#005050) -->
             {% set succ_msg = success or request.query_params.get('success') %}
             {% if succ_msg %}
-            <div class="mb-4 bg-[#E8F7F7] border border-[#B3E3E3] rounded-xl p-3.5 flex items-start space-x-2.5 text-xs text-[#005050] font-semibold">
+            <div
+                class="mb-4 bg-[#E8F7F7] border border-[#B3E3E3] rounded-xl p-3.5 flex items-start space-x-2.5 text-xs text-[#005050] font-semibold">
                 <i data-lucide="check-circle-2" class="w-4 h-4 text-[#008080] shrink-0 mt-0.5"></i>
                 <span class="flex-1 leading-relaxed">{{ succ_msg }}</span>
             </div>
@@ -116,23 +126,20 @@
 
             <!-- Login Form -->
             <form id="loginForm" action="/login" method="POST" class="space-y-4" onsubmit="handleLoginSubmit(event)">
-                
+
                 <!-- Work Email Field -->
                 <div>
-                    <label for="email" class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] mb-1.5 font-sans">
+                    <label for="email"
+                        class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] mb-1.5 font-sans">
                         Work Email
                     </label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
                             <i data-lucide="mail" class="w-4 h-4"></i>
                         </div>
-                        <input 
-                            type="email" 
-                            name="email" 
-                            id="email" 
-                            required 
-                            autocomplete="email" 
-                            placeholder="name@company.com" 
+                        <input type="email" name="email" id="email" required autocomplete="email"
+                            placeholder="name@company.com"
                             class="w-full text-xs sm:text-sm bg-white border border-[#B3E3E3] hover:border-[#80C7C7] rounded-xl pl-10 pr-3.5 py-2.5 text-[#1C2B2B] placeholder:text-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-3 focus:ring-[#E0F4F4] transition-all font-sans">
                     </div>
                 </div>
@@ -140,29 +147,24 @@
                 <!-- Password Field -->
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <label for="password" class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] font-sans">
+                        <label for="password"
+                            class="block text-xs font-bold uppercase tracking-wider text-[#1C2B2B] font-sans">
                             Password
                         </label>
-                        <a href="/forgot-password" class="text-xs font-semibold text-[#008080] hover:text-[#006666] hover:underline transition-colors">
+                        <a href="/forgot-password"
+                            class="text-xs font-semibold text-[#008080] hover:text-[#006666] hover:underline transition-colors">
                             Forgot password?
                         </a>
                     </div>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B7F7F]">
                             <i data-lucide="lock" class="w-4 h-4"></i>
                         </div>
-                        <input 
-                            type="password" 
-                            name="password" 
-                            id="password" 
-                            required 
-                            autocomplete="current-password" 
-                            placeholder="Enter your password" 
+                        <input type="password" name="password" id="password" required autocomplete="current-password"
+                            placeholder="Enter your password"
                             class="w-full text-xs sm:text-sm bg-white border border-[#B3E3E3] hover:border-[#80C7C7] rounded-xl pl-10 pr-10 py-2.5 text-[#1C2B2B] placeholder:text-[#6B7F7F] focus:bg-white focus:outline-none focus:border-[#008080] focus:ring-3 focus:ring-[#E0F4F4] transition-all font-sans">
-                        <button 
-                            type="button" 
-                            onclick="togglePasswordVisibility()" 
-                            tabindex="-1"
+                        <button type="button" onclick="togglePasswordVisibility()" tabindex="-1"
                             aria-label="Toggle password visibility"
                             class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#6B7F7F] hover:text-[#1C2B2B] focus:outline-none transition-colors">
                             <i data-lucide="eye" id="password-toggle-icon" class="w-4 h-4"></i>
@@ -170,20 +172,22 @@
                     </div>
                 </div>
 
-                <!-- Submit Button: TURTU Teal (#008080) -> Hover Teal Deep (#006666) -->
+                <!-- Submit Button: company Teal (#008080) -> Hover Teal Deep (#006666) -->
                 <div class="pt-2">
-                    <button 
-                        type="submit" 
-                        id="submitBtn"
+                    <button type="submit" id="submitBtn"
                         class="w-full h-11 flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-bold tracking-wide text-white bg-[#008080] hover:bg-[#006666] active:bg-[#004444] shadow-sm shadow-[#008080]/20 hover:shadow transition-all focus:outline-none focus:ring-3 focus:ring-[#E0F4F4] cursor-pointer">
                         <span id="submitText" class="flex items-center space-x-2">
                             <i data-lucide="log-in" id="submitIcon" class="w-4 h-4 mr-1"></i>
                             <span>Sign In</span>
                         </span>
                         <span id="submitSpinner" class="hidden flex items-center space-x-2">
-                            <svg class="animate-spin w-4 h-4 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg class="animate-spin w-4 h-4 text-white mr-2" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
                             <span>Signing in...</span>
                         </span>
@@ -192,7 +196,8 @@
             </form>
 
             <!-- Card Bottom Note: Teal Mist (#E0F4F4) with Deep Forest (#1C2B2B) -->
-            <div class="mt-6 pt-4 border-t border-[#F4F7F7] flex items-center justify-center space-x-2 text-xs text-[#6B7F7F]">
+            <div
+                class="mt-6 pt-4 border-t border-[#F4F7F7] flex items-center justify-center space-x-2 text-xs text-[#6B7F7F]">
                 <div class="w-2 h-2 rounded-full bg-[#008080]"></div>
                 <span>Secured with role-based access control</span>
             </div>
@@ -208,7 +213,7 @@
 
     <!-- Scripts -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             lucide.createIcons();
         });
 
@@ -241,4 +246,5 @@
         }
     </script>
 </body>
+
 </html>

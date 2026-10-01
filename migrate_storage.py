@@ -1,5 +1,5 @@
 """
-TURTU HRMS: Storage Provider Migration Utility
+company HRMS: Storage Provider Migration Utility
 Allows zero-downtime migration of all avatars and documents between any storage providers:
 Local Disk <-> Google Drive <-> Supabase Storage <-> Cloudflare R2 <-> AWS S3.
 
@@ -25,7 +25,7 @@ from app.services.storage import get_storage_provider
 
 def migrate_storage(source_name: str, target_name: str):
     print("=" * 65)
-    print(f"📦 TURTU HRMS STORAGE MIGRATION: [{source_name.upper()}] ➔ [{target_name.upper()}]")
+    print(f"📦 company HRMS STORAGE MIGRATION: [{source_name.upper()}] ➔ [{target_name.upper()}]")
     print("=" * 65)
 
     source_provider = get_storage_provider(source_name)

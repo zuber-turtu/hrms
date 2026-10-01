@@ -10,7 +10,7 @@ from app.models.attendance import Attendance
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.utils.timezone import get_ist_today, get_ist_now
-from app.utils.geofence import validate_punch_geofence
+from app.utils.geofence import validate_punch_geofence, get_active_wfh_request
 from app.config import settings
 from app.schemas.attendance import (
     AttendanceStatusOut,
@@ -110,6 +110,10 @@ async def api_check_in(
         if dist_m is not None:
             in_range = (dist_m <= allowed_radius)
 
+        active_wfh = get_active_wfh_request(db, current_user.id, today)
+        mode = "wfh" if active_wfh else ("office" if not is_exempt else "remote")
+        wfh_id = active_wfh.id if active_wfh else None
+
         log = Attendance(
             employee_id=current_user.id,
             date=today,
@@ -118,6 +122,8 @@ async def api_check_in(
             check_in_lon=lon,
             check_in_distance_m=dist_m,
             check_in_in_range=in_range,
+            work_mode=mode,
+            wfh_request_id=wfh_id,
         )
         db.add(log)
         db.commit()

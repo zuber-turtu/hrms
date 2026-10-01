@@ -26,4 +26,9 @@ class Attendance(Base):
     check_out_distance_m = Column(Float, nullable=True)
     check_out_in_range = Column(Boolean, nullable=True)
 
+    # Work Mode & WFH Linkage
+    work_mode = Column(String(50), default="office")  # 'office', 'wfh', 'remote'
+    wfh_request_id = Column(Integer, ForeignKey("wfh_requests.id"), nullable=True)
+
     employee = relationship("Employee", back_populates="attendances")
+    wfh_request = relationship("WfhRequest", foreign_keys=[wfh_request_id])

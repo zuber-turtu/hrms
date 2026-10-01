@@ -493,3 +493,189 @@ def send_welcome_credentials_email(
 </html>"""
 
     return send_smtp_email(to_email, subject, text_content, html_content, company=company)
+
+
+def send_leave_status_email(
+    to_email: str,
+    recipient_name: str,
+    leave_type_name: str,
+    start_date: str,
+    end_date: str,
+    total_days: float,
+    status: str,  # 'approved', 'rejected', 'applied'
+    reason: str,
+    reviewer_remarks: Optional[str] = None,
+    portal_url: Optional[str] = None,
+    company=None,
+) -> bool:
+    """Sends email notification when a leave is applied, approved, or rejected."""
+    if not company:
+        company = get_global_company()
+    company_name = company.name if company and company.name else settings.COMPANY_NAME
+    portal_url = portal_url or f"{settings.APP_BASE_URL.rstrip('/')}/leaves"
+
+    status_upper = status.upper()
+    status_color = "#0f766e" if status == "approved" else ("#dc2626" if status == "rejected" else "#3b82f6")
+    status_bg = "#ccfbf1" if status == "approved" else ("#fee2e2" if status == "rejected" else "#dbeafe")
+
+    subject = f"Leave Request {status_upper} — {leave_type_name} ({company_name})"
+    date_str = start_date if start_date == end_date else f"{start_date} to {end_date}"
+
+    text_content = (
+        f"Hello {recipient_name},\n\n"
+        f"Your leave application for {leave_type_name} ({date_str}, {total_days} day(s)) has been {status_upper}.\n\n"
+        f"Reason: {reason}\n"
+    )
+    if reviewer_remarks:
+        text_content += f"Reviewer Remarks: {reviewer_remarks}\n"
+    text_content += f"\nView Leave Portal: {portal_url}\n"
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Application Update</title>
+    <style>{_get_base_styles()}</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{company_name}</h1>
+            <p>Leave & Time-Off Management</p>
+        </div>
+        <div class="content">
+            <div class="greeting">Hello {recipient_name},</div>
+            <div class="message">
+                Your leave application has been updated with status: <strong style="color: {status_color}; background: {status_bg}; padding: 3px 8px; border-radius: 4px;">{status_upper}</strong>
+            </div>
+            
+            <div class="credentials-box">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 6px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Leave Category:</td>
+                        <td style="padding: 6px 0; text-align: right; font-weight: 700; color: #115e59; font-size: 13px;">{leave_type_name}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Duration:</td>
+                        <td style="padding: 6px 0; text-align: right; font-weight: 700; color: #115e59; font-size: 13px;">{date_str} ({total_days} day(s))</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Reason:</td>
+                        <td style="padding: 6px 0; text-align: right; color: #374151; font-size: 13px;">{reason}</td>
+                    </tr>
+                    {f'''<tr>
+                        <td style="padding: 6px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Remarks:</td>
+                        <td style="padding: 6px 0; text-align: right; color: #dc2626; font-weight: 600; font-size: 13px;">{reviewer_remarks}</td>
+                    </tr>''' if reviewer_remarks else ''}
+                </table>
+            </div>
+
+            <div class="button-wrapper">
+                <a href="{portal_url}" class="btn" target="_blank">View Leave Portal</a>
+            </div>
+        </div>
+        <div class="footer">
+            Automated time-off management notification from {company_name}.<br>
+            <div class="footer-note">
+                © {company_name} • Personnel & Operations
+            </div>
+        </div>
+    </div>
+</body>
+</html>"""
+
+    return send_smtp_email(to_email, subject, text_content, html_content, company=company)
+
+
+def send_wfh_status_email(
+    to_email: str,
+    recipient_name: str,
+    start_date: str,
+    end_date: str,
+    total_days: float,
+    status: str,  # 'approved', 'rejected', 'allocated'
+    reason: str,
+    reviewer_remarks: Optional[str] = None,
+    portal_url: Optional[str] = None,
+    company=None,
+) -> bool:
+    """Sends email notification when a WFH request is applied, approved, or allocated."""
+    if not company:
+        company = get_global_company()
+    company_name = company.name if company and company.name else settings.COMPANY_NAME
+    portal_url = portal_url or f"{settings.APP_BASE_URL.rstrip('/')}/attendance"
+
+    status_upper = status.upper()
+    status_color = "#0f766e" if status in ("approved", "allocated") else "#dc2626"
+    status_bg = "#ccfbf1" if status in ("approved", "allocated") else "#fee2e2"
+
+    subject = f"Work From Home (WFH) Request {status_upper} — {company_name}"
+    date_str = start_date if start_date == end_date else f"{start_date} to {end_date}"
+
+    text_content = (
+        f"Hello {recipient_name},\n\n"
+        f"Your Work From Home (WFH) allocation for {date_str} ({total_days} day(s)) has been {status_upper}.\n\n"
+        f"Reason: {reason}\n"
+    )
+    if reviewer_remarks:
+        text_content += f"Reviewer Remarks: {reviewer_remarks}\n"
+    text_content += f"\nOn approved WFH days, you can check-in and check-out remotely without office geofencing.\nPortal: {portal_url}\n"
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WFH Allocation Update</title>
+    <style>{_get_base_styles()}</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{company_name}</h1>
+            <p>Work From Home (WFH) Management</p>
+        </div>
+        <div class="content">
+            <div class="greeting">Hello {recipient_name},</div>
+            <div class="message">
+                Your Work From Home (WFH) request for <strong>{date_str}</strong> has been: <strong style="color: {status_color}; background: {status_bg}; padding: 3px 8px; border-radius: 4px;">{status_upper}</strong>
+            </div>
+            
+            <div class="credentials-box">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 6px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Dates:</td>
+                        <td style="padding: 6px 0; text-align: right; font-weight: 700; color: #115e59; font-size: 13px;">{date_str} ({total_days} day(s))</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Reason:</td>
+                        <td style="padding: 6px 0; text-align: right; color: #374151; font-size: 13px;">{reason}</td>
+                    </tr>
+                    {f'''<tr>
+                        <td style="padding: 6px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Remarks:</td>
+                        <td style="padding: 6px 0; text-align: right; color: #dc2626; font-weight: 600; font-size: 13px;">{reviewer_remarks}</td>
+                    </tr>''' if reviewer_remarks else ''}
+                </table>
+            </div>
+
+            <div style="background-color: #f0fdfa; border: 1px solid #99f6e4; border-radius: 10px; padding: 12px 16px; margin: 16px 0; font-size: 12px; color: #0f766e;">
+                🏠 <strong>Remote Punch Enabled:</strong> On your approved WFH dates, office geofence checks are automatically bypassed when punching in/out.
+            </div>
+
+            <div class="button-wrapper">
+                <a href="{portal_url}" class="btn" target="_blank">View Attendance Portal</a>
+            </div>
+        </div>
+        <div class="footer">
+            Automated workforce notification from {company_name}.<br>
+            <div class="footer-note">
+                © {company_name} • Operations & Workforce
+            </div>
+        </div>
+    </div>
+</body>
+</html>"""
+
+    return send_smtp_email(to_email, subject, text_content, html_content, company=company)
+

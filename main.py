@@ -20,11 +20,15 @@ from app.models import (
     AuditLog,
     DocumentType,
     EmployeeDocument,
+    LeaveType,
+    LeaveBalance,
+    LeaveApplication,
+    WfhRequest,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from app.dependencies import get_password_hash, extract_token_from_request
 from app.config import settings
-from app.routers import auth, dashboard, company, employees, attendance, payroll, audit, departments, documents
+from app.routers import auth, dashboard, company, employees, attendance, payroll, audit, departments, documents, leaves
 from app.routers.api.v1 import api_v1_router
 
 
@@ -48,6 +52,8 @@ def ensure_schema_columns(db_engine):
                 "check_out_lon": "FLOAT",
                 "check_out_distance_m": "FLOAT",
                 "check_out_in_range": "BOOLEAN DEFAULT FALSE",
+                "work_mode": "VARCHAR(50) DEFAULT 'office'",
+                "wfh_request_id": "INTEGER",
             },
             "company": {
                 "tagline": "VARCHAR(255)",
@@ -279,13 +285,84 @@ async def lifespan(app: FastAPI):
             db.add_all(defaults)
             db.commit()
             print("Seeded 6 default dynamic Document Types.")
+
+        # Seed standard dynamic Leave Types if empty
+        if db.query(LeaveType).count() == 0:
+            leave_defaults = [
+                LeaveType(
+                    name="Casual Leave",
+                    code="CL",
+                    description="Standard paid casual leave for personal or unforeseen commitments.",
+                    default_days_per_year=12.0,
+                    is_paid=True,
+                    color_code="#008080",
+                    is_active=True,
+                ),
+                LeaveType(
+                    name="Sick / Medical Leave",
+                    code="SL",
+                    description="Paid medical leave for illness, medical appointments, or recovery.",
+                    default_days_per_year=12.0,
+                    is_paid=True,
+                    color_code="#E53E3E",
+                    is_active=True,
+                ),
+                LeaveType(
+                    name="Earned / Privilege Leave",
+                    code="EL",
+                    description="Annual accrued paid leave for planned vacations and personal time off.",
+                    default_days_per_year=15.0,
+                    is_paid=True,
+                    color_code="#3B82F6",
+                    is_active=True,
+                ),
+                LeaveType(
+                    name="Compensatory Off",
+                    code="COMP_OFF",
+                    description="Compensatory leave credited for working on non-working days or holidays.",
+                    default_days_per_year=0.0,
+                    is_paid=True,
+                    color_code="#8B5CF6",
+                    is_active=True,
+                ),
+                LeaveType(
+                    name="Maternity Leave",
+                    code="ML",
+                    description="Statutory paid maternity leave for eligible female employees (up to 26 weeks).",
+                    default_days_per_year=182.0,
+                    is_paid=True,
+                    color_code="#EC4899",
+                    is_active=True,
+                ),
+                LeaveType(
+                    name="Paternity Leave",
+                    code="PL_PAT",
+                    description="Paid paternity leave for new fathers upon birth or adoption.",
+                    default_days_per_year=15.0,
+                    is_paid=True,
+                    color_code="#10B981",
+                    is_active=True,
+                ),
+                LeaveType(
+                    name="Leave Without Pay (LWP)",
+                    code="LWP",
+                    description="Unpaid time off taken when all paid quotas are exhausted or for extended leave.",
+                    default_days_per_year=0.0,
+                    is_paid=False,
+                    color_code="#6B7280",
+                    is_active=True,
+                ),
+            ]
+            db.add_all(leave_defaults)
+            db.commit()
+            print("Seeded 7 default Leave Types (CL, SL, EL, COMP_OFF, ML, PL_PAT, LWP).")
     finally:
         db.close()
     yield  # app runs
 
 
 app = FastAPI(
-    title="TURTU HRMS API & Portal",
+    title="company HRMS API & Portal",
     description="Full-featured enterprise HRMS backend with REST API v1 and interactive web portal.",
     version="1.0.0",
     lifespan=lifespan,
@@ -510,6 +587,7 @@ app.include_router(company.router)
 app.include_router(audit.router)
 app.include_router(departments.router)
 app.include_router(documents.router)
+app.include_router(leaves.router)
 
 # Include REST API v1 Routers (JSON / Mobile / SPA)
 app.include_router(api_v1_router)
