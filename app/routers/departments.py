@@ -299,3 +299,65 @@ async def get_designations_options(
         name="departments/partials/_designation_options.html",
         context={"designations": designations, "selected_id": selected_id}
     )
+
+
+# ================= EMPLOYEE ROSTER ENDPOINTS =================
+
+@router.get("/designations/{desig_id}/employees", response_class=HTMLResponse)
+async def get_designation_employees(
+    request: Request,
+    desig_id: int,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    designation = db.query(Designation).filter(Designation.id == desig_id).first()
+    if not designation:
+        raise HTTPException(status_code=404, detail="Designation not found")
+
+    employees = (
+        db.query(Employee)
+        .filter(Employee.designation_id == desig_id)
+        .order_by(Employee.name.asc())
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="departments/partials/_employees_modal.html",
+        context={
+            "user": current_user,
+            "target_type": "designation",
+            "target_object": designation,
+            "employees": employees,
+        },
+    )
+
+
+@router.get("/{dept_id}/employees", response_class=HTMLResponse)
+async def get_department_employees(
+    request: Request,
+    dept_id: int,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    department = db.query(Department).filter(Department.id == dept_id).first()
+    if not department:
+        raise HTTPException(status_code=404, detail="Department not found")
+
+    employees = (
+        db.query(Employee)
+        .filter(Employee.department_id == dept_id)
+        .order_by(Employee.name.asc())
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="departments/partials/_employees_modal.html",
+        context={
+            "user": current_user,
+            "target_type": "department",
+            "target_object": department,
+            "employees": employees,
+        },
+    )

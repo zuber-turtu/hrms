@@ -10,7 +10,7 @@ from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.services.email_service import send_leave_status_email, send_wfh_status_email
-from app.routers.leaves import ensure_employee_leave_balances, calculate_leave_days
+from app.routers.leaves import ensure_employee_leave_balances, calculate_leave_days, is_leave_type_applicable
 from app.schemas.leave import (
     LeaveTypeOut,
     LeaveBalanceOut,
@@ -31,8 +31,9 @@ async def api_get_leave_types(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    """List all active leave categories/types."""
-    return db.query(LeaveType).filter(LeaveType.is_active == True).order_by(LeaveType.id.asc()).all()
+    """List all active leave categories/types applicable for current user profile."""
+    all_types = db.query(LeaveType).filter(LeaveType.is_active == True).order_by(LeaveType.id.asc()).all()
+    return [lt for lt in all_types if is_leave_type_applicable(lt.code, current_user.gender)]
 
 
 @router.get("/balances", response_model=List[LeaveBalanceOut])
@@ -87,6 +88,15 @@ async def api_apply_leave(
     leave_type = db.query(LeaveType).filter(LeaveType.id == payload.leave_type_id, LeaveType.is_active == True).first()
     if not leave_type:
         raise HTTPException(status_code=404, detail="Invalid leave type")
+
+    # Gender-specific eligibility check
+    if not is_leave_type_applicable(leave_type.code, current_user.gender):
+        if leave_type.code == "ML":
+            raise HTTPException(status_code=400, detail="Maternity leave is applicable for female employees only")
+        elif leave_type.code == "PL_PAT":
+            raise HTTPException(status_code=400, detail="Paternity leave is applicable for male employees only")
+        else:
+            raise HTTPException(status_code=400, detail=f"{leave_type.name} is not applicable for your profile")
 
     total_days = calculate_leave_days(payload.start_date, payload.end_date, payload.is_half_day)
     year = payload.start_date.year

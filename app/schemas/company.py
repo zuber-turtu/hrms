@@ -11,6 +11,9 @@ class CompanyProfileBase(BaseModel):
     working_days_per_month: Optional[int] = None
     standard_hours_per_day: Optional[float] = None
     half_day_threshold_hours: Optional[float] = None
+    lunch_break_hours: Optional[float] = 1.0
+    lunch_start_time: Optional[str] = "13:00"
+    lunch_end_time: Optional[str] = "14:00"
     support_email: Optional[str] = None
     website: Optional[str] = None
     cin: Optional[str] = None
@@ -34,6 +37,9 @@ class CompanyProfileUpdate(BaseModel):
     working_days_per_month: Optional[int] = None
     standard_hours_per_day: Optional[float] = None
     half_day_threshold_hours: Optional[float] = None
+    lunch_break_hours: Optional[float] = None
+    lunch_start_time: Optional[str] = None
+    lunch_end_time: Optional[str] = None
     support_email: Optional[str] = None
     website: Optional[str] = None
     cin: Optional[str] = None

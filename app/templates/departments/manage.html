@@ -103,12 +103,15 @@
                 <!-- Dept Header -->
                 <div class="flex items-start justify-between pb-3 border-b border-slate-100 mb-3.5">
                     <div class="flex items-center space-x-3">
-                        <div class="w-9 h-9 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs border border-teal-200 shrink-0 font-mono">
+                        <button type="button" onclick="openDepartmentRoster({{ dept.id }})" class="w-9 h-9 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-xs border border-teal-200 shrink-0 font-mono transition-transform hover:scale-105 cursor-pointer shadow-2xs" title="Click to view all employees in {{ dept.name }}">
                             {{ dept.code or dept.name[:3]|upper }}
-                        </div>
+                        </button>
                         <div>
                             <div class="flex items-center space-x-2">
-                                <h4 class="text-sm font-heading font-bold text-slate-900">{{ dept.name }}</h4>
+                                <button type="button" onclick="openDepartmentRoster({{ dept.id }})" class="text-sm font-heading font-bold text-slate-900 hover:text-teal-700 transition-colors text-left flex items-center group cursor-pointer" title="Click to view employees in {{ dept.name }}">
+                                    <span>{{ dept.name }}</span>
+                                    <i data-lucide="external-link" class="w-3.5 h-3.5 ml-1.5 opacity-0 group-hover:opacity-100 text-teal-600 transition-opacity"></i>
+                                </button>
                                 {% if dept.code %}
                                 <span class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-slate-100 text-slate-600 border border-slate-200">
                                     {{ dept.code }}
@@ -132,12 +135,17 @@
 
                 <!-- Designations under this Department -->
                 <div class="mb-3.5">
-                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">Designation Titles:</span>
+                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">Designation Titles (Click to view staff):</span>
                     <div class="flex flex-wrap gap-1.5">
                         {% for des in dept.designations %}
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 group hover:border-teal-300 transition-colors">
-                            <span>{{ des.title }}</span>
-                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', {{ dept.id }}, '{{ des.description or '' }}')" class="ml-1.5 text-slate-400 hover:text-teal-700 transition-colors" title="Edit Designation">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 group hover:border-teal-300 hover:bg-teal-50/40 transition-colors shadow-2xs">
+                            <button type="button" onclick="openDesignationRoster({{ des.id }})" class="font-medium text-slate-800 hover:text-teal-700 transition-colors text-left inline-flex items-center group/desig cursor-pointer" title="Click to view employees holding {{ des.title }}">
+                                <span>{{ des.title }}</span>
+                                <span class="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-200/80 text-slate-700 group-hover/desig:bg-teal-100 group-hover/desig:text-teal-800 transition-colors">
+                                    {{ des.employees|length }}
+                                </span>
+                            </button>
+                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', {{ dept.id }}, '{{ des.description or '' }}')" class="ml-2 text-slate-400 hover:text-teal-700 transition-colors" title="Edit Designation">
                                 <i data-lucide="edit" class="w-3 h-3"></i>
                             </button>
                             <button type="button" onclick="confirmDeleteDesignation({{ des.id }}, '{{ des.title }}')" class="ml-1 text-slate-400 hover:text-rose-600 transition-colors" title="Delete Designation">
@@ -153,11 +161,12 @@
 
             <!-- Footer stats -->
             <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span class="inline-flex items-center font-medium text-slate-700">
-                    <i data-lucide="users" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
-                    <span class="font-mono font-semibold text-slate-900 mr-1">{{ dept.employees|length }}</span> Staff Assigned
-                </span>
-                <button onclick="openDesignationModal(null, '', {{ dept.id }})" class="text-xs font-semibold text-teal-700 hover:text-teal-800 inline-flex items-center">
+                <button type="button" onclick="openDepartmentRoster({{ dept.id }})" class="inline-flex items-center font-semibold text-xs text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-200/60 px-2.5 py-1 rounded-lg transition-all cursor-pointer group shadow-2xs" title="Click to view staff assigned to {{ dept.name }}">
+                    <i data-lucide="users" class="w-3.5 h-3.5 mr-1.5 text-teal-600"></i>
+                    <span class="font-mono font-bold text-slate-900 mr-1">{{ dept.employees|length }}</span> Staff Assigned
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-0.5 text-teal-500 group-hover:translate-x-0.5 transition-transform"></i>
+                </button>
+                <button onclick="openDesignationModal(null, '', {{ dept.id }})" class="text-xs font-semibold text-teal-700 hover:text-teal-800 inline-flex items-center cursor-pointer">
                     <i data-lucide="plus" class="w-3 h-3 mr-1"></i> Add Title
                 </button>
             </div>
@@ -189,12 +198,17 @@
                 </div>
 
                 <div class="mb-3.5">
-                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">Designation Titles:</span>
+                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">Designation Titles (Click to view staff):</span>
                     <div class="flex flex-wrap gap-1.5">
                         {% for des in unassigned_desigs %}
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 group hover:border-teal-300 transition-colors">
-                            <span>{{ des.title }}</span>
-                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', '', '{{ des.description or '' }}')" class="ml-1.5 text-slate-400 hover:text-teal-700 transition-colors" title="Edit Designation">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 group hover:border-teal-300 hover:bg-teal-50/40 transition-colors shadow-2xs">
+                            <button type="button" onclick="openDesignationRoster({{ des.id }})" class="font-medium text-slate-800 hover:text-teal-700 transition-colors text-left inline-flex items-center group/desig cursor-pointer" title="Click to view employees holding {{ des.title }}">
+                                <span>{{ des.title }}</span>
+                                <span class="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-200/80 text-slate-700 group-hover/desig:bg-teal-100 group-hover/desig:text-teal-800 transition-colors">
+                                    {{ des.employees|length }}
+                                </span>
+                            </button>
+                            <button type="button" onclick="openDesignationModal({{ des.id }}, '{{ des.title }}', '', '{{ des.description or '' }}')" class="ml-2 text-slate-400 hover:text-teal-700 transition-colors" title="Edit Designation">
                                 <i data-lucide="edit" class="w-3 h-3"></i>
                             </button>
                             <button type="button" onclick="confirmDeleteDesignation({{ des.id }}, '{{ des.title }}')" class="ml-1 text-slate-400 hover:text-rose-600 transition-colors" title="Delete Designation">
@@ -211,7 +225,7 @@
                     <i data-lucide="award" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
                     <span class="font-mono font-semibold text-slate-900 mr-1">{{ unassigned_desigs|length }}</span> Global Titles
                 </span>
-                <button onclick="openDesignationModal(null, '', '')" class="text-xs font-semibold text-teal-700 hover:text-teal-800 inline-flex items-center">
+                <button onclick="openDesignationModal(null, '', '')" class="text-xs font-semibold text-teal-700 hover:text-teal-800 inline-flex items-center cursor-pointer">
                     <i data-lucide="plus" class="w-3 h-3 mr-1"></i> Add Title
                 </button>
             </div>
@@ -333,6 +347,18 @@
     </div>
 </div>
 
+<!-- 3. Employee Roster Modal (Department / Role Staff Inspection) -->
+<div id="rosterModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-3 sm:px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closeRosterModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div id="rosterModalContent" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-200">
+            <!-- Dynamically Loaded via HTMX/Fetch -->
+        </div>
+    </div>
+</div>
+
 <!-- Hidden Delete Forms -->
 <form id="deleteDeptForm" method="POST" class="hidden"></form>
 
@@ -402,5 +428,123 @@
             form.submit();
         }
     }
+
+    // ================= EMPLOYEE ROSTER MODAL HANDLERS =================
+
+    async function openDepartmentRoster(deptId) {
+        const modal = document.getElementById('rosterModal');
+        const content = document.getElementById('rosterModalContent');
+        if (!modal || !content) return;
+
+        content.innerHTML = `
+            <div class="p-10 text-center text-slate-500">
+                <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin text-teal-600 mb-3"></i>
+                <p class="text-xs font-semibold text-slate-800">Loading Department Staff...</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Fetching assigned employee details</p>
+            </div>
+        `;
+        modal.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            const resp = await fetch(`/departments/${deptId}/employees`);
+            if (!resp.ok) throw new Error("Failed to load department staff");
+            const html = await resp.text();
+            content.innerHTML = html;
+            if (window.lucide) lucide.createIcons();
+            const input = document.getElementById('rosterSearchInput');
+            if (input) input.focus();
+        } catch (err) {
+            content.innerHTML = `
+                <div class="p-6 text-center">
+                    <i data-lucide="alert-circle" class="w-8 h-8 text-rose-500 mx-auto mb-2"></i>
+                    <p class="text-xs font-semibold text-rose-700">Unable to load employee details.</p>
+                    <button type="button" onclick="closeRosterModal()" class="mt-3 px-4 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors">Close</button>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+
+    async function openDesignationRoster(desigId) {
+        const modal = document.getElementById('rosterModal');
+        const content = document.getElementById('rosterModalContent');
+        if (!modal || !content) return;
+
+        content.innerHTML = `
+            <div class="p-10 text-center text-slate-500">
+                <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin text-teal-600 mb-3"></i>
+                <p class="text-xs font-semibold text-slate-800">Loading Designation Roster...</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Fetching assigned employee details</p>
+            </div>
+        `;
+        modal.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            const resp = await fetch(`/departments/designations/${desigId}/employees`);
+            if (!resp.ok) throw new Error("Failed to load designation staff");
+            const html = await resp.text();
+            content.innerHTML = html;
+            if (window.lucide) lucide.createIcons();
+            const input = document.getElementById('rosterSearchInput');
+            if (input) input.focus();
+        } catch (err) {
+            content.innerHTML = `
+                <div class="p-6 text-center">
+                    <i data-lucide="alert-circle" class="w-8 h-8 text-rose-500 mx-auto mb-2"></i>
+                    <p class="text-xs font-semibold text-rose-700">Unable to load employee details.</p>
+                    <button type="button" onclick="closeRosterModal()" class="mt-3 px-4 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors">Close</button>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+
+    function closeRosterModal() {
+        const modal = document.getElementById('rosterModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function filterRosterEmployees() {
+        const query = (document.getElementById('rosterSearchInput')?.value || '').toLowerCase().trim();
+        const cards = document.querySelectorAll('.roster-emp-card');
+        const noResults = document.getElementById('rosterNoResults');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name') || '';
+            const code = card.getAttribute('data-code') || '';
+            const role = card.getAttribute('data-role') || '';
+            const email = card.getAttribute('data-email') || '';
+            const desig = card.getAttribute('data-desig') || '';
+            const dept = card.getAttribute('data-dept') || '';
+
+            const matches = !query || name.includes(query) || code.includes(query) || role.includes(query) || email.includes(query) || desig.includes(query) || dept.includes(query);
+            if (matches) {
+                card.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+
+        if (noResults) {
+            if (visibleCount === 0 && cards.length > 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+            }
+        }
+    }
+
+    // Keyboard accessibility: Close modals on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeDepartmentModal();
+            closeDesignationModal();
+            closeRosterModal();
+        }
+    });
 </script>
 {% endblock %}

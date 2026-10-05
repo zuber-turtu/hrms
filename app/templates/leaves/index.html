@@ -6,348 +6,596 @@
 {% block content %}
 <div class="space-y-6">
 
-    <!-- Top Action Banner -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div>
-            <h2 class="text-lg font-bold text-slate-900 font-heading">Time-Off & Remote Work Portal</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Manage leave quotas, apply for time off, request work-from-home days, or allocate remote shifts.</p>
+    <!-- 1. Executive Portal Header & Quick Actions -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <div class="flex items-start sm:items-center space-x-4 min-w-0">
+            <div class="w-12 h-12 rounded-xl bg-[#002626] text-teal-300 flex items-center justify-center font-bold text-xl shrink-0 shadow-sm border border-teal-900/40">
+                <i data-lucide="calendar-heart" class="w-6 h-6 text-teal-400"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center space-x-2.5 flex-wrap gap-y-1">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200/80">
+                        {{ selected_year }} Policy Year
+                    </span>
+                    <span class="text-slate-300 hidden sm:inline">•</span>
+                    <span class="text-xs font-semibold text-slate-500">
+                        Jan 01, {{ selected_year }} – Dec 31, {{ selected_year }}
+                    </span>
+                </div>
+                <h2 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight font-heading mt-1">
+                    Time-Off & Remote Workforce Hub
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    Plan time-off, track annual statutory & paid leave balances, request remote work, or allocate WFH shifts.
+                </p>
+            </div>
         </div>
-        <div class="flex flex-wrap items-center gap-2.5">
-            <button onclick="openApplyLeaveModal()" type="button" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm hover:shadow transition-all active:scale-[0.98] cursor-pointer">
-                <i data-lucide="plane-takeoff" class="w-4 h-4 mr-1.5"></i>
+
+        <!-- Action Buttons Group -->
+        <div class="flex flex-wrap items-center gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            <button onclick="openApplyLeaveModal()" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer group">
+                <i data-lucide="plane-takeoff" class="w-4 h-4 mr-2 text-teal-100 group-hover:-translate-y-0.5 transition-transform"></i>
                 <span>Apply for Leave</span>
             </button>
-            <button onclick="openRequestWfhModal()" type="button" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-bold text-teal-800 bg-[#E0F4F4] hover:bg-[#B3E3E3] border border-teal-200/80 shadow-2xs transition-all active:scale-[0.98] cursor-pointer">
-                <i data-lucide="home" class="w-4 h-4 mr-1.5 text-teal-700"></i>
+            <button onclick="openRequestWfhModal()" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-teal-900 bg-[#E0F4F4] hover:bg-[#B3E3E3] border border-teal-300/80 shadow-2xs transition-all active:scale-[0.98] cursor-pointer">
+                <i data-lucide="home" class="w-4 h-4 mr-2 text-teal-700"></i>
                 <span>Request WFH</span>
             </button>
+            <button onclick="openQuotaBreakdownModal()" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200/90 shadow-2xs transition-all active:scale-[0.98] cursor-pointer group" title="Click to view detailed category leave quota breakdown">
+                <i data-lucide="pie-chart" class="w-4 h-4 mr-2 text-teal-700 group-hover:rotate-12 transition-transform"></i>
+                <span>Leave Quotas</span>
+            </button>
             {% if is_approver %}
-            <button onclick="openAllocateWfhModal()" type="button" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-bold text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 shadow-2xs transition-all active:scale-[0.98] cursor-pointer">
-                <i data-lucide="user-plus" class="w-4 h-4 mr-1.5 text-purple-700"></i>
+            <button onclick="openAllocateWfhModal()" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200/90 shadow-2xs transition-all active:scale-[0.98] cursor-pointer">
+                <i data-lucide="user-plus" class="w-4 h-4 mr-2 text-purple-700"></i>
                 <span>Allocate WFH</span>
             </button>
             {% endif %}
         </div>
     </div>
 
-    <!-- Leave Balances Ribbon -->
-    <div>
-        <div class="flex items-center justify-between mb-3 px-1">
-            <div class="flex items-center space-x-2">
-                <i data-lucide="pie-chart" class="w-4 h-4 text-teal-600"></i>
-                <h3 class="text-sm font-bold text-slate-900 font-heading">My {{ selected_year }} Leave Quotas & Balances</h3>
+    <!-- 2. Annual Overview KPI Summary Ribbon -->
+    {% set total_used_all = my_balances|sum(attribute='used_days') %}
+    {% set total_pending_all = my_balances|sum(attribute='pending_days') %}
+    
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- KPI 1: Leave Entitlements & Balances (Interactive trigger for Quota Breakdown Modal) -->
+        <div onclick="openQuotaBreakdownModal()" class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 hover:border-teal-400 hover:shadow-md transition-all cursor-pointer group flex items-center justify-between" title="Click to inspect category-by-category leave quota breakdown">
+            <div>
+                <div class="flex items-center space-x-1.5">
+                    <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Leave Entitlements</p>
+                    <i data-lucide="external-link" class="w-3 h-3 text-teal-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                </div>
+                <div class="flex items-baseline space-x-1.5 mt-1">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-teal-800 font-mono group-hover:text-teal-900 transition-colors">
+                        {{ my_balances|length }}
+                    </h3>
+                    <span class="text-xs font-semibold text-slate-400">Categories</span>
+                </div>
+                <div class="flex items-center text-[11px] font-semibold text-teal-700 mt-1">
+                    <span>Click to inspect quotas →</span>
+                </div>
             </div>
-            <span class="text-[11px] font-semibold text-slate-500 font-mono">Cycle: Jan {{ selected_year }} - Dec {{ selected_year }}</span>
+            <div class="w-11 h-11 rounded-xl bg-teal-50 group-hover:bg-teal-100 border border-teal-200/80 text-teal-700 flex items-center justify-center shrink-0 transition-colors shadow-2xs">
+                <i data-lucide="pie-chart" class="w-5 h-5"></i>
+            </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
-            {% for b in my_balances %}
-            <div class="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-2xs flex flex-col justify-between hover:border-teal-400 hover:shadow-sm transition-all">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider" style="background-color: {{ b.leave_type.color_code or '#008080' }};">
-                        {{ b.leave_type.code }}
-                    </span>
-                    <span class="text-[11px] font-semibold text-slate-400">
-                        {{ b.leave_type.default_days_per_year|int if b.leave_type.default_days_per_year.is_integer() else b.leave_type.default_days_per_year }} d
-                    </span>
+        <!-- KPI 2: Used Days -->
+        <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Leaves Availed</p>
+                <div class="flex items-baseline space-x-1.5 mt-1">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono">
+                        {{ total_used_all|int if total_used_all.is_integer() else total_used_all }}
+                    </h3>
+                    <span class="text-xs font-semibold text-slate-400">days</span>
                 </div>
-
-                <div class="my-1">
-                    <p class="text-xs font-bold text-slate-800 truncate" title="{{ b.leave_type.name }}">{{ b.leave_type.name }}</p>
-                    <div class="flex items-baseline space-x-1 mt-1">
-                        <span class="text-xl font-extrabold text-slate-900 font-heading">{{ b.remaining_days|int if b.remaining_days.is_integer() else b.remaining_days }}</span>
-                        <span class="text-[11px] text-slate-500 font-medium">available</span>
-                    </div>
+                <div class="flex items-center text-[11px] font-medium text-slate-500 mt-1">
+                    <i data-lucide="calendar-check" class="w-3 h-3 mr-1 text-slate-400"></i> Approved Time-Off
                 </div>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center shrink-0">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+            </div>
+        </div>
 
-                <!-- Usage Progress Bar -->
-                <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
-                    <span>Used: <strong class="text-slate-700 font-semibold">{{ b.used_days|int if b.used_days.is_integer() else b.used_days }}</strong></span>
-                    {% if b.pending_days > 0 %}
-                    <span class="text-amber-600 font-semibold">Pending: {{ b.pending_days|int if b.pending_days.is_integer() else b.pending_days }}</span>
+        <!-- KPI 3: Pending Approvals -->
+        <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Pending Requests</p>
+                <div class="flex items-baseline space-x-1.5 mt-1">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold {% if total_pending_all > 0 %}text-amber-600{% else %}text-slate-900{% endif %} font-mono">
+                        {{ total_pending_all|int if total_pending_all.is_integer() else total_pending_all }}
+                    </h3>
+                    <span class="text-xs font-semibold text-slate-400">days</span>
+                </div>
+                <div class="flex items-center text-[11px] font-medium {% if total_pending_all > 0 %}text-amber-700{% else %}text-slate-500{% endif %} mt-1">
+                    {% if total_pending_all > 0 %}
+                    <i data-lucide="clock" class="w-3 h-3 mr-1 text-amber-600"></i> Awaiting Approval
+                    {% else %}
+                    <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> All Processed
                     {% endif %}
                 </div>
             </div>
-            {% endfor %}
+            <div class="w-11 h-11 rounded-xl {% if total_pending_all > 0 %}bg-amber-50 border border-amber-200/80 text-amber-700{% else %}bg-slate-50 border border-slate-200 text-slate-500{% endif %} flex items-center justify-center shrink-0">
+                <i data-lucide="hourglass" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- KPI 4: Approved WFH Days -->
+        {% set my_wfh_approved = my_wfh|selectattr('status', 'equalto', 'approved')|list %}
+        <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Remote / WFH Days</p>
+                <div class="flex items-baseline space-x-1.5 mt-1">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-teal-900 font-mono">
+                        {{ my_wfh_approved|sum(attribute='total_days')|round(1) }}
+                    </h3>
+                    <span class="text-xs font-semibold text-slate-400">approved</span>
+                </div>
+                <div class="flex items-center text-[11px] font-medium text-teal-700 mt-1">
+                    <i data-lucide="map-pin-off" class="w-3 h-3 mr-1 text-teal-600"></i> Geofence Bypass Active
+                </div>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-teal-50 border border-teal-200/80 text-teal-800 flex items-center justify-center shrink-0">
+                <i data-lucide="home" class="w-5 h-5"></i>
+            </div>
         </div>
     </div>
 
-    <!-- Main Navigation Tabs -->
+    <!-- 4. Interactive Navigation Tabs & Records Table Container -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div class="border-b border-slate-200 bg-slate-50/50 px-4 pt-3 flex items-center justify-between flex-wrap gap-3">
-            <div class="flex space-x-1 sm:space-x-2">
-                <button onclick="switchTab('my_requests')" id="tab-btn-my_requests" class="tab-btn px-3.5 py-2.5 text-xs font-bold rounded-t-xl border-b-2 border-teal-600 text-teal-800 bg-white transition-all flex items-center space-x-1.5">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>My Requests & History</span>
+        
+        <!-- Segmented Tab Header -->
+        <div class="border-b border-slate-200 bg-slate-50/70 px-4 sm:px-6 pt-3 flex items-center justify-between flex-wrap gap-3">
+            <div class="flex space-x-1 sm:space-x-2 overflow-x-auto no-scrollbar">
+                
+                <!-- Tab: My Leaves -->
+                <button onclick="switchTab('my_leaves')" id="tab-btn-my_leaves" class="tab-btn px-4 py-3 text-xs font-bold rounded-t-xl border-b-2 border-teal-600 text-teal-900 bg-white transition-all flex items-center space-x-2 shrink-0">
+                    <i data-lucide="plane-takeoff" class="w-4 h-4 text-teal-600"></i>
+                    <span>My Leave Applications</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-teal-100 text-teal-800">{{ my_leaves|length }}</span>
+                </button>
+
+                <!-- Tab: My WFH -->
+                <button onclick="switchTab('my_wfh')" id="tab-btn-my_wfh" class="tab-btn px-4 py-3 text-xs font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/80 transition-all flex items-center space-x-2 shrink-0">
+                    <i data-lucide="home" class="w-4 h-4"></i>
+                    <span>My WFH Requests</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-200 text-slate-700">{{ my_wfh|length }}</span>
                 </button>
                 
+                <!-- Tab: Approvals Queue (Admin & Manager) -->
                 {% if is_approver %}
-                <button onclick="switchTab('approvals')" id="tab-btn-approvals" class="tab-btn px-3.5 py-2.5 text-xs font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60 transition-all flex items-center space-x-1.5">
-                    <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+                {% set total_pending = (pending_leaves|length) + (pending_wfh|length) %}
+                <button onclick="switchTab('approvals')" id="tab-btn-approvals" class="tab-btn px-4 py-3 text-xs font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/80 transition-all flex items-center space-x-2 shrink-0">
+                    <i data-lucide="check-square" class="w-4 h-4 text-purple-600"></i>
                     <span>Approvals Queue</span>
-                    {% set total_pending = (pending_leaves|length) + (pending_wfh|length) %}
                     {% if total_pending > 0 %}
-                    <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">{{ total_pending }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500 text-white animate-pulse">{{ total_pending }}</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-200 text-slate-700">0</span>
                     {% endif %}
                 </button>
                 {% endif %}
 
-                <button onclick="switchTab('today_status')" id="tab-btn-today_status" class="tab-btn px-3.5 py-2.5 text-xs font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60 transition-all flex items-center space-x-1.5">
-                    <i data-lucide="users" class="w-3.5 h-3.5"></i>
-                    <span>Today's Remote & Off ({{ (active_today_wfh|length) + (active_today_leaves|length) }})</span>
+                <!-- Tab: Today's Remote & Off -->
+                <button onclick="switchTab('today_status')" id="tab-btn-today_status" class="tab-btn px-4 py-3 text-xs font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/80 transition-all flex items-center space-x-2 shrink-0">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>Who is Off / WFH Today</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-200 text-slate-700">{{ (active_today_wfh|length) + (active_today_leaves|length) }}</span>
                 </button>
             </div>
         </div>
 
-        <!-- Tab 1: My Requests & History -->
-        <div id="tab-content-my_requests" class="tab-pane p-5 space-y-6">
+        <!-- Tab Content 1: My Leave Applications -->
+        <div id="tab-content-my_leaves" class="tab-pane p-5 sm:p-6 space-y-4">
             
-            <!-- Leave Requests Table -->
-            <div>
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
-                        <i data-lucide="calendar" class="w-3.5 h-3.5 text-teal-600"></i>
-                        <span>My Leave Applications</span>
-                    </h4>
+            <!-- Controls Bar: Search & Status Filters -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
+                <div class="relative flex-1 max-w-sm">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="leaves-search" oninput="filterLeavesTable()" placeholder="Search leaves by category, date, or reason..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white">
                 </div>
 
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
-                        <thead class="bg-slate-50/80 text-slate-600 font-semibold uppercase text-[10px] tracking-wider font-heading">
-                            <tr>
-                                <th class="px-4 py-3">Leave Type</th>
-                                <th class="px-4 py-3">Dates & Duration</th>
-                                <th class="px-4 py-3">Reason</th>
-                                <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Applied On</th>
-                                <th class="px-4 py-3 text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 bg-white">
-                            {% for l in my_leaves %}
-                            <tr class="hover:bg-slate-50/80 transition-colors">
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold text-white" style="background-color: {{ l.leave_type.color_code if l.leave_type else '#008080' }};">
-                                        {{ l.leave_type.name if l.leave_type else 'Leave' }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="font-mono font-semibold text-slate-900 text-xs">
-                                        {{ l.start_date }} {% if l.start_date != l.end_date %}to {{ l.end_date }}{% endif %}
-                                    </div>
-                                    <div class="text-[10px] text-slate-500">
-                                        {{ l.total_days }} day(s) {% if l.is_half_day %}({{ l.half_day_session|replace('_', ' ')|title }}){% endif %}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 max-w-xs truncate text-slate-700" title="{{ l.reason }}">
-                                    {{ l.reason }}
-                                    {% if l.rejection_reason %}
-                                    <div class="text-rose-600 text-[10px] font-medium mt-0.5">Note: {{ l.rejection_reason }}</div>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    {% if l.status == 'approved' %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        <i data-lucide="check-circle-2" class="w-3 h-3 mr-1"></i> Approved
-                                    </span>
-                                    {% elif l.status == 'rejected' %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                        <i data-lucide="x-circle" class="w-3 h-3 mr-1"></i> Rejected
-                                    </span>
-                                    {% elif l.status == 'cancelled' %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                        Cancelled
-                                    </span>
-                                    {% else %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
-                                        <i data-lucide="clock" class="w-3 h-3 mr-1"></i> Pending
-                                    </span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-slate-500 font-mono text-[11px]">
-                                    {{ l.created_at.strftime('%Y-%m-%d') if l.created_at else '—' }}
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-right">
-                                    {% if l.status in ['pending', 'approved'] %}
-                                    <form method="POST" action="/leaves/{{ l.id }}/cancel" onsubmit="return confirm('Are you sure you want to cancel this leave application?');" class="inline">
-                                        <button type="submit" class="text-rose-600 hover:text-rose-800 hover:underline font-semibold text-[11px]">
-                                            Cancel
-                                        </button>
-                                    </form>
-                                    {% else %}
-                                    <span class="text-slate-400 text-[11px]">—</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-slate-500">
-                                    <p class="text-xs font-semibold">No leave applications found.</p>
-                                    <button onclick="openApplyLeaveModal()" class="mt-2 text-xs text-teal-700 font-bold hover:underline">Apply for Leave</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="flex items-center space-x-2">
+                    <label class="text-xs font-bold text-slate-600">Status:</label>
+                    <select id="leaves-status-filter" onchange="filterLeavesTable()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 bg-white font-medium">
+                        <option value="all">All Statuses</option>
+                        <option value="approved">Approved</option>
+                        <option value="pending">Pending</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- WFH Requests Table -->
-            <div class="pt-4 border-t border-slate-100">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
-                        <i data-lucide="home" class="w-3.5 h-3.5 text-teal-600"></i>
-                        <span>My Work From Home (WFH) Requests</span>
-                    </h4>
+            <!-- Leave Table -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
+                        <tr>
+                            <th class="px-5 py-3.5">Leave Category</th>
+                            <th class="px-5 py-3.5">Time-Off Period</th>
+                            <th class="px-5 py-3.5">Duration</th>
+                            <th class="px-5 py-3.5">Reason & Reviewer Notes</th>
+                            <th class="px-5 py-3.5">Status</th>
+                            <th class="px-5 py-3.5">Applied Date</th>
+                            <th class="px-5 py-3.5 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaves-table-body" class="divide-y divide-slate-100 bg-white">
+                        {% for l in my_leaves %}
+                        <tr class="hover:bg-slate-50/80 transition-colors leave-row" 
+                            data-search="{{ (l.leave_type.name if l.leave_type else '')|lower }} {{ l.start_date|string }} {{ l.end_date|string }} {{ l.reason|lower }}" 
+                            data-status="{{ l.status|lower }}">
+                            
+                            <!-- Category Badge -->
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ l.leave_type.color_code if l.leave_type else '#008080' }};"></span>
+                                    <span class="font-bold text-slate-900 text-xs">{{ l.leave_type.name if l.leave_type else 'Leave' }}</span>
+                                    <span class="text-[10px] font-mono text-slate-500 font-semibold">({{ l.leave_type.code if l.leave_type else 'LV' }})</span>
+                                </div>
+                            </td>
+
+                            <!-- Period -->
+                            <td class="px-5 py-3.5 whitespace-nowrap font-mono text-slate-800 font-semibold text-xs">
+                                <div class="flex items-center space-x-1.5">
+                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    <span>{{ l.start_date }}</span>
+                                    {% if l.start_date != l.end_date %}
+                                    <span class="text-slate-400">→</span>
+                                    <span>{{ l.end_date }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- Duration -->
+                            <td class="px-5 py-3.5 whitespace-nowrap font-mono text-xs">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                                    {{ l.total_days }} day(s)
+                                </span>
+                                {% if l.is_half_day %}
+                                <span class="block text-[10px] text-teal-700 font-semibold mt-0.5">
+                                    {{ l.half_day_session|replace('_', ' ')|title }}
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Reason -->
+                            <td class="px-5 py-3.5 max-w-xs text-slate-700">
+                                <p class="truncate" title="{{ l.reason }}">{{ l.reason }}</p>
+                                {% if l.rejection_reason %}
+                                <div class="text-rose-600 text-[11px] font-semibold mt-1 flex items-center space-x-1 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 w-fit">
+                                    <i data-lucide="alert-circle" class="w-3 h-3 text-rose-500 shrink-0"></i>
+                                    <span class="truncate">Remark: {{ l.rejection_reason }}</span>
+                                </div>
+                                {% endif %}
+                            </td>
+
+                            <!-- Status Pill -->
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                {% if l.status == 'approved' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i> Approved
+                                </span>
+                                {% elif l.status == 'rejected' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs">
+                                    <i data-lucide="x-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i> Rejected
+                                </span>
+                                {% elif l.status == 'cancelled' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                    Cancelled
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs animate-pulse">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-amber-600"></i> Pending Review
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Applied Date -->
+                            <td class="px-5 py-3.5 whitespace-nowrap text-slate-500 font-mono text-[11px]">
+                                {{ l.created_at.strftime('%Y-%m-%d') if l.created_at else '—' }}
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-5 py-3.5 whitespace-nowrap text-right font-medium">
+                                {% if l.status in ['pending', 'approved'] %}
+                                <form method="POST" action="/leaves/{{ l.id }}/cancel" onsubmit="return confirm('Are you sure you want to cancel this leave application?');" class="inline">
+                                    <button type="submit" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all active:scale-95 cursor-pointer shadow-2xs">
+                                        <i data-lucide="x" class="w-3 h-3 mr-1"></i> Cancel
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span class="text-slate-400 font-mono text-xs">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr id="leaves-empty-state">
+                            <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                                <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3 border border-teal-200/70">
+                                    <i data-lucide="calendar-plus" class="w-6 h-6"></i>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 font-heading">No Leave Applications Found</h4>
+                                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">You haven't submitted any leave applications for {{ selected_year }} yet.</p>
+                                <button onclick="openApplyLeaveModal()" class="mt-3 inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all cursor-pointer">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5 mr-1.5"></i> Apply for Leave Now
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab Content 2: My WFH Requests -->
+        <div id="tab-content-my_wfh" class="tab-pane p-5 sm:p-6 space-y-4 hidden">
+            
+            <!-- Controls Bar: Search & Status Filters -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
+                <div class="relative flex-1 max-w-sm">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="wfh-search" oninput="filterWfhTable()" placeholder="Search WFH by date, reason, or type..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white">
                 </div>
 
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
-                        <thead class="bg-slate-50/80 text-slate-600 font-semibold uppercase text-[10px] tracking-wider font-heading">
-                            <tr>
-                                <th class="px-4 py-3">Type</th>
-                                <th class="px-4 py-3">Dates & Duration</th>
-                                <th class="px-4 py-3">Reason / Remarks</th>
-                                <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Requested On</th>
-                                <th class="px-4 py-3 text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 bg-white">
-                            {% for w in my_wfh %}
-                            <tr class="hover:bg-slate-50/80 transition-colors">
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    {% if w.is_direct_allocation %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                                        Management Allocated
-                                    </span>
-                                    {% else %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                                        Employee Request
-                                    </span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="font-mono font-semibold text-slate-900 text-xs">
-                                        {{ w.start_date }} {% if w.start_date != w.end_date %}to {{ w.end_date }}{% endif %}
-                                    </div>
-                                    <div class="text-[10px] text-slate-500">
-                                        {{ w.total_days }} day(s) {% if w.is_half_day %}({{ w.half_day_session|replace('_', ' ')|title }}){% endif %}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 max-w-xs truncate text-slate-700" title="{{ w.reason }}">
-                                    {{ w.reason }}
-                                    {% if w.rejection_reason %}
-                                    <div class="text-rose-600 text-[10px] font-medium mt-0.5">Note: {{ w.rejection_reason }}</div>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    {% if w.status == 'approved' %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        <i data-lucide="check-circle-2" class="w-3 h-3 mr-1"></i> Approved
-                                    </span>
-                                    {% elif w.status == 'rejected' %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                        <i data-lucide="x-circle" class="w-3 h-3 mr-1"></i> Rejected
-                                    </span>
-                                    {% elif w.status == 'cancelled' %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                        Cancelled
-                                    </span>
-                                    {% else %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
-                                        <i data-lucide="clock" class="w-3 h-3 mr-1"></i> Pending
-                                    </span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-slate-500 font-mono text-[11px]">
-                                    {{ w.created_at.strftime('%Y-%m-%d') if w.created_at else '—' }}
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-right">
-                                    {% if w.status == 'pending' %}
-                                    <form method="POST" action="/leaves/wfh/{{ w.id }}/cancel" onsubmit="return confirm('Cancel this WFH request?');" class="inline">
-                                        <button type="submit" class="text-rose-600 hover:text-rose-800 hover:underline font-semibold text-[11px]">
-                                            Cancel
-                                        </button>
-                                    </form>
-                                    {% else %}
-                                    <span class="text-slate-400 text-[11px]">—</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-slate-500">
-                                    <p class="text-xs font-semibold">No WFH requests found.</p>
-                                    <button onclick="openRequestWfhModal()" class="mt-2 text-xs text-teal-700 font-bold hover:underline">Request Work From Home</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="flex items-center space-x-2">
+                    <label class="text-xs font-bold text-slate-600">Status:</label>
+                    <select id="wfh-status-filter" onchange="filterWfhTable()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 bg-white font-medium">
+                        <option value="all">All Statuses</option>
+                        <option value="approved">Approved</option>
+                        <option value="pending">Pending</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
                 </div>
             </div>
 
+            <!-- WFH Table -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
+                        <tr>
+                            <th class="px-5 py-3.5">Allocation Source</th>
+                            <th class="px-5 py-3.5">Remote Work Dates</th>
+                            <th class="px-5 py-3.5">Total Days</th>
+                            <th class="px-5 py-3.5">Reason & Objectives</th>
+                            <th class="px-5 py-3.5">Status</th>
+                            <th class="px-5 py-3.5">Geofence Rule</th>
+                            <th class="px-5 py-3.5 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wfh-table-body" class="divide-y divide-slate-100 bg-white">
+                        {% for w in my_wfh %}
+                        <tr class="hover:bg-slate-50/80 transition-colors wfh-row" 
+                            data-search="{{ w.start_date|string }} {{ w.end_date|string }} {{ w.reason|lower }} {{ 'direct allocation' if w.is_direct_allocation else 'employee request' }}" 
+                            data-status="{{ w.status|lower }}">
+                            
+                            <!-- Source Badge -->
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                {% if w.is_direct_allocation %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200 shadow-2xs font-heading">
+                                    <i data-lucide="shield-check" class="w-3 h-3 mr-1 text-purple-600"></i> Management Allocated
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs font-heading">
+                                    <i data-lucide="user" class="w-3 h-3 mr-1 text-teal-600"></i> Self Requested
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Dates -->
+                            <td class="px-5 py-3.5 whitespace-nowrap font-mono text-slate-800 font-semibold text-xs">
+                                <div class="flex items-center space-x-1.5">
+                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-teal-600"></i>
+                                    <span>{{ w.start_date }}</span>
+                                    {% if w.start_date != w.end_date %}
+                                    <span class="text-slate-400">→</span>
+                                    <span>{{ w.end_date }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- Total Days -->
+                            <td class="px-5 py-3.5 whitespace-nowrap font-mono text-xs">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                                    {{ w.total_days }} day(s)
+                                </span>
+                                {% if w.is_half_day %}
+                                <span class="block text-[10px] text-teal-700 font-semibold mt-0.5">
+                                    {{ w.half_day_session|replace('_', ' ')|title }}
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Reason -->
+                            <td class="px-5 py-3.5 max-w-xs text-slate-700">
+                                <p class="truncate" title="{{ w.reason }}">{{ w.reason }}</p>
+                                {% if w.rejection_reason %}
+                                <div class="text-rose-600 text-[11px] font-semibold mt-1 flex items-center space-x-1 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 w-fit">
+                                    <i data-lucide="alert-circle" class="w-3 h-3 text-rose-500 shrink-0"></i>
+                                    <span class="truncate">Remark: {{ w.rejection_reason }}</span>
+                                </div>
+                                {% endif %}
+                            </td>
+
+                            <!-- Status -->
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                {% if w.status == 'approved' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i> Approved
+                                </span>
+                                {% elif w.status == 'rejected' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs">
+                                    <i data-lucide="x-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i> Rejected
+                                </span>
+                                {% elif w.status == 'cancelled' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                    Cancelled
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs animate-pulse">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-amber-600"></i> Pending Review
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Geofence Rule -->
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                {% if w.status == 'approved' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                                    <i data-lucide="shield" class="w-3 h-3 mr-1 text-teal-600"></i> Geofence Bypassed
+                                </span>
+                                {% else %}
+                                <span class="text-slate-400 text-xs font-mono">Pending Approval</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-5 py-3.5 whitespace-nowrap text-right font-medium">
+                                {% if w.status == 'pending' %}
+                                <form method="POST" action="/leaves/wfh/{{ w.id }}/cancel" onsubmit="return confirm('Cancel this WFH request?');" class="inline">
+                                    <button type="submit" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all active:scale-95 cursor-pointer shadow-2xs">
+                                        <i data-lucide="x" class="w-3 h-3 mr-1"></i> Cancel
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span class="text-slate-400 font-mono text-xs">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr id="wfh-empty-state">
+                            <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                                <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3 border border-teal-200/70">
+                                    <i data-lucide="home" class="w-6 h-6"></i>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 font-heading">No WFH Requests Found</h4>
+                                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">You haven't requested any work-from-home days yet.</p>
+                                <button onclick="openRequestWfhModal()" class="mt-3 inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-bold text-teal-900 bg-[#E0F4F4] hover:bg-[#B3E3E3] border border-teal-300/80 shadow-2xs transition-all cursor-pointer">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5 mr-1.5"></i> Request WFH Now
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         {% if is_approver %}
-        <!-- Tab 2: Approvals Queue -->
-        <div id="tab-content-approvals" class="tab-pane p-5 space-y-6 hidden">
+        <!-- Tab Content 3: Approvals Queue (Admins & Managers) -->
+        <div id="tab-content-approvals" class="tab-pane p-5 sm:p-6 space-y-5 hidden">
             
-            <!-- Pending Leaves Queue -->
-            <div>
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
-                        <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-amber-600"></i>
-                        <span>Pending Leave Approvals ({{ pending_leaves|length }})</span>
-                    </h4>
+            <!-- Approvals Sub-Header with Horizontal Pill Switcher -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold shrink-0 border border-purple-200/70">
+                        <i data-lucide="check-square" class="w-5 h-5 text-purple-700"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 font-heading">Subordinate Approvals Queue</h3>
+                        <p class="text-xs text-slate-500">Review, authorize, or decline employee time-off and remote punch shift applications.</p>
+                    </div>
+                </div>
+
+                <!-- Horizontal Segmented Sub-Tab Switcher -->
+                <div class="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/90 text-xs font-bold shrink-0 self-start md:self-auto">
+                    <button type="button" onclick="switchApprovalSubTab('leaves')" id="approval-subtab-btn-leaves" class="approval-subtab-btn px-4 py-2 rounded-lg transition-all flex items-center space-x-2 bg-white text-purple-900 shadow-2xs cursor-pointer">
+                        <i data-lucide="plane-takeoff" class="w-3.5 h-3.5 text-purple-700"></i>
+                        <span>Leave Applications</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold {% if pending_leaves|length > 0 %}bg-rose-500 text-white animate-pulse{% else %}bg-slate-200 text-slate-700{% endif %}">
+                            {{ pending_leaves|length }}
+                        </span>
+                    </button>
+                    <button type="button" onclick="switchApprovalSubTab('wfh')" id="approval-subtab-btn-wfh" class="approval-subtab-btn px-4 py-2 rounded-lg transition-all flex items-center space-x-2 text-slate-600 hover:text-slate-900 cursor-pointer">
+                        <i data-lucide="home" class="w-3.5 h-3.5 text-teal-600"></i>
+                        <span>WFH Requests</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold {% if pending_wfh|length > 0 %}bg-teal-600 text-white{% else %}bg-slate-200 text-slate-700{% endif %}">
+                            {{ pending_wfh|length }}
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sub-Pane 1: Pending Leaves Approvals (Horizontal Single View) -->
+            <div id="approval-subpane-leaves" class="approval-subpane space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="relative flex-1 max-w-sm">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="pending-leaves-search" oninput="filterPendingLeavesTable()" placeholder="Search pending leaves by employee or reason..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 bg-white">
+                    </div>
+                    {% if pending_leaves|length > 0 %}
+                    <span class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full font-mono flex items-center space-x-1 self-start sm:self-auto">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
+                        <span>{{ pending_leaves|length }} Request(s) Awaiting Review</span>
+                    </span>
+                    {% endif %}
                 </div>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
-                        <thead class="bg-slate-50/80 text-slate-600 font-semibold uppercase text-[10px] tracking-wider font-heading">
+                        <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
                             <tr>
-                                <th class="px-4 py-3">Employee</th>
-                                <th class="px-4 py-3">Leave Type</th>
-                                <th class="px-4 py-3">Dates & Days</th>
-                                <th class="px-4 py-3">Reason</th>
-                                <th class="px-4 py-3 text-right">Review Actions</th>
+                                <th class="px-5 py-3.5">Employee Name</th>
+                                <th class="px-5 py-3.5">Leave Category</th>
+                                <th class="px-5 py-3.5">Period & Days</th>
+                                <th class="px-5 py-3.5">Employee Reason</th>
+                                <th class="px-5 py-3.5 text-right">Review Decision</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 bg-white">
+                        <tbody id="pending-leaves-table-body" class="divide-y divide-slate-100 bg-white">
                             {% for pl in pending_leaves %}
-                            <tr class="hover:bg-slate-50/80 transition-colors">
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="font-bold text-slate-900">{{ pl.employee.name }}</div>
-                                    <div class="text-[10px] text-slate-500">{{ pl.employee.department.name if pl.employee.department else 'General' }} • {{ pl.employee.role }}</div>
+                            <tr class="hover:bg-slate-50/80 transition-colors pending-leave-row" data-search="{{ pl.employee.name|lower }} {{ (pl.leave_type.name if pl.leave_type else '')|lower }} {{ pl.reason|lower }}">
+                                <td class="px-5 py-3.5 whitespace-nowrap">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs font-heading shrink-0">
+                                            {{ pl.employee.name[0]|upper }}
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-slate-900">{{ pl.employee.name }}</p>
+                                            <p class="text-[10px] text-slate-500">{{ pl.employee.department.name if pl.employee.department else 'General' }} • {{ pl.employee.role|title }}</p>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold text-white" style="background-color: {{ pl.leave_type.color_code if pl.leave_type else '#008080' }};">
-                                        {{ pl.leave_type.name }}
+
+                                <td class="px-5 py-3.5 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold text-white shadow-2xs font-mono" style="background-color: {{ pl.leave_type.color_code if pl.leave_type else '#008080' }};">
+                                        {{ pl.leave_type.name }} ({{ pl.leave_type.code }})
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="font-mono font-semibold text-slate-900">{{ pl.start_date }} to {{ pl.end_date }}</div>
-                                    <div class="text-[10px] text-slate-500">{{ pl.total_days }} day(s)</div>
+
+                                <td class="px-5 py-3.5 whitespace-nowrap font-mono">
+                                    <div class="font-bold text-slate-900 text-xs">{{ pl.start_date }} → {{ pl.end_date }}</div>
+                                    <div class="text-[10px] text-teal-800 font-semibold">{{ pl.total_days }} day(s) duration</div>
                                 </td>
-                                <td class="px-4 py-3 text-slate-700 max-w-xs">
-                                    {{ pl.reason }}
+
+                                <td class="px-5 py-3.5 text-slate-700 max-w-xs">
+                                    <p class="text-xs italic bg-slate-50 p-2 rounded-lg border border-slate-200/80">"{{ pl.reason }}"</p>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-right space-x-2">
+
+                                <td class="px-5 py-3.5 whitespace-nowrap text-right space-x-2">
                                     <form method="POST" action="/leaves/{{ pl.id }}/approve" class="inline">
-                                        <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-all active:scale-95 cursor-pointer">
+                                        <button type="submit" class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all active:scale-95 cursor-pointer">
                                             <i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i> Approve
                                         </button>
                                     </form>
-                                    <button type="button" onclick="openRejectModal('/leaves/{{ pl.id }}/reject', '{{ pl.employee.name }}', 'leave')" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-2xs transition-all active:scale-95 cursor-pointer">
-                                        <i data-lucide="x" class="w-3.5 h-3.5 mr-1"></i> Reject
+                                    <button type="button" onclick="openRejectModal('/leaves/{{ pl.id }}/reject', '{{ pl.employee.name }}', 'leave application')" class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-2xs transition-all active:scale-95 cursor-pointer">
+                                        <i data-lucide="x" class="w-3.5 h-3.5 mr-1"></i> Decline
                                     </button>
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="5" class="px-4 py-8 text-center text-slate-500 text-xs">
-                                    🎉 No pending leave applications requiring approval.
+                                <td colspan="5" class="px-6 py-10 text-center text-slate-500">
+                                    <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2 border border-emerald-200">
+                                        <i data-lucide="check-check" class="w-5 h-5"></i>
+                                    </div>
+                                    <p class="text-xs font-bold text-slate-800">All Leave Applications Reviewed</p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">No subordinate leave applications currently pending approval.</p>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -356,54 +604,80 @@
                 </div>
             </div>
 
-            <!-- Pending WFH Queue -->
-            <div class="pt-4 border-t border-slate-100">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
+            <!-- Sub-Pane 2: Pending WFH Approvals (Horizontal Single View) -->
+            <div id="approval-subpane-wfh" class="approval-subpane space-y-3 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="relative flex-1 max-w-sm">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="pending-wfh-search" oninput="filterPendingWfhTable()" placeholder="Search pending WFH by employee or task..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 bg-white">
+                    </div>
+                    {% if pending_wfh|length > 0 %}
+                    <span class="text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-200 px-3 py-1 rounded-full font-mono flex items-center space-x-1 self-start sm:self-auto">
                         <i data-lucide="home" class="w-3.5 h-3.5 text-teal-600"></i>
-                        <span>Pending Work From Home Approvals ({{ pending_wfh|length }})</span>
-                    </h4>
+                        <span>{{ pending_wfh|length }} WFH Request(s) Awaiting Review</span>
+                    </span>
+                    {% endif %}
                 </div>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
-                        <thead class="bg-slate-50/80 text-slate-600 font-semibold uppercase text-[10px] tracking-wider font-heading">
+                        <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
                             <tr>
-                                <th class="px-4 py-3">Employee</th>
-                                <th class="px-4 py-3">Dates & Days</th>
-                                <th class="px-4 py-3">Reason</th>
-                                <th class="px-4 py-3 text-right">Review Actions</th>
+                                <th class="px-5 py-3.5">Employee Name</th>
+                                <th class="px-5 py-3.5">Requested Dates</th>
+                                <th class="px-5 py-3.5">Days</th>
+                                <th class="px-5 py-3.5">Work Objectives</th>
+                                <th class="px-5 py-3.5 text-right">Review Decision</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 bg-white">
+                        <tbody id="pending-wfh-table-body" class="divide-y divide-slate-100 bg-white">
                             {% for pw in pending_wfh %}
-                            <tr class="hover:bg-slate-50/80 transition-colors">
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="font-bold text-slate-900">{{ pw.employee.name }}</div>
-                                    <div class="text-[10px] text-slate-500">{{ pw.employee.department.name if pw.employee.department else 'General' }}</div>
+                            <tr class="hover:bg-slate-50/80 transition-colors pending-wfh-row" data-search="{{ pw.employee.name|lower }} {{ pw.reason|lower }}">
+                                <td class="px-5 py-3.5 whitespace-nowrap">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs font-heading shrink-0">
+                                            {{ pw.employee.name[0]|upper }}
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-slate-900">{{ pw.employee.name }}</p>
+                                            <p class="text-[10px] text-slate-500">{{ pw.employee.department.name if pw.employee.department else 'General' }}</p>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="font-mono font-semibold text-slate-900">{{ pw.start_date }} to {{ pw.end_date }}</div>
-                                    <div class="text-[10px] text-slate-500">{{ pw.total_days }} day(s)</div>
+
+                                <td class="px-5 py-3.5 whitespace-nowrap font-mono">
+                                    <div class="font-bold text-slate-900 text-xs">{{ pw.start_date }} → {{ pw.end_date }}</div>
                                 </td>
-                                <td class="px-4 py-3 text-slate-700 max-w-xs">
-                                    {{ pw.reason }}
+
+                                <td class="px-5 py-3.5 whitespace-nowrap font-mono">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                                        {{ pw.total_days }} day(s)
+                                    </span>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-right space-x-2">
+
+                                <td class="px-5 py-3.5 text-slate-700 max-w-xs">
+                                    <p class="text-xs italic bg-slate-50 p-2 rounded-lg border border-slate-200/80">"{{ pw.reason }}"</p>
+                                </td>
+
+                                <td class="px-5 py-3.5 whitespace-nowrap text-right space-x-2">
                                     <form method="POST" action="/leaves/wfh/{{ pw.id }}/approve" class="inline">
-                                        <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-all active:scale-95 cursor-pointer">
-                                            <i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i> Approve WFH
+                                        <button type="submit" class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all active:scale-95 cursor-pointer">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i> Authorize WFH
                                         </button>
                                     </form>
-                                    <button type="button" onclick="openRejectModal('/leaves/wfh/{{ pw.id }}/reject', '{{ pw.employee.name }}', 'WFH')" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-2xs transition-all active:scale-95 cursor-pointer">
-                                        <i data-lucide="x" class="w-3.5 h-3.5 mr-1"></i> Reject
+                                    <button type="button" onclick="openRejectModal('/leaves/wfh/{{ pw.id }}/reject', '{{ pw.employee.name }}', 'WFH request')" class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-2xs transition-all active:scale-95 cursor-pointer">
+                                        <i data-lucide="x" class="w-3.5 h-3.5 mr-1"></i> Decline
                                     </button>
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-slate-500 text-xs">
-                                    🎉 No pending WFH requests requiring approval.
+                                <td colspan="5" class="px-6 py-10 text-center text-slate-500">
+                                    <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-2 border border-teal-200">
+                                        <i data-lucide="check-check" class="w-5 h-5"></i>
+                                    </div>
+                                    <p class="text-xs font-bold text-slate-800">All WFH Requests Reviewed</p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">No remote punch authorizations awaiting review.</p>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -415,65 +689,101 @@
         </div>
         {% endif %}
 
-        <!-- Tab 3: Today's Remote & Off -->
-        <div id="tab-content-today_status" class="tab-pane p-5 space-y-6 hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Tab Content 4: Who is Off / WFH Today -->
+        <div id="tab-content-today_status" class="tab-pane p-5 sm:p-6 space-y-6 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
-                <!-- Working From Home Today -->
-                <div class="bg-teal-50/40 rounded-xl p-4 border border-teal-200/80">
-                    <h4 class="text-xs font-bold text-teal-900 uppercase tracking-wider flex items-center space-x-2 mb-3">
-                        <i data-lucide="home" class="w-4 h-4 text-teal-600"></i>
-                        <span>🏠 Working From Home Today ({{ active_today_wfh|length }})</span>
-                    </h4>
-                    
-                    <div class="space-y-2">
-                        {% for aw in active_today_wfh %}
-                        <div class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-teal-100 shadow-2xs">
+                <!-- Working From Home Today Card -->
+                <div class="bg-teal-50/30 rounded-2xl p-5 border border-teal-200/80 shadow-2xs flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 border-b border-teal-100 mb-3">
                             <div class="flex items-center space-x-2.5">
-                                <div class="w-7 h-7 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs font-heading">
-                                    {{ aw.employee.name[0]|upper }}
+                                <div class="p-2 rounded-xl bg-teal-100/80 text-teal-800">
+                                    <i data-lucide="home" class="w-4 h-4"></i>
                                 </div>
                                 <div>
-                                    <p class="text-xs font-bold text-slate-900">{{ aw.employee.name }}</p>
-                                    <p class="text-[10px] text-slate-500">{{ aw.employee.department.name if aw.employee.department else 'General' }}</p>
+                                    <h4 class="text-sm font-bold text-slate-900 font-heading">🏠 Working Remotely Today</h4>
+                                    <p class="text-[11px] text-slate-500">Authorized WFH with remote punch enabled</p>
                                 </div>
                             </div>
-                            <span class="text-[11px] font-medium text-teal-700 font-mono">
-                                {{ aw.start_date }} to {{ aw.end_date }}
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-teal-100 text-teal-800">
+                                {{ active_today_wfh|length }} Active
                             </span>
                         </div>
-                        {% else %}
-                        <p class="text-xs text-slate-500 py-3 text-center">No employees scheduled for WFH today.</p>
-                        {% endfor %}
+
+                        <div class="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                            {% for aw in active_today_wfh %}
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-white border border-teal-100 shadow-2xs hover:border-teal-300 transition-all">
+                                <div class="flex items-center space-x-3 min-w-0">
+                                    <div class="w-9 h-9 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold text-xs font-heading shrink-0 shadow-2xs">
+                                        {{ aw.employee.name[0]|upper }}
+                                    </div>
+                                    <div class="min-w-0 flex-1 truncate">
+                                        <p class="text-xs font-bold text-slate-900 truncate">{{ aw.employee.name }}</p>
+                                        <p class="text-[11px] text-slate-500 truncate">{{ aw.employee.department.name if aw.employee.department else 'General' }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right shrink-0 pl-3">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-teal-50 text-teal-700 border border-teal-200">
+                                        {{ aw.start_date }} → {{ aw.end_date }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="py-10 text-center text-slate-500">
+                                <i data-lucide="building" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                <p class="text-xs font-semibold text-slate-700">No Remote WFH Shifts Today</p>
+                                <p class="text-[11px] text-slate-400">All workforce members are scheduled on standard office presence.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
 
-                <!-- On Leave Today -->
-                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2 mb-3">
-                        <i data-lucide="plane" class="w-4 h-4 text-rose-600"></i>
-                        <span>🌴 On Leave Today ({{ active_today_leaves|length }})</span>
-                    </h4>
-
-                    <div class="space-y-2">
-                        {% for al in active_today_leaves %}
-                        <div class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 shadow-2xs">
+                <!-- On Leave Today Card -->
+                <div class="bg-rose-50/30 rounded-2xl p-5 border border-rose-200/80 shadow-2xs flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 border-b border-rose-100 mb-3">
                             <div class="flex items-center space-x-2.5">
-                                <div class="w-7 h-7 rounded-lg bg-rose-700 text-white flex items-center justify-center font-bold text-xs font-heading">
-                                    {{ al.employee.name[0]|upper }}
+                                <div class="p-2 rounded-xl bg-rose-100/80 text-rose-800">
+                                    <i data-lucide="plane-takeoff" class="w-4 h-4"></i>
                                 </div>
                                 <div>
-                                    <p class="text-xs font-bold text-slate-900">{{ al.employee.name }}</p>
-                                    <p class="text-[10px] text-slate-500">{{ al.leave_type.name }}</p>
+                                    <h4 class="text-sm font-bold text-slate-900 font-heading">🌴 On Leave / Off Today</h4>
+                                    <p class="text-[11px] text-slate-500">Approved time-off & statutory leave</p>
                                 </div>
                             </div>
-                            <span class="text-[11px] font-medium text-slate-600 font-mono">
-                                {{ al.start_date }} to {{ al.end_date }}
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-rose-100 text-rose-800">
+                                {{ active_today_leaves|length }} On Leave
                             </span>
                         </div>
-                        {% else %}
-                        <p class="text-xs text-slate-500 py-3 text-center">No employees on approved leave today.</p>
-                        {% endfor %}
+
+                        <div class="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                            {% for al in active_today_leaves %}
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-white border border-rose-100 shadow-2xs hover:border-rose-300 transition-all">
+                                <div class="flex items-center space-x-3 min-w-0">
+                                    <div class="w-9 h-9 rounded-xl bg-rose-700 text-white flex items-center justify-center font-bold text-xs font-heading shrink-0 shadow-2xs">
+                                        {{ al.employee.name[0]|upper }}
+                                    </div>
+                                    <div class="min-w-0 flex-1 truncate">
+                                        <p class="text-xs font-bold text-slate-900 truncate">{{ al.employee.name }}</p>
+                                        <p class="text-[11px] text-slate-500 truncate">{{ al.leave_type.name if al.leave_type else 'Leave' }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right shrink-0 pl-3">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-rose-50 text-rose-700 border border-rose-200">
+                                        {{ al.start_date }} → {{ al.end_date }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="py-10 text-center text-slate-500">
+                                <i data-lucide="smile" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                <p class="text-xs font-semibold text-slate-700">Full Workforce Present</p>
+                                <p class="text-[11px] text-slate-400">No active leaves scheduled for today.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
 
@@ -485,70 +795,100 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL: Apply for Leave -->
+<!-- MODAL: Apply for Leave (Professional Alignment & Auto-Calculations) -->
 <!-- ========================================================================= -->
 <div id="apply-leave-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
-        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <i data-lucide="plane-takeoff" class="w-5 h-5 text-teal-600"></i>
-                <h3 class="text-sm font-bold text-slate-900 font-heading">Submit Leave Application</h3>
+    <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
+        <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 rounded-xl bg-teal-100 text-teal-800">
+                    <i data-lucide="plane-takeoff" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 font-heading">Submit Leave Application</h3>
+                    <p class="text-[11px] text-slate-500">Select category and dates to apply for time-off.</p>
+                </div>
             </div>
-            <button onclick="closeApplyLeaveModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
-                <i data-lucide="x" class="w-4 h-4"></i>
+            <button onclick="closeApplyLeaveModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
         <form method="POST" action="/leaves/apply" class="p-6 space-y-4">
+            
+            <!-- Category Selector with Live Quota Preview -->
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Leave Category <span class="text-rose-500">*</span></label>
-                <select name="leave_type_id" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                    Leave Category <span class="text-rose-500">*</span>
+                </label>
+                <select name="leave_type_id" id="modal-leave-type-select" required onchange="updateSelectedLeaveQuota()" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-medium">
                     {% for lt in leave_types %}
-                    <option value="{{ lt.id }}">{{ lt.name }} ({{ lt.code }}) — {{ 'Paid' if lt.is_paid else 'Unpaid' }}</option>
+                    {% set b_match = my_balances|selectattr('leave_type_id', 'equalto', lt.id)|first %}
+                    <option value="{{ lt.id }}" data-remaining="{{ b_match.remaining_days if b_match else lt.default_days_per_year }}" data-paid="{{ 'true' if lt.is_paid else 'false' }}">
+                        {{ lt.name }} ({{ lt.code }}) — Available: {{ b_match.remaining_days|int if b_match and b_match.remaining_days.is_integer() else (b_match.remaining_days if b_match else lt.default_days_per_year) }} day(s) [{{ 'Paid' if lt.is_paid else 'Unpaid' }}]
+                    </option>
                     {% endfor %}
                 </select>
+                <p id="quota-hint-badge" class="text-[11px] text-teal-700 font-medium mt-1">
+                    💡 <em>Select category to check available quota for this request.</em>
+                </p>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <!-- Date Ranges -->
+            <div class="grid grid-cols-2 gap-3.5">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Start Date <span class="text-rose-500">*</span></label>
-                    <input type="date" name="start_date" id="leave_start_date" required onchange="calculateDuration()" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        Start Date <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="date" name="start_date" id="leave_start_date" required onchange="calculateDuration()" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">End Date <span class="text-rose-500">*</span></label>
-                    <input type="date" name="end_date" id="leave_end_date" required onchange="calculateDuration()" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        End Date <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="date" name="end_date" id="leave_end_date" required onchange="calculateDuration()" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
                 </div>
             </div>
 
-            <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <label class="flex items-center space-x-2 text-xs font-semibold text-slate-800 cursor-pointer">
-                    <input type="checkbox" name="is_half_day" id="is_half_day_cb" value="true" onchange="toggleHalfDayOptions()" class="rounded text-teal-600 focus:ring-teal-500">
-                    <span>Half-Day Leave (0.5 Day)</span>
+            <!-- Half-Day Selector -->
+            <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
+                <label class="flex items-center space-x-2.5 text-xs font-bold text-slate-800 cursor-pointer">
+                    <input type="checkbox" name="is_half_day" id="is_half_day_cb" value="true" onchange="toggleHalfDayOptions()" class="rounded text-teal-600 focus:ring-teal-500 w-4 h-4">
+                    <span>Half-Day Session (0.5 Day)</span>
                 </label>
 
-                <div id="half_day_session_container" class="hidden items-center space-x-3 text-xs text-slate-600">
-                    <label class="flex items-center space-x-1 cursor-pointer">
-                        <input type="radio" name="half_day_session" value="first_half" checked class="text-teal-600">
-                        <span>First Half</span>
+                <div id="half_day_session_container" class="hidden items-center space-x-4 text-xs text-slate-700 pl-6 pt-1">
+                    <label class="flex items-center space-x-1.5 cursor-pointer font-medium">
+                        <input type="radio" name="half_day_session" value="first_half" checked class="text-teal-600 focus:ring-teal-500">
+                        <span>First Half (Morning)</span>
                     </label>
-                    <label class="flex items-center space-x-1 cursor-pointer">
-                        <input type="radio" name="half_day_session" value="second_half" class="text-teal-600">
-                        <span>Second Half</span>
+                    <label class="flex items-center space-x-1.5 cursor-pointer font-medium">
+                        <input type="radio" name="half_day_session" value="second_half" class="text-teal-600 focus:ring-teal-500">
+                        <span>Second Half (Afternoon)</span>
                     </label>
                 </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Reason for Leave <span class="text-rose-500">*</span></label>
-                <textarea name="reason" rows="3" required placeholder="Please provide details for your time off..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500"></textarea>
+            <!-- Calculated Summary Alert -->
+            <div id="leave-calc-banner" class="hidden p-3 rounded-xl bg-teal-50 border border-teal-200 text-xs text-teal-900 font-medium">
+                <span id="leave-calc-text">Duration: 1.0 Day</span>
             </div>
 
-            <div class="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                <button type="button" onclick="closeApplyLeaveModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+            <!-- Reason -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    Reason for Leave <span class="text-rose-500">*</span>
+                </label>
+                <textarea name="reason" rows="3" required placeholder="Please provide specific details or context for your time-off request..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500"></textarea>
+            </div>
+
+            <!-- Footer Buttons -->
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeApplyLeaveModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
                     Cancel
                 </button>
-                <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all active:scale-95">
-                    Submit Application
+                <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all active:scale-95">
+                    Submit Leave Application
                 </button>
             </div>
         </form>
@@ -556,46 +896,51 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL: Request WFH -->
+<!-- MODAL: Request Work From Home (WFH) -->
 <!-- ========================================================================= -->
 <div id="request-wfh-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
-        <div class="px-6 py-4 bg-teal-50/50 border-b border-teal-100 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <i data-lucide="home" class="w-5 h-5 text-teal-600"></i>
-                <h3 class="text-sm font-bold text-slate-900 font-heading">Request Work From Home (WFH)</h3>
+    <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
+        <div class="px-6 py-4 bg-teal-50/60 border-b border-teal-100 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 rounded-xl bg-teal-100 text-teal-800">
+                    <i data-lucide="home" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 font-heading">Request Work From Home (WFH)</h3>
+                    <p class="text-[11px] text-slate-500">Apply for remote days with automatic geofence bypass upon approval.</p>
+                </div>
             </div>
-            <button onclick="closeRequestWfhModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
-                <i data-lucide="x" class="w-4 h-4"></i>
+            <button onclick="closeRequestWfhModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
         <form method="POST" action="/leaves/wfh/apply" class="p-6 space-y-4">
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-3.5">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Start Date <span class="text-rose-500">*</span></label>
-                    <input type="date" name="start_date" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
+                    <input type="date" name="start_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">End Date <span class="text-rose-500">*</span></label>
-                    <input type="date" name="end_date" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
+                    <input type="date" name="end_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Reason / Remote Deliverables <span class="text-rose-500">*</span></label>
-                <textarea name="reason" rows="3" required placeholder="Reason for WFH and summary of tasks planned..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500"></textarea>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Planned Remote Objectives & Tasks <span class="text-rose-500">*</span></label>
+                <textarea name="reason" rows="3" required placeholder="Describe key tasks, projects, or deliverables planned during your remote days..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500"></textarea>
             </div>
 
-            <div class="p-3 bg-teal-50 rounded-xl border border-teal-200 text-xs text-teal-800">
-                💡 <em>Once approved, office geofence verification is automatically bypassed for your daily punch on these dates.</em>
+            <div class="p-3.5 bg-teal-50/80 rounded-xl border border-teal-200 text-xs text-teal-900 leading-relaxed">
+                🏠 <strong>Smart Geofence Bypass:</strong> Once approved by your manager/HR, your daily check-in and check-out can be performed from any location without office radius restrictions.
             </div>
 
-            <div class="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                <button type="button" onclick="closeRequestWfhModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeRequestWfhModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
                     Cancel
                 </button>
-                <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all active:scale-95">
+                <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all active:scale-95">
                     Submit WFH Request
                 </button>
             </div>
@@ -608,49 +953,54 @@
 <!-- MODAL: Direct WFH Allocation (Managers & Admins) -->
 <!-- ========================================================================= -->
 <div id="allocate-wfh-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
+    <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
         <div class="px-6 py-4 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <i data-lucide="user-plus" class="w-5 h-5 text-purple-700"></i>
-                <h3 class="text-sm font-bold text-purple-900 font-heading">Direct WFH Allocation</h3>
+            <div class="flex items-center space-x-3">
+                <div class="p-2 rounded-xl bg-purple-100 text-purple-800">
+                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-purple-900 font-heading">Direct WFH Allocation</h3>
+                    <p class="text-[11px] text-purple-700">Allocate remote days directly to a team member (Instant Approval).</p>
+                </div>
             </div>
-            <button onclick="closeAllocateWfhModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
-                <i data-lucide="x" class="w-4 h-4"></i>
+            <button onclick="closeAllocateWfhModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-purple-100/60 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
         <form method="POST" action="/leaves/wfh/allocate" class="p-6 space-y-4">
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Select Employee <span class="text-rose-500">*</span></label>
-                <select name="employee_id" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500">
-                    <option value="">-- Choose team member --</option>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Select Team Member <span class="text-rose-500">*</span></label>
+                <select name="employee_id" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-medium">
+                    <option value="">-- Choose employee from list --</option>
                     {% for m in team_members %}
                     <option value="{{ m.id }}">{{ m.name }} ({{ m.email }}) — {{ m.department.name if m.department else 'General' }}</option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-3.5">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Start Date <span class="text-rose-500">*</span></label>
-                    <input type="date" name="start_date" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
+                    <input type="date" name="start_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">End Date <span class="text-rose-500">*</span></label>
-                    <input type="date" name="end_date" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
+                    <input type="date" name="end_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Allocation Note / Directive</label>
-                <textarea name="reason" rows="2" placeholder="e.g. Remote sprint / Client on-site / Severe weather..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500">Direct WFH Allocation by Management</textarea>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Allocation Directive / Reason</label>
+                <textarea name="reason" rows="2" placeholder="e.g., Remote sprint, Severe weather directive, Client site..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500">Direct WFH Allocation by Management</textarea>
             </div>
 
-            <div class="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                <button type="button" onclick="closeAllocateWfhModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeAllocateWfhModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
                     Cancel
                 </button>
-                <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-sm transition-all active:scale-95">
+                <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-sm transition-all active:scale-95">
                     Allocate & Notify Employee
                 </button>
             </div>
@@ -659,16 +1009,16 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL: Reject Request with Reason -->
+<!-- MODAL: Reject Request with Remarks -->
 <!-- ========================================================================= -->
 <div id="reject-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
         <div class="px-6 py-4 bg-rose-50 border-b border-rose-100 flex items-center justify-between">
-            <div class="flex items-center space-x-2 text-rose-800 font-heading">
+            <div class="flex items-center space-x-2.5 text-rose-900 font-heading">
                 <i data-lucide="x-octagon" class="w-5 h-5 text-rose-600"></i>
-                <h3 class="text-sm font-bold">Decline Request</h3>
+                <h3 class="text-sm font-bold">Decline Application</h3>
             </div>
-            <button onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
+            <button onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-rose-100/60">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
@@ -678,14 +1028,14 @@
             
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Rejection Remarks <span class="text-rose-500">*</span></label>
-                <textarea name="rejection_reason" rows="3" required placeholder="Reason for decline..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-rose-500"></textarea>
+                <textarea name="rejection_reason" rows="3" required placeholder="Reason for decline (e.g. Critical project deadline, staffing coverage)..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-rose-500"></textarea>
             </div>
 
-            <div class="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                <button type="button" onclick="closeRejectModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeRejectModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
                     Cancel
                 </button>
-                <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-all active:scale-95">
+                <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-all active:scale-95">
                     Confirm Rejection
                 </button>
             </div>
@@ -694,45 +1044,309 @@
 </div>
 {% endif %}
 
+<!-- ========================================================================= -->
+<!-- MODAL: Category-Wise Leave Quota & Balance Breakdown -->
+<!-- ========================================================================= -->
+<div id="quota-breakdown-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold shrink-0 shadow-2xs border border-teal-200/80">
+                    <i data-lucide="pie-chart" class="w-5 h-5 text-teal-700"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center space-x-2 flex-wrap">
+                        <h3 class="text-base font-bold text-slate-900 font-heading">Annual Leave Quotas & Balances</h3>
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold font-mono bg-teal-100 text-teal-800 border border-teal-200">
+                            {{ selected_year }} Policy Year
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5 truncate">Detailed category breakdown of statutory allocations, utilized days, and active balances.</p>
+                </div>
+            </div>
+            <button onclick="closeQuotaBreakdownModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Policy Summary Metric Ribbon -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 px-6 py-3 bg-teal-50/40 border-b border-teal-100/80 text-xs shrink-0">
+            <div class="flex items-center space-x-2">
+                <span class="text-slate-500 font-medium">Policy Year:</span>
+                <span class="font-bold font-mono text-slate-900">{{ selected_year }}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-slate-500 font-medium">Active Entitlements:</span>
+                <span class="font-bold font-mono text-teal-800">{{ my_balances|length }} Categories</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-slate-500 font-medium">Leaves Availed:</span>
+                <span class="font-bold font-mono text-slate-900">{{ total_used_all|int if total_used_all.is_integer() else total_used_all }}d</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-slate-500 font-medium">Pending Review:</span>
+                <span class="font-bold font-mono {% if total_pending_all > 0 %}text-amber-700 font-extrabold{% else %}text-slate-800{% endif %}">
+                    {{ total_pending_all|int if total_pending_all.is_integer() else total_pending_all }}d
+                </span>
+            </div>
+        </div>
+
+        <!-- Modal Body (Scrollable Category Grid) -->
+        <div class="p-6 overflow-y-auto flex-1 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for b in my_balances %}
+                {% set pct_used = ((b.used_days / b.total_allocated * 100)|round|int) if b.total_allocated > 0 else 0 %}
+                <div class="bg-slate-50/70 hover:bg-white rounded-xl p-4 border border-slate-200 hover:border-teal-400 hover:shadow-card transition-all flex flex-col justify-between group">
+                    <div>
+                        <!-- Header with Code & Paid Tag -->
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold text-white tracking-wider font-mono shadow-2xs" style="background-color: {{ b.leave_type.color_code or '#008080' }};">
+                                    {{ b.leave_type.code }}
+                                </span>
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border {{ 'bg-emerald-50 text-emerald-700 border-emerald-200' if b.leave_type.is_paid else 'bg-slate-100 text-slate-600 border-slate-300' }}">
+                                    {{ 'Paid' if b.leave_type.is_paid else 'Unpaid' }}
+                                </span>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500 font-mono" title="Total Annual Quota">
+                                {{ b.total_allocated|int if b.total_allocated.is_integer() else b.total_allocated }}d Quota
+                            </span>
+                        </div>
+
+                        <!-- Leave Name & Description -->
+                        <h4 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-teal-900 transition-colors truncate" title="{{ b.leave_type.name }}">
+                            {{ b.leave_type.name }}
+                        </h4>
+                        <p class="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-relaxed" title="{{ b.leave_type.description or 'Standard company leave allocation.' }}">
+                            {{ b.leave_type.description or 'Standard company leave allocation.' }}
+                        </p>
+
+                        <!-- Available Hero Metric -->
+                        <div class="flex items-baseline space-x-1.5 my-3">
+                            <span class="text-3xl font-extrabold text-slate-900 font-mono tracking-tight group-hover:text-teal-800 transition-colors">
+                                {{ b.remaining_days|int if b.remaining_days.is_integer() else b.remaining_days }}
+                            </span>
+                            <span class="text-xs font-semibold text-slate-500">days remaining</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar & Details -->
+                    <div class="space-y-2 pt-2 border-t border-slate-200/70">
+                        <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                            <div class="h-1.5 rounded-full transition-all duration-500" style="width: {{ [pct_used, 100]|min }}%; background-color: {{ b.leave_type.color_code or '#008080' }};"></div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between text-[11px] font-medium text-slate-600">
+                            <span>Used: <strong class="text-slate-800 font-bold font-mono">{{ b.used_days|int if b.used_days.is_integer() else b.used_days }}d</strong></span>
+                            {% if b.pending_days > 0 %}
+                            <span class="text-amber-700 font-bold font-mono">Pending: {{ b.pending_days|int if b.pending_days.is_integer() else b.pending_days }}d</span>
+                            {% else %}
+                            <span class="text-slate-400">{{ pct_used }}% used</span>
+                            {% endif %}
+                        </div>
+
+                        <button type="button" onclick="closeQuotaBreakdownModal(); openApplyLeaveModal('{{ b.leave_type.id }}')" class="w-full mt-2 py-1.5 px-3 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200/80 transition-all flex items-center justify-center space-x-1 cursor-pointer active:scale-95 shadow-2xs">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            <span>Apply for {{ b.leave_type.code }}</span>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+            <span class="text-[11px] text-slate-500">💡 Balances adjust automatically upon approval. Unused quotas roll over per policy rules.</span>
+            <div class="flex items-center space-x-2 self-end sm:self-auto">
+                <button type="button" onclick="closeQuotaBreakdownModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 transition-colors cursor-pointer shadow-2xs">
+                    Close
+                </button>
+                <button type="button" onclick="closeQuotaBreakdownModal(); openApplyLeaveModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all cursor-pointer flex items-center space-x-1.5 active:scale-95">
+                    <i data-lucide="plane-takeoff" class="w-3.5 h-3.5"></i>
+                    <span>Apply for Leave</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    // Tab Switching
+    // Tab Switching Helper
     function switchTab(tabName) {
         document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('border-teal-600', 'text-teal-800', 'bg-white', 'font-bold');
-            btn.classList.add('border-transparent', 'text-slate-500', 'hover:text-slate-800', 'hover:bg-slate-100/60');
+            btn.classList.remove('border-teal-600', 'text-teal-900', 'bg-white', 'font-bold');
+            btn.classList.add('border-transparent', 'text-slate-500', 'hover:text-slate-800', 'hover:bg-slate-100/80');
         });
         document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
 
         const activeBtn = document.getElementById('tab-btn-' + tabName);
         const activePane = document.getElementById('tab-content-' + tabName);
         if (activeBtn && activePane) {
-            activeBtn.classList.remove('border-transparent', 'text-slate-500', 'hover:text-slate-800', 'hover:bg-slate-100/60');
-            activeBtn.classList.add('border-teal-600', 'text-teal-800', 'bg-white', 'font-bold');
+            activeBtn.classList.remove('border-transparent', 'text-slate-500', 'hover:text-slate-800', 'hover:bg-slate-100/80');
+            activeBtn.classList.add('border-teal-600', 'text-teal-900', 'bg-white', 'font-bold');
             activePane.classList.remove('hidden');
         }
     }
 
-    // Modal Handlers
-    function openApplyLeaveModal() {
+    // Client-side Filter for Leaves Table
+    function filterLeavesTable() {
+        const query = (document.getElementById('leaves-search')?.value || '').toLowerCase().trim();
+        const status = (document.getElementById('leaves-status-filter')?.value || 'all').toLowerCase();
+        const rows = document.querySelectorAll('.leave-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const searchData = row.getAttribute('data-search') || '';
+            const rowStatus = row.getAttribute('data-status') || '';
+            
+            const matchesQuery = !query || searchData.includes(query);
+            const matchesStatus = status === 'all' || rowStatus === status;
+
+            if (matchesQuery && matchesStatus) {
+                row.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+    }
+
+    // Client-side Filter for WFH Table
+    function filterWfhTable() {
+        const query = (document.getElementById('wfh-search')?.value || '').toLowerCase().trim();
+        const status = (document.getElementById('wfh-status-filter')?.value || 'all').toLowerCase();
+        const rows = document.querySelectorAll('.wfh-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const searchData = row.getAttribute('data-search') || '';
+            const rowStatus = row.getAttribute('data-status') || '';
+            
+            const matchesQuery = !query || searchData.includes(query);
+            const matchesStatus = status === 'all' || rowStatus === status;
+
+            if (matchesQuery && matchesStatus) {
+                row.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+    }
+
+    // Dynamic Quota Helper in Apply Leave Modal
+    function updateSelectedLeaveQuota() {
+        const select = document.getElementById('modal-leave-type-select');
+        const badge = document.getElementById('quota-hint-badge');
+        if (!select || !badge) return;
+        const opt = select.options[select.selectedIndex];
+        const rem = opt.getAttribute('data-remaining') || '0';
+        const isPaid = opt.getAttribute('data-paid') === 'true';
+        badge.innerHTML = `💡 <em>Available quota for selected category: <strong>${rem} day(s)</strong> (${isPaid ? 'Paid' : 'Unpaid'}).</em>`;
+    }
+
+    // Duration Auto-Calculator
+    function calculateDuration() {
+        const s = document.getElementById('leave_start_date');
+        const e = document.getElementById('leave_end_date');
+        const isHalfDay = document.getElementById('is_half_day_cb')?.checked;
+        const banner = document.getElementById('leave-calc-banner');
+        const text = document.getElementById('leave-calc-text');
+
+        if (s && e && s.value) {
+            if (!e.value) e.value = s.value;
+            const d1 = new Date(s.value);
+            const d2 = new Date(e.value);
+            if (!isNaN(d1) && !isNaN(d2) && d2 >= d1) {
+                const diffTime = Math.abs(d2 - d1);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                const total = isHalfDay ? 0.5 : diffDays;
+                if (banner && text) {
+                    banner.classList.remove('hidden');
+                    text.innerHTML = `⏱ <strong>Calculated Duration:</strong> ${total} Day(s) (${isHalfDay ? 'Half-Day' : (diffDays === 1 ? 'Single Day' : diffDays + ' Days')})`;
+                }
+            }
+        }
+    }
+
+    function toggleHalfDayOptions() {
+        const cb = document.getElementById('is_half_day_cb');
+        const container = document.getElementById('half_day_session_container');
+        if (cb && container) {
+            if (cb.checked) {
+                container.classList.remove('hidden');
+                container.classList.add('flex');
+            } else {
+                container.classList.add('hidden');
+                container.classList.remove('flex');
+            }
+            calculateDuration();
+        }
+    }
+
+    // Quota Breakdown Modal Handlers
+    function openQuotaBreakdownModal() {
+        const modal = document.getElementById('quota-breakdown-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+    }
+    function closeQuotaBreakdownModal() {
+        const modal = document.getElementById('quota-breakdown-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
+
+    // Modal Visibility Handlers
+    function openApplyLeaveModal(leaveTypeId) {
         const modal = document.getElementById('apply-leave-modal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        if (leaveTypeId) {
+            const select = document.getElementById('modal-leave-type-select');
+            if (select) {
+                select.value = leaveTypeId;
+            }
+        }
+        updateSelectedLeaveQuota();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
     function closeApplyLeaveModal() {
         const modal = document.getElementById('apply-leave-modal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
     }
 
     function openRequestWfhModal() {
         const modal = document.getElementById('request-wfh-modal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
     }
     function closeRequestWfhModal() {
         const modal = document.getElementById('request-wfh-modal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
     }
 
     function openAllocateWfhModal() {
@@ -740,6 +1354,9 @@
         if (modal) {
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         }
     }
     function closeAllocateWfhModal() {
@@ -756,9 +1373,12 @@
         const desc = document.getElementById('reject-modal-desc');
         if (modal && form) {
             form.action = actionUrl;
-            if (desc) desc.textContent = `Decline ${type} request for ${empName}:`;
+            if (desc) desc.textContent = `Decline ${type} for ${empName}:`;
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         }
     }
     function closeRejectModal() {
@@ -769,26 +1389,55 @@
         }
     }
 
-    function toggleHalfDayOptions() {
-        const cb = document.getElementById('is_half_day_cb');
-        const container = document.getElementById('half_day_session_container');
-        if (cb && container) {
-            if (cb.checked) {
-                container.classList.remove('hidden');
-                container.classList.add('flex');
+    // Horizontal Approvals Sub-Tab Switcher
+    function switchApprovalSubTab(subTab) {
+        document.querySelectorAll('.approval-subtab-btn').forEach(btn => {
+            btn.classList.remove('bg-white', 'text-purple-900', 'text-teal-900', 'shadow-2xs');
+            btn.classList.add('text-slate-600', 'hover:text-slate-900');
+        });
+        document.querySelectorAll('.approval-subpane').forEach(p => p.classList.add('hidden'));
+
+        const btn = document.getElementById('approval-subtab-btn-' + subTab);
+        const pane = document.getElementById('approval-subpane-' + subTab);
+        if (btn && pane) {
+            btn.classList.remove('text-slate-600', 'hover:text-slate-900');
+            btn.classList.add('bg-white', 'shadow-2xs');
+            if (subTab === 'leaves') {
+                btn.classList.add('text-purple-900');
             } else {
-                container.classList.add('hidden');
-                container.classList.remove('flex');
+                btn.classList.add('text-teal-900');
             }
+            pane.classList.remove('hidden');
+        }
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
     }
 
-    function calculateDuration() {
-        const s = document.getElementById('leave_start_date');
-        const e = document.getElementById('leave_end_date');
-        if (s && e && s.value && !e.value) {
-            e.value = s.value;
-        }
+    // Client-side search for Pending Leaves
+    function filterPendingLeavesTable() {
+        const q = (document.getElementById('pending-leaves-search')?.value || '').toLowerCase().trim();
+        document.querySelectorAll('.pending-leave-row').forEach(row => {
+            const data = (row.getAttribute('data-search') || '').toLowerCase();
+            if (!q || data.includes(q)) {
+                row.classList.remove('hidden');
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+    }
+
+    // Client-side search for Pending WFH
+    function filterPendingWfhTable() {
+        const q = (document.getElementById('pending-wfh-search')?.value || '').toLowerCase().trim();
+        document.querySelectorAll('.pending-wfh-row').forEach(row => {
+            const data = (row.getAttribute('data-search') || '').toLowerCase();
+            if (!q || data.includes(q)) {
+                row.classList.remove('hidden');
+            } else {
+                row.classList.add('hidden');
+            }
+        });
     }
 </script>
 {% endblock %}

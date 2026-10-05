@@ -5,7 +5,7 @@
 {% block content %}
 <div class="space-y-5">
 
-    <!-- Top Action Bar -->
+    <!-- Top Action Bar & Standard Schedule Ribbon -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <div class="flex items-center space-x-2.5">
@@ -15,6 +15,20 @@
                 </span>
             </div>
             <p class="text-xs text-slate-500 mt-0.5">Chronological daily work sessions, punch timestamps & active durations</p>
+        </div>
+
+        {% set comp = company or get_company() %}
+        <div class="flex items-center flex-wrap gap-2 text-xs">
+            <div class="inline-flex items-center space-x-2 bg-slate-50 border border-slate-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-teal-600"></i>
+                <span class="text-slate-500 font-medium">Standard Shift:</span>
+                <span class="font-bold font-mono text-slate-800">{{ comp.standard_hours_per_day or 8.0 }}h</span>
+            </div>
+            <div class="inline-flex items-center space-x-2 bg-amber-50/70 border border-amber-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
+                <i data-lucide="coffee" class="w-3.5 h-3.5 text-amber-600"></i>
+                <span class="text-amber-800 font-medium">Lunch Break:</span>
+                <span class="font-bold font-mono text-amber-900">{{ comp.lunch_start_time or '13:00' }} – {{ comp.lunch_end_time or '14:00' }} ({{ comp.lunch_break_hours or 1.0 }}h)</span>
+            </div>
         </div>
     </div>
 

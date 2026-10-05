@@ -210,7 +210,7 @@
                                         {{ payslip.employee.name if payslip.employee else 'Unknown Employee' }}
                                     </a>
                                     <span class="text-[11px] text-slate-500 font-medium block truncate">
-                                        <span class="font-mono text-slate-400 font-semibold mr-1">#{{ "%04d" % (payslip.employee.id if payslip.employee else (payslip.employee_id or 0)) }}</span>• {{ payslip.employee.department.name if payslip.employee and payslip.employee.department and payslip.employee.department.name else (payslip.employee.department if payslip.employee and payslip.employee.department else 'General') }}
+                                        <span class="font-mono text-slate-400 font-semibold mr-1">{{ format_emp_code(payslip.employee or payslip.employee_id, company) }}</span>• {{ payslip.employee.department.name if payslip.employee and payslip.employee.department and payslip.employee.department.name else (payslip.employee.department if payslip.employee and payslip.employee.department else 'General') }}
                                     </span>
                                 </div>
                             </div>

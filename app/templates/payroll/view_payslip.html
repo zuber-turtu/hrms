@@ -195,7 +195,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="font-medium text-slate-500">Employee ID:</span>
-                        <span class="font-mono font-bold text-slate-900 text-right">#{{ "%04d" % payslip.employee.id }}</span>
+                        <span class="font-mono font-bold text-slate-900 text-right">{{ format_emp_code(payslip.employee, company) }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="font-medium text-slate-500">Department:</span>

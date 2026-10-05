@@ -64,7 +64,7 @@
                         <i data-lucide="map-pin" class="w-3 h-3 mr-1 text-teal-600"></i> Office Geofenced
                     </span>
                     {% endif %}
-                    <span class="text-[11px] sm:text-xs text-slate-400 font-mono">ID: #{{ "%04d"|format(employee.id) }}</span>
+                    <span class="text-[11px] sm:text-xs text-slate-400 font-mono">ID: {{ format_emp_code(employee) }}</span>
                 </div>
                 <h2 class="text-lg sm:text-2xl font-bold font-heading text-slate-900 tracking-tight mt-1 truncate">
                     {{ employee.name }}
@@ -216,6 +216,12 @@
                     <div class="flex justify-between items-center py-0.5">
                         <dt class="font-medium text-slate-500">Designation</dt>
                         <dd class="font-semibold text-slate-900">{{ employee.designation or '—' }}</dd>
+                    </div>
+                    <div class="flex justify-between items-center py-0.5">
+                        <dt class="font-medium text-slate-500">Work Shift & Lunch</dt>
+                        <dd class="font-semibold text-slate-800 text-[11px] font-mono">
+                            {{ (company or get_company()).standard_hours_per_day or 8.0 }}h Shift | Lunch {{ (company or get_company()).lunch_start_time or '13:00' }}-{{ (company or get_company()).lunch_end_time or '14:00' }} ({{ (company or get_company()).lunch_break_hours or 1.0 }}h)
+                        </dd>
                     </div>
                     <div class="flex justify-between items-center py-0.5">
                         <dt class="font-medium text-slate-500">Geofence Policy</dt>

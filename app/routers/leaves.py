@@ -21,18 +21,40 @@ allow_hr_admin = RoleChecker(["admin", "hr_admin", "manager"])
 allow_admin_only = RoleChecker(["admin", "hr_admin"])
 
 
+def is_leave_type_applicable(leave_code: str, gender: Optional[str]) -> bool:
+    """
+    Checks if a leave type is applicable based on employee gender.
+    - Maternity Leave ('ML'): Only applicable for female employees ('female', 'f', 'woman').
+    - Paternity Leave ('PL_PAT'): Only applicable for male employees (non-female).
+    - All other leave types (CL, SL, EL, COMP_OFF, LWP): Applicable for all workforce members.
+    """
+    g = (gender or "").strip().lower()
+    if leave_code == "ML":
+        return g in ["female", "f", "woman"]
+    if leave_code == "PL_PAT":
+        return g not in ["female", "f", "woman"]
+    return True
+
+
 def ensure_employee_leave_balances(db: Session, employee_id: int, year: Optional[int] = None) -> List[LeaveBalance]:
     """
-    Initializes annual leave balance records for all active leave types for the employee
-    if they do not already exist for the specified year.
+    Initializes annual leave balance records for all active applicable leave types
+    for the employee if they do not already exist for the specified year.
+    Maternity Leave is strictly reserved for female employees.
     """
     if year is None:
         year = get_ist_today().year
+
+    employee = db.query(Employee).filter(Employee.id == employee_id).first()
+    emp_gender = employee.gender if employee else None
 
     leave_types = db.query(LeaveType).filter(LeaveType.is_active == True).all()
     balances = []
 
     for lt in leave_types:
+        if not is_leave_type_applicable(lt.code, emp_gender):
+            continue
+
         bal = (
             db.query(LeaveBalance)
             .filter(
@@ -79,7 +101,7 @@ async def leaves_dashboard(
 ):
     current_year = year or get_ist_today().year
     
-    # 1. Ensure user's own balances are initialized
+    # 1. Ensure user's own balances are initialized (gender filtered)
     my_balances = ensure_employee_leave_balances(db, current_user.id, current_year)
     
     # 2. Query user's own leave applications
@@ -103,7 +125,13 @@ async def leaves_dashboard(
     pending_leaves = []
     pending_wfh = []
     team_members = []
+    
+    # Applicable leave types for current user dropdown
     all_leave_types = db.query(LeaveType).filter(LeaveType.is_active == True).order_by(LeaveType.id.asc()).all()
+    applicable_leave_types = [
+        lt for lt in all_leave_types
+        if is_leave_type_applicable(lt.code, current_user.gender)
+    ]
 
     if is_approver:
         if current_user.role == "manager":
@@ -180,7 +208,7 @@ async def leaves_dashboard(
         "user": current_user,
         "tab": tab,
         "selected_year": current_year,
-        "leave_types": all_leave_types,
+        "leave_types": applicable_leave_types,
         "my_balances": my_balances,
         "my_leaves": my_leaves,
         "my_wfh": my_wfh,
@@ -231,6 +259,19 @@ async def apply_leave(
     if not leave_type:
         return RedirectResponse(
             url="/leaves?error=Selected+leave+type+is+invalid+or+inactive.",
+            status_code=303,
+        )
+
+    # Gender-specific eligibility check
+    if not is_leave_type_applicable(leave_type.code, current_user.gender):
+        if leave_type.code == "ML":
+            err_msg = "Maternity leave is applicable for female employees only."
+        elif leave_type.code == "PL_PAT":
+            err_msg = "Paternity leave is applicable for male employees only."
+        else:
+            err_msg = f"{leave_type.name} is not applicable for your profile."
+        return RedirectResponse(
+            url=f"/leaves?error={append_query_param('', 'error', err_msg).split('error=')[1]}",
             status_code=303,
         )
 

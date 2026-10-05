@@ -62,6 +62,9 @@ def ensure_schema_columns(db_engine):
                 "website": "VARCHAR(255)",
                 "standard_hours_per_day": "FLOAT DEFAULT 8.0",
                 "half_day_threshold_hours": "FLOAT DEFAULT 4.5",
+                "lunch_break_hours": "FLOAT DEFAULT 1.0",
+                "lunch_start_time": "VARCHAR(20) DEFAULT '13:00'",
+                "lunch_end_time": "VARCHAR(20) DEFAULT '14:00'",
                 "cin": "VARCHAR(100)",
                 "gstin": "VARCHAR(100)",
                 "pan": "VARCHAR(100)",
@@ -74,6 +77,8 @@ def ensure_schema_columns(db_engine):
                 "geofence_radius_meters": "INTEGER DEFAULT 200",
                 "geofence_enabled": "BOOLEAN DEFAULT TRUE",
                 "geofence_strict_mode": "BOOLEAN DEFAULT TRUE",
+                "role_permissions": "TEXT",
+                "employee_id_prefix": "VARCHAR(50)",
             },
             "employee_profiles": {
                 "avatar_url": "VARCHAR(500)",

@@ -1,7 +1,7 @@
 {% for emp in employees %}
 <tr class="hover:bg-slate-50/80 transition-colors emp-row" 
     data-id="{{ emp.id }}"
-    data-id-fmt="{{ '%04d' % emp.id }}"
+    data-id-fmt="{{ format_emp_code(emp) }}"
     data-letter="{{ emp.name[0]|upper if emp.name else '#' }}"
     data-name="{{ emp.name|lower }}" 
     data-email="{{ emp.email|lower }}" 
@@ -22,7 +22,7 @@
                     {{ emp.name }}
                 </a>
                 <span class="text-[11px] text-slate-500 block truncate">
-                    <span class="font-mono text-slate-400 font-semibold mr-1">#{{ "%04d" % emp.id }}</span>• {{ emp.email }}
+                    <span class="font-mono text-slate-400 font-semibold mr-1">{{ format_emp_code(emp) }}</span>• {{ emp.email }}
                 </span>
             </div>
         </div>

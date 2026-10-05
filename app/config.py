@@ -55,6 +55,9 @@ class Settings:
     COMPANY_WORKING_DAYS_PER_MONTH: int = int(os.getenv("COMPANY_WORKING_DAYS_PER_MONTH", "22"))
     COMPANY_STANDARD_HOURS_PER_DAY: float = float(os.getenv("COMPANY_STANDARD_HOURS_PER_DAY", "8.0"))
     COMPANY_HALF_DAY_HOURS: float = float(os.getenv("COMPANY_HALF_DAY_HOURS", "4.0"))
+    COMPANY_LUNCH_BREAK_HOURS: float = float(os.getenv("COMPANY_LUNCH_BREAK_HOURS", "1.0"))
+    COMPANY_LUNCH_START_TIME: str = os.getenv("COMPANY_LUNCH_START_TIME", "13:00")
+    COMPANY_LUNCH_END_TIME: str = os.getenv("COMPANY_LUNCH_END_TIME", "14:00")
     APP_TIMEZONE: str = os.getenv("APP_TIMEZONE", "Asia/Kolkata")
     TIMEZONE_OFFSET_MINUTES: int = int(os.getenv("TIMEZONE_OFFSET_MINUTES", "330"))
     APP_COPYRIGHT_YEAR: Optional[int] = (

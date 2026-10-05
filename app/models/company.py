@@ -13,6 +13,9 @@ class Company(Base):
     working_days_per_month = Column(Integer, nullable=True)
     standard_hours_per_day = Column(Float, nullable=True)
     half_day_threshold_hours = Column(Float, nullable=True)
+    lunch_break_hours = Column(Float, default=1.0, nullable=True)
+    lunch_start_time = Column(String, default="13:00", nullable=True)
+    lunch_end_time = Column(String, default="14:00", nullable=True)
     support_email = Column(String, nullable=True)
     website = Column(String, nullable=True)
 
@@ -33,3 +36,9 @@ class Company(Base):
     geofence_radius_meters = Column(Integer, default=200)
     geofence_enabled = Column(Boolean, default=False)
     geofence_strict_mode = Column(Boolean, default=False)
+
+    # Dynamic Access Control & Role Permissions Matrix (JSON string)
+    role_permissions = Column(String, nullable=True)
+
+    # Employee ID Prefix (e.g. 'TURTU', 'EMP' -> TURTU-0001; if null/empty -> #0001)
+    employee_id_prefix = Column(String, nullable=True)

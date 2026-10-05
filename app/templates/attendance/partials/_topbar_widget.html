@@ -1,6 +1,20 @@
 {% if user and user.role != 'admin' %}
 {% if request.state.is_checked_in %}
-    <div class="inline-block">
+    <div class="flex items-center space-x-1.5 sm:space-x-2">
+        {% if request.state.is_lunch_window %}
+        <!-- Lunch Break Check Out (Active during configured Lunch Window) -->
+        <button id="lunch-checkout-btn" 
+                onclick="triggerPunch(this, '/attendance/check-out', {punch_reason: 'lunch'})"
+                type="button" 
+                title="Go for Lunch Break ({{ request.state.lunch_start_str }} - {{ request.state.lunch_end_str }})"
+                class="inline-flex items-center px-2 py-1.5 sm:px-3 sm:py-2 border border-amber-400/40 text-xs sm:text-sm font-bold rounded-lg text-amber-950 bg-amber-400 hover:bg-amber-300 shadow-xs hover:shadow transition-all active:scale-[0.98] cursor-pointer shrink-0 animate-pulse">
+            <span class="mr-1.5">🍱</span>
+            <span class="hidden sm:inline">Go for Lunch</span>
+            <span class="sm:hidden">Lunch</span>
+        </button>
+        {% endif %}
+
+        <!-- Standard Shift Check Out -->
         <button id="checkout-btn" 
                 onclick="triggerPunch(this, '/attendance/check-out')"
                 data-checkin-time="{{ request.state.active_check_in_iso if request.state.active_check_in_iso else request.state.active_check_in.isoformat() + '+05:30' }}" 
@@ -17,6 +31,21 @@
     </div>
 {% else %}
     <div class="inline-block">
+        {% if request.state.is_on_lunch_break %}
+        <!-- Lunch Break Return (Resume from Lunch) -->
+        <button id="lunch-checkin-btn"
+                onclick="triggerPunch(this, '/attendance/check-in', {punch_reason: 'lunch_return'})"
+                type="button" 
+                title="Return from Lunch Break ({{ request.state.lunch_start_str }} - {{ request.state.lunch_end_str }})"
+                class="inline-flex items-center px-2.5 py-1.5 sm:px-3.5 sm:py-2 border border-amber-500/40 text-xs sm:text-sm font-bold rounded-lg text-white bg-amber-600 hover:bg-amber-700 shadow-xs hover:shadow transition-all active:scale-[0.98] group cursor-pointer shrink-0">
+            <span class="mr-1.5">🍱</span>
+            <span>Return from Lunch</span>
+            {% if request.state.accumulated_seconds > 0 %}
+                <span class="hidden lg:inline ml-1.5 text-xs text-amber-100 font-normal">({{ request.state.accumulated_time_str }})</span>
+            {% endif %}
+        </button>
+        {% else %}
+        <!-- Standard Shift Check In -->
         <button id="checkin-btn"
                 onclick="triggerPunch(this, '/attendance/check-in')"
                 type="button" 
@@ -29,6 +58,7 @@
                 <span class="hidden lg:inline ml-1.5 text-xs text-teal-100 font-normal">(Last: {{ request.state.last_check_out.strftime('%I:%M %p') }})</span>
             {% endif %}
         </button>
+        {% endif %}
     </div>
 {% endif %}
 {% endif %}

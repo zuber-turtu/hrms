@@ -169,6 +169,7 @@ async def check_in(
     request: Request,
     lat: Optional[float] = Form(None),
     lon: Optional[float] = Form(None),
+    punch_reason: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -251,6 +252,7 @@ async def check_out(
     request: Request,
     lat: Optional[float] = Form(None),
     lon: Optional[float] = Form(None),
+    punch_reason: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -303,6 +305,8 @@ async def check_out(
         log.check_out_lon = lon
         log.check_out_distance_m = dist_m
         log.check_out_in_range = in_range
+        if punch_reason and "lunch" in punch_reason.lower():
+            log.override_reason = "Lunch Break"
         db.commit()
 
     if request.headers.get("HX-Request"):
