@@ -9,8 +9,7 @@ from app.models.leave import LeaveType, LeaveBalance, LeaveApplication, WfhReque
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.utils.timezone import get_ist_today, get_ist_now
-from app.services.email_service import send_leave_status_email, send_wfh_status_email
-from app.routers.leaves import ensure_employee_leave_balances, calculate_leave_days, is_leave_type_applicable
+from app.routers.leaves import ensure_employee_leave_balances, calculate_leave_days, is_leave_type_applicable, auto_lapse_pending_requests
 from app.schemas.leave import (
     LeaveTypeOut,
     LeaveBalanceOut,
@@ -23,7 +22,7 @@ from app.schemas.leave import (
 )
 
 router = APIRouter(prefix="/leaves", tags=["Leaves & WFH"])
-allow_hr_admin = RoleChecker(["admin", "hr_admin", "manager"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin", "manager"])
 
 
 @router.get("/types", response_model=List[LeaveTypeOut])
@@ -33,7 +32,7 @@ async def api_get_leave_types(
 ):
     """List all active leave categories/types applicable for current user profile."""
     all_types = db.query(LeaveType).filter(LeaveType.is_active == True).order_by(LeaveType.id.asc()).all()
-    return [lt for lt in all_types if is_leave_type_applicable(lt.code, current_user.gender)]
+    return [lt for lt in all_types if is_leave_type_applicable(lt, current_user.gender)]
 
 
 @router.get("/balances", response_model=List[LeaveBalanceOut])
@@ -46,11 +45,12 @@ async def api_get_my_leave_balances(
     """Retrieve annual leave quotas, used, pending, and remaining balances."""
     target_emp_id = current_user.id
     if employee_id and employee_id != current_user.id:
-        if current_user.role not in ["admin", "hr_admin", "manager"]:
+        if current_user.role not in ["super_admin", "admin", "hr", "hr_admin", "manager"]:
             raise HTTPException(status_code=403, detail="Not authorized to view other employee balances")
         target_emp_id = employee_id
 
     target_year = year or get_ist_today().year
+    auto_lapse_pending_requests(db)
     raw_balances = ensure_employee_leave_balances(db, target_emp_id, target_year)
 
     results = []
@@ -82,6 +82,7 @@ async def api_apply_leave(
     current_user: Employee = Depends(require_auth),
 ):
     """Submit a new leave application."""
+    auto_lapse_pending_requests(db)
     if payload.start_date > payload.end_date:
         raise HTTPException(status_code=400, detail="Start date cannot be after end date")
 
@@ -112,11 +113,15 @@ async def api_apply_leave(
         .first()
     )
 
-    if leave_type.is_paid and leave_type.code not in ["LWP", "COMP_OFF"]:
-        if balance and balance.remaining_days < total_days:
+    # Strict Quota Enforcement
+    is_lwp_unlimited = (leave_type.code == "LWP" and not leave_type.is_paid and leave_type.default_days_per_year == 0.0 and (balance.total_allocated if balance else 0.0) == 0.0)
+    
+    if not is_lwp_unlimited:
+        avail_days = balance.remaining_days if balance else 0.0
+        if avail_days < total_days:
             raise HTTPException(
                 status_code=400,
-                detail=f"Insufficient {leave_type.name} balance. Available: {balance.remaining_days}, Requested: {total_days}",
+                detail=f"Insufficient leave balance for {leave_type.name}. You have {avail_days:g} day(s) remaining in your quota, but requested {total_days:g} day(s).",
             )
 
     overlap = (
@@ -193,6 +198,7 @@ async def api_get_leave_applications(
     current_user: Employee = Depends(require_auth),
 ):
     """Get leave applications. Employees see their own; Admins/Managers see team applications."""
+    auto_lapse_pending_requests(db)
     query = db.query(LeaveApplication)
 
     if current_user.role in ["employee", "intern"]:
@@ -200,7 +206,7 @@ async def api_get_leave_applications(
     elif current_user.role == "manager":
         query = query.join(Employee, LeaveApplication.employee_id == Employee.id).filter(
             Employee.department_id == current_user.department_id,
-            Employee.role.notin_(["admin", "hr_admin"]),
+            Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"]),
         )
         if employee_id:
             query = query.filter(LeaveApplication.employee_id == employee_id)
@@ -252,14 +258,17 @@ async def api_review_leave(
     if not app:
         raise HTTPException(status_code=404, detail="Leave application not found")
 
-    if app.status != "pending":
-        raise HTTPException(status_code=400, detail="This application has already been reviewed")
+    today = get_ist_today()
+    if app.status != "pending" or app.start_date < today:
+        if app.status == "pending" and app.start_date < today:
+            auto_lapse_pending_requests(db)
+        raise HTTPException(status_code=400, detail="This application has already been processed or has lapsed")
 
     if current_user.role == "manager":
         if (
             not current_user.department_id
             or app.employee.department_id != current_user.department_id
-            or app.employee.role in ["admin", "hr_admin"]
+            or app.employee.role in ["super_admin", "admin", "hr", "hr_admin"]
         ):
             raise HTTPException(status_code=403, detail="Not authorized to review this application")
 
@@ -320,6 +329,7 @@ async def api_apply_wfh(
     current_user: Employee = Depends(require_auth),
 ):
     """Apply for Work From Home (WFH)."""
+    auto_lapse_pending_requests(db)
     if payload.start_date > payload.end_date:
         raise HTTPException(status_code=400, detail="Start date cannot be after end date")
 
@@ -376,7 +386,7 @@ async def api_allocate_wfh(
         if (
             not current_user.department_id
             or target_emp.department_id != current_user.department_id
-            or target_emp.role in ["admin", "hr_admin"]
+            or target_emp.role in ["super_admin", "admin", "hr", "hr_admin"]
         ):
             raise HTTPException(status_code=403, detail="Not authorized to allocate WFH for this employee")
 

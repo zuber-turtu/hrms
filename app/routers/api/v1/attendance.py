@@ -21,7 +21,7 @@ from app.schemas.attendance import (
 )
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
-allow_hr_admin = RoleChecker(["admin", "hr_admin", "manager"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin", "manager"])
 
 
 @router.get("/status", response_model=AttendanceStatusOut)
@@ -76,7 +76,7 @@ async def api_check_in(
     """
     Clock in for today's work shift (supports mobile punch timestamps and GPS coordinates).
     """
-    if current_user.role == "admin":
+    if current_user.role == "super_admin":
         return await api_get_attendance_status(db, current_user)
 
     lat = payload.latitude if payload else None
@@ -140,7 +140,7 @@ async def api_check_out(
     """
     Clock out of the active work shift (supports GPS coordinates).
     """
-    if current_user.role == "admin":
+    if current_user.role == "super_admin":
         return await api_get_attendance_status(db, current_user)
 
     lat = payload.latitude if payload else None
@@ -205,13 +205,13 @@ async def api_get_attendance_logs(
     elif current_user.role == "manager":
         query = query.join(Employee, Attendance.employee_id == Employee.id).filter(
             Employee.department_id == current_user.department_id,
-            Employee.role.notin_(["admin", "hr_admin"]),
+            Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"]),
         )
         if employee_id:
             query = query.filter(Attendance.employee_id == employee_id)
     else:
         query = query.join(Employee, Attendance.employee_id == Employee.id).filter(
-            Employee.role != "admin"
+            Employee.role != "super_admin"
         )
         if employee_id:
             query = query.filter(Attendance.employee_id == employee_id)
@@ -334,7 +334,7 @@ async def api_override_attendance(
         if (
             not current_user.department_id
             or log.employee.department_id != current_user.department_id
-            or log.employee.role in ["admin", "hr_admin"]
+            or log.employee.role in ["super_admin", "admin", "hr", "hr_admin"]
         ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

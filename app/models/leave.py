@@ -15,6 +15,7 @@ class LeaveType(Base):
     default_days_per_year = Column(Float, default=12.0)
     is_paid = Column(Boolean, default=True)              # Paid vs Unpaid (LWP)
     color_code = Column(String(50), default="#008080")   # Hex color for UI badges
+    applicable_gender = Column(String(20), default="all") # 'all', 'female', 'male'
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=get_ist_now)
 

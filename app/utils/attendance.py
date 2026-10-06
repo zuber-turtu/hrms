@@ -12,7 +12,7 @@ def update_attendance_request_state(db: Session, user: Employee, request: Reques
     Computes today's active check-in and accumulated worked seconds for the given user,
     updating the request.state object for templates and HTMX partials.
     """
-    if user and user.role == "admin":
+    if user and user.role == "super_admin":
         request.state.is_checked_in = False
         request.state.active_check_in = None
         request.state.active_check_in_iso = ""

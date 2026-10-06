@@ -31,7 +31,7 @@ from app.schemas.payroll import (
 )
 
 router = APIRouter(prefix="/payroll", tags=["Payroll"])
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 
 
 
@@ -73,7 +73,7 @@ async def list_payslips(
     query = db.query(Payslip)
 
     # Role-based scoping: normal employees can only see their own finalized or paid payslips
-    if current_user.role not in ["admin", "hr_admin"]:
+    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
         query = query.filter(Payslip.employee_id == current_user.id, Payslip.status.in_(["finalized", "paid"]))
     elif employee_id is not None:
         query = query.filter(Payslip.employee_id == employee_id)
@@ -262,7 +262,7 @@ async def get_payslip(
             detail=f"Payslip with ID {payslip_id} not found"
         )
 
-    if current_user.role not in ["admin", "hr_admin"]:
+    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
         if payslip.employee_id != current_user.id or payslip.status == "draft":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -356,7 +356,7 @@ async def download_payslip_pdf(
             detail=f"Payslip with ID {payslip_id} not found"
         )
 
-    if current_user.role not in ["admin", "hr_admin"]:
+    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
         if payslip.employee_id != current_user.id or payslip.status == "draft":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

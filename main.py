@@ -143,6 +143,9 @@ def ensure_schema_columns(db_engine):
                 "rejection_reason": "TEXT",
                 "uploaded_at": "TIMESTAMP",
             },
+            "leave_types": {
+                "applicable_gender": "VARCHAR(20) DEFAULT 'all'",
+            },
         }
 
         # 1. First run explicit mappings
@@ -301,6 +304,7 @@ async def lifespan(app: FastAPI):
                     default_days_per_year=12.0,
                     is_paid=True,
                     color_code="#008080",
+                    applicable_gender="all",
                     is_active=True,
                 ),
                 LeaveType(
@@ -310,6 +314,7 @@ async def lifespan(app: FastAPI):
                     default_days_per_year=12.0,
                     is_paid=True,
                     color_code="#E53E3E",
+                    applicable_gender="all",
                     is_active=True,
                 ),
                 LeaveType(
@@ -319,6 +324,7 @@ async def lifespan(app: FastAPI):
                     default_days_per_year=15.0,
                     is_paid=True,
                     color_code="#3B82F6",
+                    applicable_gender="all",
                     is_active=True,
                 ),
                 LeaveType(
@@ -328,6 +334,7 @@ async def lifespan(app: FastAPI):
                     default_days_per_year=0.0,
                     is_paid=True,
                     color_code="#8B5CF6",
+                    applicable_gender="all",
                     is_active=True,
                 ),
                 LeaveType(
@@ -337,6 +344,7 @@ async def lifespan(app: FastAPI):
                     default_days_per_year=182.0,
                     is_paid=True,
                     color_code="#EC4899",
+                    applicable_gender="female",
                     is_active=True,
                 ),
                 LeaveType(
@@ -346,6 +354,7 @@ async def lifespan(app: FastAPI):
                     default_days_per_year=15.0,
                     is_paid=True,
                     color_code="#10B981",
+                    applicable_gender="male",
                     is_active=True,
                 ),
                 LeaveType(
@@ -355,12 +364,24 @@ async def lifespan(app: FastAPI):
                     default_days_per_year=0.0,
                     is_paid=False,
                     color_code="#6B7280",
+                    applicable_gender="all",
                     is_active=True,
                 ),
             ]
             db.add_all(leave_defaults)
             db.commit()
             print("Seeded 7 default Leave Types (CL, SL, EL, COMP_OFF, ML, PL_PAT, LWP).")
+        else:
+            # Backfill any existing LeaveTypes missing applicable_gender
+            for lt in db.query(LeaveType).all():
+                if not lt.applicable_gender:
+                    if lt.code == "ML":
+                        lt.applicable_gender = "female"
+                    elif lt.code == "PL_PAT":
+                        lt.applicable_gender = "male"
+                    else:
+                        lt.applicable_gender = "all"
+            db.commit()
     finally:
         db.close()
     yield  # app runs
@@ -451,6 +472,12 @@ async def add_security_headers_middleware(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(self), microphone=(), camera=()"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    # Auto-cleanup one-time flash message cookie
+    from app.utils.flash import COOKIE_NAME
+    if COOKIE_NAME in request.cookies:
+        response.delete_cookie(key=COOKIE_NAME, path="/")
+
     return response
 
 from fastapi.exceptions import RequestValidationError

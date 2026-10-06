@@ -22,7 +22,7 @@ from app.templates_config import templates
 
 router = APIRouter(prefix="/attendance")
 
-allow_hr_admin = RoleChecker(["admin", "hr_admin", "manager"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin", "manager"])
 
 
 @router.get("", response_class=HTMLResponse)
@@ -50,7 +50,7 @@ async def attendance_log(
             .join(Employee, Attendance.employee_id == Employee.id)
             .filter(
                 Employee.department_id == current_user.department_id,
-                Employee.role.notin_(["admin", "hr_admin"])
+                Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
             )
             .order_by(Attendance.date.desc(), Attendance.check_in.asc())
             .all()
@@ -59,7 +59,7 @@ async def attendance_log(
         raw_logs = (
             db.query(Attendance)
             .join(Employee, Attendance.employee_id == Employee.id)
-            .filter(Employee.role != "admin")
+            .filter(Employee.role != "super_admin")
             .order_by(Attendance.date.desc(), Attendance.check_in.asc())
             .all()
         )
@@ -173,7 +173,7 @@ async def check_in(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role == "admin":
+    if current_user.role == "super_admin":
         if request.headers.get("HX-Request"):
             return HTMLResponse("")
         safe_target = get_safe_redirect(request, default="/dashboard")
@@ -256,7 +256,7 @@ async def check_out(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role == "admin":
+    if current_user.role == "super_admin":
         if request.headers.get("HX-Request"):
             return HTMLResponse("")
         safe_target = get_safe_redirect(request, default="/dashboard")
@@ -340,7 +340,7 @@ async def override_attendance(
         if (
             not current_user.department_id
             or log.employee.department_id != current_user.department_id
-            or log.employee.role in ["admin", "hr_admin"]
+            or log.employee.role in ["super_admin", "admin", "hr", "hr_admin"]
         ):
             raise HTTPException(
                 status_code=403,

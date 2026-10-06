@@ -59,12 +59,12 @@
             <p class="text-xs text-slate-500 mt-0.5">Generate, audit, finalize, and disburse monthly compensation statements</p>
         </div>
         
-        {% if user.role in ['admin', 'hr_admin'] %}
+        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
         <div class="flex flex-wrap items-center gap-2.5">
-            <button onclick="document.getElementById('generateModal').classList.remove('hidden')" class="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-2xs transition-colors">
+            <button onclick="openGenerateModal()" class="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-2xs transition-colors">
                 <i data-lucide="user-plus" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Single Draft
             </button>
-            <button onclick="document.getElementById('bulkModal').classList.remove('hidden')" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-xs transition-all hover:shadow-md">
+            <button onclick="openBulkModal()" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-xs transition-all hover:shadow-md">
                 <i data-lucide="layers" class="w-3.5 h-3.5 mr-1.5"></i> Run Bulk Payroll
             </button>
         </div>
@@ -94,9 +94,9 @@
                 <select id="payrollStatusFilter" onchange="filterPayslips()" 
                     class="w-full sm:w-auto py-2 px-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
                     <option value="all">All Statuses</option>
-                    <option value="draft">Draft (🟡 In Review)</option>
-                    <option value="finalized">Finalized (🔵 Approved)</option>
-                    <option value="paid">Paid (🟢 Disbursed)</option>
+                    <option value="draft">Draft (In Review)</option>
+                    <option value="finalized">Finalized (Approved)</option>
+                    <option value="paid">Paid (Disbursed)</option>
                 </select>
             </div>
         </div>
@@ -110,9 +110,9 @@
                 </label>
                 <select id="payrollYearFilter" onchange="onPayrollYearChange()" 
                     class="py-1 px-2.5 text-xs font-bold bg-slate-100 hover:bg-slate-200/70 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 cursor-pointer transition-colors">
-                    <option value="ALL">All Years</option>
+                    <option value="ALL" selected>All Years</option>
                     {% for yr in (available_years or range(app_year + 2, app_year - 3, -1)) %}
-                    <option value="{{ yr }}" {% if yr == current_year %}selected{% endif %}>{{ yr }}</option>
+                    <option value="{{ yr }}">{{ yr }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -161,7 +161,7 @@
             <table class="w-full border-collapse" id="payslipsTable">
                 <thead class="bg-slate-50 border-b border-slate-200">
                     <tr>
-                        {% if user.role in ['admin', 'hr_admin'] %}
+                        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
                         <th scope="col" class="w-12 px-4 py-3.5 text-center">
                             <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="w-4 h-4 rounded text-teal-700 focus:ring-teal-600 border-slate-300 cursor-pointer">
                         </th>
@@ -189,7 +189,7 @@
                         data-period="{{ '%02d' % payslip.month }}/{{ payslip.year }}"
                         data-status="{{ payslip.status|lower }}">
                         
-                        {% if user.role in ['admin', 'hr_admin'] %}
+                        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
                         <!-- Selection Checkbox -->
                         <td class="w-12 px-4 py-3.5 text-center whitespace-nowrap">
                             <input type="checkbox" value="{{ payslip.id }}" data-status="{{ payslip.status }}" onchange="updateBatchToolbar()" class="payslip-row-checkbox w-4 h-4 rounded text-teal-700 focus:ring-teal-600 border-slate-300 cursor-pointer">
@@ -255,7 +255,7 @@
                             <a href="/payroll/{{ payslip.id }}/view" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-2xs" title="View Payslip">
                                 <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> View
                             </a>
-                            {% if user.role in ['admin', 'hr_admin'] %}
+                            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
                             <a href="/payroll/{{ payslip.id }}/edit" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors" title="Edit Line Items">
                                 <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Edit
                             </a>
@@ -291,7 +291,7 @@
         </div>
     </div>
 
-{% if user.role in ['admin', 'hr_admin'] %}
+{% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
 <!-- Floating Batch Action Toolbar -->
 <div id="batchActionBar" class="fixed bottom-6 inset-x-4 max-w-4xl mx-auto z-40 bg-slate-900 text-white rounded-2xl shadow-2xl p-3 sm:p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-3 transform translate-y-32 opacity-0 transition-all duration-300 pointer-events-none">
 
@@ -331,13 +331,12 @@
 </form>
 
 
-<!-- Modal: Bulk Generate Payslips -->
+<!-- Modal: Bulk Payroll Generation -->
 <div id="bulkModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="document.getElementById('bulkModal').classList.add('hidden')"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+    <div class="flex items-start justify-center min-h-screen pt-12 sm:pt-16 pb-24 px-4 text-center">
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closeBulkModal()"></div>
 
-        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-200">
+        <div class="relative inline-block w-full max-w-lg bg-white rounded-2xl text-left shadow-2xl transform transition-all my-auto border border-slate-200 z-10 overflow-visible">
             <div class="p-5 sm:p-6">
                 <!-- Modal Header -->
                 <div class="flex justify-between items-start pb-4 border-b border-slate-100">
@@ -350,7 +349,7 @@
                             <p class="text-xs text-slate-500">Auto-calculate monthly pro-rata payslips for workforce</p>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('bulkModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                    <button type="button" onclick="closeBulkModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -405,7 +404,7 @@
                     </div>
                     
                     <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="document.getElementById('bulkModal').classList.add('hidden')" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                        <button type="button" onclick="closeBulkModal()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
                             Cancel
                         </button>
                         <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
@@ -420,11 +419,10 @@
 
 <!-- Modal: Generate Single Draft Payslip -->
 <div id="generateModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="document.getElementById('generateModal').classList.add('hidden')"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+    <div class="flex items-start justify-center min-h-screen pt-12 sm:pt-16 pb-24 px-4 text-center">
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closeGenerateModal()"></div>
 
-        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+        <div class="relative inline-block w-full max-w-md bg-white rounded-2xl text-left shadow-2xl transform transition-all my-auto border border-slate-200 z-10 overflow-visible">
             <div class="p-5 sm:p-6">
                 <div class="flex justify-between items-start pb-3.5 border-b border-slate-100">
                     <div class="flex items-center space-x-3">
@@ -436,19 +434,68 @@
                             <p class="text-xs text-slate-500">Individual pro-rata calculation from attendance logs</p>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('generateModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                    <button type="button" onclick="closeGenerateModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
                 
                 <form action="/payroll/generate-draft" method="POST" class="mt-4 space-y-4">
-                    <div>
-                        <label for="employee_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Select Employee</label>
-                        <select name="employee_id" id="employee_id" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
-                            {% for emp in employees %}
-                            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.department.name if emp.department else 'General' }})</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Searchable Downward Employee Select Dropdown -->
+                    <div class="relative" id="payrollEmpDropdownContainer">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Select Employee</label>
+                        <input type="hidden" name="employee_id" id="payroll_modal_employee_id" value="{{ employees[0].id if employees else '' }}" required>
+                        
+                        <!-- Trigger Box -->
+                        <button type="button" id="payrollEmpTriggerBtn" onclick="togglePayrollEmpDropdown()" class="w-full flex items-center justify-between text-left text-xs sm:text-sm bg-slate-50 hover:bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 transition-colors shadow-2xs">
+                            <div class="flex items-center space-x-2.5 min-w-0">
+                                <div class="w-6 h-6 rounded-md bg-teal-700 text-white font-bold flex items-center justify-center text-[10px] shrink-0" id="payrollSelectedEmpAvatar">
+                                    {{ employees[0].name[0]|upper if employees else 'E' }}
+                                </div>
+                                <div class="min-w-0 truncate">
+                                    <span class="font-bold text-slate-900 truncate" id="payrollSelectedEmpName">{{ employees[0].name if employees else 'Choose Employee' }}</span>
+                                    <span class="text-slate-400 text-xs ml-1" id="payrollSelectedEmpDept">({{ (employees[0].department.name if employees[0].department and employees[0].department.name else (employees[0].department if employees[0].department else 'General')) if employees else '' }})</span>
+                                </div>
+                            </div>
+                            <i data-lucide="chevron-down" id="payrollDropdownChevron" class="w-4 h-4 text-slate-400 shrink-0 ml-2 transition-transform"></i>
+                        </button>
+
+                        <!-- Downward-Opening Options Panel with Real-time Search -->
+                        <div id="payrollEmpDropdownMenu" class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200 p-2 z-50 transition-all">
+                            <!-- Search Bar inside dropdown -->
+                            <div class="relative mb-2">
+                                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
+                                <input type="text" id="payrollEmpSearchInput" onkeyup="filterPayrollEmpList()" placeholder="Search by name, ID, or department..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            </div>
+
+                            <!-- Scrollable Employee Cards List -->
+                            <div class="max-h-52 overflow-y-auto space-y-1 divide-y divide-slate-100" id="payrollEmpListContainer">
+                                {% for emp in employees %}
+                                {% set emp_dept = emp.department.name if emp.department and emp.department.name else (emp.department or 'General') %}
+                                <div class="payroll-emp-option p-2 rounded-lg hover:bg-teal-50 cursor-pointer flex items-center justify-between transition-colors"
+                                     data-id="{{ emp.id }}"
+                                     data-name="{{ emp.name }}"
+                                     data-dept="{{ emp_dept }}"
+                                     data-code="{{ format_emp_code(emp, company) }}"
+                                     onclick="selectPayrollEmployee('{{ emp.id }}', '{{ emp.name|escape }}', '{{ emp_dept|escape }}')">
+                                    <div class="flex items-center space-x-2.5 min-w-0">
+                                        <div class="w-7 h-7 rounded-lg bg-teal-700 text-white font-bold flex items-center justify-center text-xs shrink-0 font-heading">
+                                            {{ emp.name[0]|upper }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="text-xs font-bold text-slate-900 truncate leading-tight">{{ emp.name }}</p>
+                                            <p class="text-[11px] text-slate-500 truncate mt-0.5"><span class="font-mono font-medium text-slate-400">{{ format_emp_code(emp, company) }}</span> • {{ emp_dept }}</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] font-semibold text-teal-700 bg-teal-50 border border-teal-200/80 px-1.5 py-0.5 rounded capitalize shrink-0 ml-2">
+                                        {{ emp.role|replace('_', ' ') }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                                <div id="payrollEmpEmptyState" class="hidden py-4 text-center text-xs text-slate-400">
+                                    No employees match your search
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-3">
@@ -469,10 +516,9 @@
                             </select>
                         </div>
                     </div>
-
                     
                     <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="document.getElementById('generateModal').classList.add('hidden')" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                        <button type="button" onclick="closeGenerateModal()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
                             Cancel
                         </button>
                         <button type="submit" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
@@ -888,6 +934,118 @@
         if (ids.length === 0) return;
         window.location.href = `/payroll/bulk-export-zip?ids=${ids.join(',')}`;
     }
+
+    // Modal & Custom Downward Employee Dropdown UX Handlers
+    function openGenerateModal(empId) {
+        const modal = document.getElementById('generateModal');
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        if (empId) {
+            const option = document.querySelector(`.payroll-emp-option[data-id="${empId}"]`);
+            if (option) {
+                selectPayrollEmployee(empId, option.getAttribute('data-name'), option.getAttribute('data-dept'));
+            }
+        }
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function closeGenerateModal() {
+        const modal = document.getElementById('generateModal');
+        if (modal) modal.classList.add('hidden');
+        const menu = document.getElementById('payrollEmpDropdownMenu');
+        if (menu) menu.classList.add('hidden');
+    }
+
+    function openBulkModal() {
+        const modal = document.getElementById('bulkModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+
+    function closeBulkModal() {
+        const modal = document.getElementById('bulkModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function togglePayrollEmpDropdown() {
+        const menu = document.getElementById('payrollEmpDropdownMenu');
+        const chevron = document.getElementById('payrollDropdownChevron');
+        if (!menu) return;
+        const isHidden = menu.classList.toggle('hidden');
+        if (!isHidden) {
+            const search = document.getElementById('payrollEmpSearchInput');
+            if (search) {
+                search.value = '';
+                search.focus();
+                filterPayrollEmpList();
+            }
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+        } else {
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function selectPayrollEmployee(id, name, dept) {
+        const input = document.getElementById('payroll_modal_employee_id');
+        const nameEl = document.getElementById('payrollSelectedEmpName');
+        const deptEl = document.getElementById('payrollSelectedEmpDept');
+        const avatarEl = document.getElementById('payrollSelectedEmpAvatar');
+        if (input) input.value = id;
+        if (nameEl) nameEl.textContent = name;
+        if (deptEl) deptEl.textContent = dept ? `(${dept})` : '';
+        if (avatarEl && name) avatarEl.textContent = name.charAt(0).toUpperCase();
+        
+        const menu = document.getElementById('payrollEmpDropdownMenu');
+        if (menu) menu.classList.add('hidden');
+        const chevron = document.getElementById('payrollDropdownChevron');
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+
+    function filterPayrollEmpList() {
+        const searchInput = document.getElementById('payrollEmpSearchInput');
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const items = document.querySelectorAll('.payroll-emp-option');
+        let count = 0;
+        items.forEach(item => {
+            const name = (item.getAttribute('data-name') || '').toLowerCase();
+            const dept = (item.getAttribute('data-dept') || '').toLowerCase();
+            const code = (item.getAttribute('data-code') || '').toLowerCase();
+            if (!query || name.includes(query) || dept.includes(query) || code.includes(query)) {
+                item.classList.remove('hidden');
+                count++;
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+        const empty = document.getElementById('payrollEmpEmptyState');
+        if (empty) {
+            if (count === 0) empty.classList.remove('hidden');
+            else empty.classList.add('hidden');
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('payrollEmpDropdownContainer');
+        if (container && !container.contains(e.target)) {
+            const menu = document.getElementById('payrollEmpDropdownMenu');
+            if (menu && !menu.classList.contains('hidden')) {
+                menu.classList.add('hidden');
+                const chevron = document.getElementById('payrollDropdownChevron');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const yearSelect = document.getElementById('payrollYearFilter');
+        if (yearSelect) {
+            currentSelectedPayrollYear = yearSelect.value || 'ALL';
+        }
+        updateMonthIndicators();
+        filterPayslips();
+    });
 
 </script>
 {% endif %}

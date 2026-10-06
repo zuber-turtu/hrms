@@ -1,0 +1,673 @@
+{% extends "base.html" %}
+
+{% block header_title %}Leave Types & Statutory Policies — Admin Configuration{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+    <!-- Top Action Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2">
+                <a href="/leaves" class="text-xs font-semibold text-slate-500 hover:text-teal-700 transition-colors flex items-center">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1"></i> Leaves & WFH Dashboard
+                </a>
+            </div>
+            <h2 class="text-lg sm:text-xl font-bold font-heading text-slate-900 tracking-tight mt-1">
+                Leave Categories & Statutory Policies
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+                Create, customize, and manage annual leave quotas, paid entitlements, and gender-specific leave rules
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <a href="/leaves" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
+                <i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Leaves Dashboard
+            </a>
+            <form action="/leaves/types/sync-quotas" method="POST" onsubmit="return confirm('Synchronize all staff leave quotas with the current leave policies? This will update total quotas to match policy defaults for the active year.');" class="inline">
+                <input type="hidden" name="year" value="{{ selected_year }}">
+                <button type="submit" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3.5 py-2 border border-teal-300 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 transition-colors shadow-2xs cursor-pointer" title="Synchronize all employee leave quotas to strictly match these policy rules">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Sync Staff Quotas
+                </button>
+            </form>
+            <button onclick="openCreateLeaveTypeModal()" class="flex-1 sm:flex-none justify-center inline-flex items-center px-4 py-2 rounded-lg text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 shadow-sm transition-all active:scale-95 cursor-pointer">
+                <i data-lucide="plus-circle" class="w-4 h-4 mr-1.5"></i> Add Leave Type
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification Flash Alerts -->
+    {% if request.query_params.get('success') %}
+    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 shadow-xs flex items-start space-x-3">
+        <div class="p-1 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+        </div>
+        <div class="flex-1 text-xs sm:text-sm text-emerald-800 font-medium">
+            {{ request.query_params.get('success') }}
+        </div>
+        <a href="/leaves/types" class="text-emerald-500 hover:text-emerald-700 p-1 rounded-lg">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if request.query_params.get('error') %}
+    <div class="bg-rose-50 border border-rose-200 rounded-xl p-3.5 shadow-xs flex items-start space-x-3">
+        <div class="p-1 rounded-lg bg-rose-100 text-rose-700 shrink-0">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+        </div>
+        <div class="flex-1 text-xs sm:text-sm text-rose-800 font-medium">
+            {{ request.query_params.get('error') }}
+        </div>
+        <a href="/leaves/types" class="text-rose-500 hover:text-rose-700 p-1 rounded-lg">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Metrics Ribbon -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Metric 1: Total Categories -->
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Leave Categories</p>
+                <p class="text-xl sm:text-2xl font-extrabold font-mono text-slate-900 mt-1">{{ leave_types|length }}</p>
+                <p class="text-[11px] text-teal-700 font-medium mt-0.5">Configured in system</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60 shrink-0">
+                <i data-lucide="layers" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Metric 2: Paid Entitlements -->
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Paid Leave Types</p>
+                <p class="text-xl sm:text-2xl font-extrabold font-mono text-emerald-700 mt-1">{{ paid_count }}</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">No salary deductions</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60 shrink-0">
+                <i data-lucide="badge-check" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Metric 3: Unpaid / LWP -->
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Unpaid / LWP</p>
+                <p class="text-xl sm:text-2xl font-extrabold font-mono text-slate-800 mt-1">{{ unpaid_count }}</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Deducts in payroll</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200 shrink-0">
+                <i data-lucide="minus-circle" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Metric 4: Active Balances Maintained -->
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Staff Entitlements</p>
+                <p class="text-xl sm:text-2xl font-extrabold font-mono text-teal-800 mt-1">{{ total_active_balances }}</p>
+                <p class="text-[11px] text-teal-700 font-medium mt-0.5">{{ selected_year }} policy balances</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60 shrink-0">
+                <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Types Table Card -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/70">
+            <div>
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider font-heading">Dynamic Leave Types List</h3>
+                <p class="text-xs text-slate-500">All leave types are available across leave application workflows, balance trackers, and payroll.</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-xs font-semibold text-slate-500">Active Policy Year:</span>
+                <span class="px-2.5 py-1 rounded-md text-xs font-bold font-mono bg-teal-100 text-teal-800 border border-teal-200">
+                    {{ selected_year }}
+                </span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto touch-scroll">
+            <table class="min-w-full divide-y divide-slate-200 text-xs">
+                <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                    <tr>
+                        <th class="py-3 px-5 text-left">Leave Type & Code</th>
+                        <th class="py-3 px-4 text-left">Default Annual Days</th>
+                        <th class="py-3 px-4 text-left">Compensation Nature</th>
+                        <th class="py-3 px-4 text-left">Gender Applicability</th>
+                        <th class="py-3 px-4 text-left">Status</th>
+                        <th class="py-3 px-4 text-left">Usage & Enrolled</th>
+                        <th class="py-3 px-5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+                    {% for lt in leave_types %}
+                    {% set st = stats.get(lt.id, {}) %}
+                    <tr class="hover:bg-slate-50/80 transition-colors {% if not lt.is_active %}opacity-60 bg-slate-50/40{% endif %}">
+                        <!-- Leave Type & Code -->
+                        <td class="py-3.5 px-5">
+                            <div class="flex items-start space-x-3 min-w-[200px]">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-white text-[11px] font-mono shrink-0 shadow-2xs mt-0.5" style="background-color: {{ lt.color_code or '#008080' }};">
+                                    {{ lt.code }}
+                                </div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-slate-900 text-xs sm:text-sm">{{ lt.name }}</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5" title="{{ lt.description or 'No description provided.' }}">
+                                        {{ lt.description or 'No description provided.' }}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Default Annual Quota -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <div class="flex items-baseline space-x-1">
+                                <span class="font-mono font-extrabold text-slate-900 text-sm">
+                                    {{ lt.default_days_per_year|int if lt.default_days_per_year.is_integer() else lt.default_days_per_year }}
+                                </span>
+                                <span class="text-[11px] font-semibold text-slate-500">days/yr</span>
+                            </div>
+                        </td>
+
+                        <!-- Compensation Nature (Paid vs Unpaid) -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            {% if lt.is_paid %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                                <i data-lucide="check" class="w-3 h-3 mr-1"></i> Paid Leave
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-300">
+                                <i data-lucide="slash" class="w-3 h-3 mr-1"></i> Unpaid (LWP)
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Gender Applicability -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            {% set g_rule = lt.applicable_gender or 'all' %}
+                            {% if g_rule == 'female' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-pink-50 text-pink-700 border border-pink-200">
+                                <i data-lucide="user" class="w-3 h-3 mr-1"></i> Female Only
+                            </span>
+                            {% elif g_rule == 'male' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                <i data-lucide="user" class="w-3 h-3 mr-1"></i> Male Only
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                <i data-lucide="users" class="w-3 h-3 mr-1"></i> All Employees
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Status -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            {% if lt.is_active %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span> Inactive / Archived
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Usage & Enrolled Stats -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <div class="text-[11px] text-slate-700 space-y-0.5">
+                                <div><span class="font-bold font-mono">{{ st.get('employees_enrolled', 0) }}</span> staff enrolled</div>
+                                <div class="text-slate-400">{{ st.get('applications_count', 0) }} applications</div>
+                            </div>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="py-3.5 px-5 text-right whitespace-nowrap">
+                            <div class="flex items-center justify-end space-x-1.5">
+                                <!-- Toggle Active Status -->
+                                <form method="POST" action="/leaves/types/{{ lt.id }}/toggle-status" class="inline">
+                                    <button type="submit" class="p-1.5 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="{{ 'Deactivate' if lt.is_active else 'Activate' }} leave type">
+                                        <i data-lucide="{{ 'eye-off' if lt.is_active else 'eye' }}" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Edit Button -->
+                                <button type="button" onclick="openEditLeaveTypeModal({{ lt.id }}, '{{ lt.name|e }}', '{{ lt.code|e }}', '{{ (lt.description or '')|e }}', {{ lt.default_days_per_year }}, {{ 'true' if lt.is_paid else 'false' }}, '{{ lt.color_code or '#008080' }}', '{{ lt.applicable_gender or 'all' }}', {{ 'true' if lt.is_active else 'false' }})" class="p-1.5 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="Edit Leave Type">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+
+                                <!-- Delete / Archive Button -->
+                                <button type="button" onclick="openDeleteLeaveTypeModal({{ lt.id }}, '{{ lt.name|e }}', {{ st.get('applications_count', 0) }})" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="Delete or Archive Leave Type">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="py-12 text-center text-slate-400 text-xs">
+                            <i data-lucide="calendar-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+                            No leave types configured. Click "Add Leave Type" above to create one.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Create New Dynamic Leave Type -->
+<!-- ========================================================================= -->
+<div id="create-leave-type-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-teal-50 border-b border-teal-100 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-2.5 text-teal-950 font-heading">
+                <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm sm:text-base font-bold">Add Dynamic Leave Category</h3>
+                    <p class="text-[11px] text-teal-800 font-normal">Define entitlement policy, quota days, and eligibility</p>
+                </div>
+            </div>
+            <button onclick="closeCreateLeaveTypeModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-teal-100/60 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" action="/leaves/types/create" class="p-6 space-y-4 overflow-y-auto flex-1">
+            <!-- Name & Code -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Leave Name <span class="text-rose-500">*</span></label>
+                    <input type="text" name="name" id="create_name" required placeholder="e.g. Bereavement Leave" oninput="autoSuggestCode(this.value)" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Unique Code <span class="text-rose-500">*</span></label>
+                    <input type="text" name="code" id="create_code" required placeholder="e.g. BL or BEREAVE" maxlength="20" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-mono uppercase focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Policy Description & Guidelines</label>
+                <textarea name="description" rows="2" placeholder="Explain the eligibility criteria or documentation requirements for this leave..." class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 focus:outline-none"></textarea>
+            </div>
+
+            <!-- Default Days & Pay Nature -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Default Days / Year <span class="text-rose-500">*</span></label>
+                    <input type="number" step="0.5" min="0" max="365" name="default_days_per_year" value="12.0" required class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-mono font-bold focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Compensation Nature <span class="text-rose-500">*</span></label>
+                    <select name="is_paid" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-medium bg-white focus:outline-none">
+                        <option value="on" selected>Paid Leave (No salary deduction)</option>
+                        <option value="off">Unpaid (Leave Without Pay / LWP)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Gender Applicability -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Gender Eligibility Rule <span class="text-rose-500">*</span></label>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
+                        <input type="radio" name="applicable_gender" value="all" checked class="sr-only">
+                        <div class="flex items-center space-x-1">
+                            <i data-lucide="users" class="w-3.5 h-3.5 text-teal-600"></i>
+                            <span>All Staff</span>
+                        </div>
+                    </label>
+                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-pink-600 has-checked:bg-pink-50/70 has-checked:text-pink-900">
+                        <input type="radio" name="applicable_gender" value="female" class="sr-only">
+                        <div class="flex items-center space-x-1">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-pink-600"></i>
+                            <span>Female Only</span>
+                        </div>
+                    </label>
+                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-blue-600 has-checked:bg-blue-50/70 has-checked:text-blue-900">
+                        <input type="radio" name="applicable_gender" value="male" class="sr-only">
+                        <div class="flex items-center space-x-1">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <span>Male Only</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Color Code Selection -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Color Badge Identifier</label>
+                <div class="flex items-center space-x-3">
+                    <input type="color" name="color_code" id="create_color_picker" value="#008080" class="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5">
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#008080')" class="w-6 h-6 rounded-md bg-[#008080] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Teal"></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#3B82F6')" class="w-6 h-6 rounded-md bg-[#3B82F6] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Blue"></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#E53E3E')" class="w-6 h-6 rounded-md bg-[#E53E3E] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Red"></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#8B5CF6')" class="w-6 h-6 rounded-md bg-[#8B5CF6] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Purple"></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#EC4899')" class="w-6 h-6 rounded-md bg-[#EC4899] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Pink"></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#10B981')" class="w-6 h-6 rounded-md bg-[#10B981] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Emerald"></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#F59E0B')" class="w-6 h-6 rounded-md bg-[#F59E0B] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Amber"></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#6B7280')" class="w-6 h-6 rounded-md bg-[#6B7280] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Gray"></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auto-Provision Quota Checkbox -->
+            <div class="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl">
+                <label class="flex items-start space-x-2.5 cursor-pointer">
+                    <input type="checkbox" name="auto_allocate_existing" checked class="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+                    <div class="text-xs">
+                        <span class="font-bold text-teal-950 block">Auto-provision quota for existing staff</span>
+                        <span class="text-slate-600 text-[11px]">Automatically credits this quota to all eligible active employees for current policy year ({{ selected_year }}).</span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeCreateLeaveTypeModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5">
+                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                    <span>Create Leave Type</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Edit Dynamic Leave Type -->
+<!-- ========================================================================= -->
+<div id="edit-leave-type-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-2.5 text-slate-900 font-heading">
+                <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm sm:text-base font-bold">Edit Leave Category</h3>
+                    <p class="text-[11px] text-slate-500 font-normal">Modify statutory days, compensation nature, or active status</p>
+                </div>
+            </div>
+            <button onclick="closeEditLeaveTypeModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form id="edit-leave-type-form" method="POST" action="" class="p-6 space-y-4 overflow-y-auto flex-1">
+            <!-- Name & Code -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Leave Name <span class="text-rose-500">*</span></label>
+                    <input type="text" name="name" id="edit_name" required class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Unique Code <span class="text-rose-500">*</span></label>
+                    <input type="text" name="code" id="edit_code" required maxlength="20" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-mono uppercase focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Policy Description & Guidelines</label>
+                <textarea name="description" id="edit_description" rows="2" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 focus:outline-none"></textarea>
+            </div>
+
+            <!-- Default Days & Pay Nature -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Default Days / Year <span class="text-rose-500">*</span></label>
+                    <input type="number" step="0.5" min="0" max="365" name="default_days_per_year" id="edit_default_days" required class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-mono font-bold focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Compensation Nature <span class="text-rose-500">*</span></label>
+                    <select name="is_paid" id="edit_is_paid" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-medium bg-white focus:outline-none">
+                        <option value="on">Paid Leave (No salary deduction)</option>
+                        <option value="off">Unpaid (Leave Without Pay / LWP)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Gender Applicability -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Gender Eligibility Rule <span class="text-rose-500">*</span></label>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
+                        <input type="radio" name="applicable_gender" id="edit_gender_all" value="all" class="sr-only">
+                        <div class="flex items-center space-x-1">
+                            <i data-lucide="users" class="w-3.5 h-3.5 text-teal-600"></i>
+                            <span>All Staff</span>
+                        </div>
+                    </label>
+                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-pink-600 has-checked:bg-pink-50/70 has-checked:text-pink-900">
+                        <input type="radio" name="applicable_gender" id="edit_gender_female" value="female" class="sr-only">
+                        <div class="flex items-center space-x-1">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-pink-600"></i>
+                            <span>Female Only</span>
+                        </div>
+                    </label>
+                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-blue-600 has-checked:bg-blue-50/70 has-checked:text-blue-900">
+                        <input type="radio" name="applicable_gender" id="edit_gender_male" value="male" class="sr-only">
+                        <div class="flex items-center space-x-1">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <span>Male Only</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Color Code Selection -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Color Badge Identifier</label>
+                <div class="flex items-center space-x-3">
+                    <input type="color" name="color_code" id="edit_color_picker" value="#008080" class="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5">
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#008080')" class="w-6 h-6 rounded-md bg-[#008080] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#3B82F6')" class="w-6 h-6 rounded-md bg-[#3B82F6] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#E53E3E')" class="w-6 h-6 rounded-md bg-[#E53E3E] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#8B5CF6')" class="w-6 h-6 rounded-md bg-[#8B5CF6] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#EC4899')" class="w-6 h-6 rounded-md bg-[#EC4899] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#10B981')" class="w-6 h-6 rounded-md bg-[#10B981] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#F59E0B')" class="w-6 h-6 rounded-md bg-[#F59E0B] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#6B7280')" class="w-6 h-6 rounded-md bg-[#6B7280] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Status Checkbox -->
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <label class="flex items-center space-x-2.5 cursor-pointer">
+                    <input type="checkbox" name="is_active" id="edit_is_active" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+                    <span class="text-xs font-bold text-slate-800">Leave Type Active (Enabled for applications & balance provisioning)</span>
+                </label>
+            </div>
+
+            <!-- Sync Balances Checkbox -->
+            <div class="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl">
+                <label class="flex items-start space-x-2.5 cursor-pointer">
+                    <input type="checkbox" name="sync_balances" id="edit_sync_balances" checked class="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+                    <div class="text-xs">
+                        <span class="font-bold text-teal-950 block">Update and sync quota for all eligible staff</span>
+                        <span class="text-slate-600 text-[11px]">Automatically updates total allocated quota to match this new default for all eligible employees (Year {{ selected_year }}).</span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeEditLeaveTypeModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Save Changes</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Delete / Archive Confirmation -->
+<!-- ========================================================================= -->
+<div id="delete-leave-type-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
+        <div class="px-6 py-4 bg-rose-50 border-b border-rose-100 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5 text-rose-900 font-heading">
+                <div class="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold shrink-0">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </div>
+                <h3 class="text-sm font-bold">Delete or Archive Leave Category</h3>
+            </div>
+            <button onclick="closeDeleteLeaveTypeModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-rose-100 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <form id="delete-leave-type-form" method="POST" action="" class="p-6 space-y-4">
+            <p class="text-xs text-slate-700" id="delete-modal-msg">
+                Are you sure you want to remove this leave type?
+            </p>
+
+            <div id="delete-modal-warning" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 space-y-1">
+                <div class="font-bold flex items-center space-x-1 text-amber-800">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                    <span>Historical Applications Detected</span>
+                </div>
+                <p>This category has historical leave records. To protect employee audit history and payroll integrity, it will be <strong>safely archived/deactivated</strong> rather than deleted permanently.</p>
+            </div>
+
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeDeleteLeaveTypeModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <span>Confirm Action</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function autoSuggestCode(name) {
+        if (!name) return;
+        const codeInput = document.getElementById('create_code');
+        if (codeInput.value && codeInput.dataset.manual === 'true') return;
+        
+        let code = name.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+        // Take initials or first word abbreviation
+        const words = name.trim().split(/\s+/);
+        if (words.length > 1) {
+            code = words.map(w => w[0].toUpperCase()).join('') + '_LV';
+        } else {
+            code = code.substring(0, 8);
+        }
+        codeInput.value = code;
+    }
+
+    document.getElementById('create_code')?.addEventListener('input', function() {
+        this.dataset.manual = 'true';
+    });
+
+    function selectColorPreset(pickerId, color) {
+        const picker = document.getElementById(pickerId);
+        if (picker) {
+            picker.value = color;
+        }
+    }
+
+    function openCreateLeaveTypeModal() {
+        const modal = document.getElementById('create-leave-type-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeCreateLeaveTypeModal() {
+        const modal = document.getElementById('create-leave-type-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function openEditLeaveTypeModal(id, name, code, desc, defaultDays, isPaid, colorCode, gender, isActive) {
+        const modal = document.getElementById('edit-leave-type-modal');
+        const form = document.getElementById('edit-leave-type-form');
+        form.action = `/leaves/types/${id}/edit`;
+
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_code').value = code;
+        document.getElementById('edit_description').value = desc || '';
+        document.getElementById('edit_default_days').value = defaultDays;
+        document.getElementById('edit_is_paid').value = isPaid ? 'on' : 'off';
+        document.getElementById('edit_color_picker').value = colorCode || '#008080';
+        document.getElementById('edit_is_active').checked = isActive;
+
+        if (gender === 'female') {
+            document.getElementById('edit_gender_female').checked = true;
+        } else if (gender === 'male') {
+            document.getElementById('edit_gender_male').checked = true;
+        } else {
+            document.getElementById('edit_gender_all').checked = true;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeEditLeaveTypeModal() {
+        const modal = document.getElementById('edit-leave-type-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function openDeleteLeaveTypeModal(id, name, appCount) {
+        const modal = document.getElementById('delete-leave-type-modal');
+        const form = document.getElementById('delete-leave-type-form');
+        form.action = `/leaves/types/${id}/delete`;
+
+        const msg = document.getElementById('delete-modal-msg');
+        const warning = document.getElementById('delete-modal-warning');
+
+        if (appCount > 0) {
+            msg.innerHTML = `Are you sure you want to deactivate <strong>${name}</strong>?`;
+            warning.classList.remove('hidden');
+        } else {
+            msg.innerHTML = `Are you sure you want to permanently delete <strong>${name}</strong>? This cannot be undone.`;
+            warning.classList.add('hidden');
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeDeleteLeaveTypeModal() {
+        const modal = document.getElementById('delete-leave-type-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+</script>
+{% endblock %}

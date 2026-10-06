@@ -13,7 +13,11 @@ class Settings:
     DATABASE_URL: str = (
         _raw_db_url.replace("postgres://", "postgresql://", 1)
         if _raw_db_url.startswith("postgres://")
-        else _raw_db_url
+        else (
+            _raw_db_url.replace("mysql://", "mysql+pymysql://", 1)
+            if _raw_db_url.startswith("mysql://")
+            else _raw_db_url
+        )
     )
 
     # Environment settings

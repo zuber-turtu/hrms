@@ -23,10 +23,11 @@ from app.services.payroll_calculator import (
 from app.services.pdf_generator import generate_payslip_pdf
 from app.services.formatters import number_to_words, get_month_name, mask_account_number, get_payslip_pdf_filename
 from app.templates_config import templates
+from app.utils.flash import flash_redirect
 
 router = APIRouter(prefix="/payroll")
 
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 
 
 @router.get("", response_class=HTMLResponse)
@@ -38,7 +39,7 @@ async def list_payroll(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role not in ["admin", "hr_admin"]:
+    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
         payslips = (
             db.query(Payslip)
             .filter(
@@ -52,7 +53,7 @@ async def list_payroll(
         payslips = db.query(Payslip).order_by(Payslip.year.desc(), Payslip.month.desc()).all()
 
 
-    employees = db.query(Employee).filter(Employee.is_active == True, Employee.role != "admin").all()
+    employees = db.query(Employee).filter(Employee.is_active == True, Employee.role != "super_admin").all()
     departments = db.query(Department).all()
 
     today = get_ist_today()
@@ -96,6 +97,13 @@ async def generate_draft(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
+    target_emp = db.query(Employee).filter(Employee.id == employee_id).first()
+    if not target_emp:
+        return flash_redirect(url="/payroll", message="Selected employee not found", category="error")
+
+    if target_emp.role == "super_admin":
+        return flash_redirect(url="/payroll", message="Super Admin is an executive officer and exempt from payroll generation.", category="error")
+
     # Check if already exists
     existing = db.query(Payslip).filter(
         Payslip.employee_id == employee_id,
@@ -104,7 +112,7 @@ async def generate_draft(
     ).first()
 
     if existing:
-        return RedirectResponse(url=f"/payroll/{existing.id}/edit", status_code=302)
+        return flash_redirect(url=f"/payroll/{existing.id}/edit", message=f"A payslip for {target_emp.name} already exists for {month}/{year}.", category="info")
 
     draft_data = generate_draft_payslip(db, employee_id, month, year)
     if draft_data:
@@ -112,9 +120,9 @@ async def generate_draft(
         db.add(payslip)
         db.commit()
         db.refresh(payslip)
-        return RedirectResponse(url=f"/payroll/{payslip.id}/edit", status_code=302)
+        return flash_redirect(url=f"/payroll/{payslip.id}/edit", message=f"Draft payslip for {target_emp.name} generated successfully.", category="success")
 
-    return RedirectResponse(url="/payroll", status_code=302)
+    return flash_redirect(url="/payroll", message=f"Could not compute draft payslip for {target_emp.name}.", category="error")
 
 
 @router.post("/bulk-generate")
@@ -144,7 +152,7 @@ async def bulk_generate(
         f"{result['updated']} draft(s) recalculated, {result['skipped_existing']} skipped, "
         f"{result['skipped_finalized']} finalized/paid protected."
     )
-    return RedirectResponse(url=f"/payroll?msg={msg}&msg_type=success", status_code=302)
+    return flash_redirect(url="/payroll", message=msg, category="success")
 
 
 @router.post("/bulk-status")
@@ -157,14 +165,14 @@ async def bulk_status_action(
 ):
     id_list = [int(x.strip()) for x in payslip_ids.split(",") if x.strip().isdigit()]
     if not id_list:
-        return RedirectResponse(url="/payroll?msg=No payslips selected&msg_type=error", status_code=302)
+        return flash_redirect(url="/payroll", message="No payslips selected", category="error")
 
     if action not in ["draft", "finalized", "paid"]:
-        return RedirectResponse(url="/payroll?msg=Invalid status selected&msg_type=error", status_code=302)
+        return flash_redirect(url="/payroll", message="Invalid status selected", category="error")
 
     res = bulk_update_payslip_status(db, id_list, action, actor=current_user)
     msg = f"Successfully updated {res['updated_count']} payslip(s) to '{action.title()}' status."
-    return RedirectResponse(url=f"/payroll?msg={msg}&msg_type=success", status_code=302)
+    return flash_redirect(url="/payroll", message=msg, category="success")
 
 
 @router.post("/bulk-delete")
@@ -176,13 +184,13 @@ async def bulk_delete_action(
 ):
     id_list = [int(x.strip()) for x in payslip_ids.split(",") if x.strip().isdigit()]
     if not id_list:
-        return RedirectResponse(url="/payroll?msg=No payslips selected&msg_type=error", status_code=302)
+        return flash_redirect(url="/payroll", message="No payslips selected", category="error")
 
     res = bulk_delete_draft_payslips(db, id_list, actor=current_user)
     msg = f"Deleted {res['deleted_count']} draft payslip(s)."
     if res["skipped_locked_count"] > 0:
         msg += f" (Protected {res['skipped_locked_count']} finalized/paid records from deletion)"
-    return RedirectResponse(url=f"/payroll?msg={msg}&msg_type=info", status_code=302)
+    return flash_redirect(url="/payroll", message=msg, category="info")
 
 
 @router.get("/bulk-export-zip")
@@ -201,7 +209,7 @@ async def bulk_export_zip(
         id_list = [p[0] for p in all_payslips]
 
     if not id_list:
-        return RedirectResponse(url="/payroll?msg=No payslips available to export&msg_type=error", status_code=302)
+        return flash_redirect(url="/payroll", message="No payslips available to export", category="error")
 
     zip_stream = bulk_generate_payslips_zip(db, id_list)
     timestamp = datetime.date.today().strftime("%Y%m%d")
@@ -296,7 +304,7 @@ async def view_payslip(
     if not payslip:
         raise HTTPException(status_code=404, detail="Payslip not found")
 
-    if current_user.role not in ["admin", "hr_admin"]:
+    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
         if payslip.employee_id != current_user.id or payslip.status == "draft":
             raise HTTPException(status_code=403, detail="Unauthorized to view this payslip (still in draft review)")
 
@@ -335,7 +343,7 @@ async def download_payslip_pdf(
     if not payslip:
         return Response(status_code=404)
 
-    if current_user.role not in ["admin", "hr_admin"]:
+    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
         if payslip.employee_id != current_user.id or payslip.status == "draft":
             return Response(status_code=403)
 

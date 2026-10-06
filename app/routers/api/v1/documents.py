@@ -23,8 +23,8 @@ from app.utils.timezone import get_ist_now
 
 router = APIRouter(prefix="/documents", tags=["Documents & KYC"])
 
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
-allow_manager_or_hr = RoleChecker(["admin", "hr_admin", "manager"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
+allow_manager_or_hr = RoleChecker(["super_admin", "admin", "hr", "hr_admin", "manager"])
 
 
 def slugify(text: str) -> str:
@@ -35,13 +35,13 @@ def slugify(text: str) -> str:
 
 
 def check_document_access(document: EmployeeDocument, current_user: Employee):
-    if current_user.role in ["admin", "hr_admin"]:
+    if current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False):
         return True
     if document.employee_id == current_user.id:
         return True
     if current_user.role == "manager":
         emp = document.employee
-        if emp and emp.department_id == current_user.department_id and emp.role not in ["admin", "hr_admin"]:
+        if emp and emp.department_id == current_user.department_id and emp.role not in ["super_admin", "admin", "hr", "hr_admin"]:
             return True
     return False
 
@@ -154,7 +154,7 @@ async def api_get_employee_documents(
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    is_hr = current_user.role in ["admin", "hr_admin"]
+    is_hr = current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False)
     is_self = current_user.id == emp_id
     is_manager = current_user.role == "manager" and employee.department_id == current_user.department_id
 
@@ -179,7 +179,7 @@ async def api_upload_employee_document(
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    is_hr = current_user.role in ["admin", "hr_admin"]
+    is_hr = current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False)
     is_self = current_user.id == emp_id
     if not is_self and not is_hr:
         raise HTTPException(status_code=403, detail="Operation not permitted")
@@ -364,7 +364,7 @@ async def api_delete_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    is_hr = current_user.role in ["admin", "hr_admin"]
+    is_hr = current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False)
     is_self = current_user.id == document.employee_id
     if not is_self and not is_hr:
         raise HTTPException(status_code=403, detail="Operation not permitted")

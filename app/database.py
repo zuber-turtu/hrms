@@ -8,18 +8,20 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./hrms.db")
 
-# Automatically normalize postgres:// to postgresql:// for SQLAlchemy compatibility
+# Automatically normalize postgres:// and mysql:// for SQLAlchemy compatibility
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+elif DATABASE_URL.startswith("mysql://"):
+    DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
 
-# Configure engine arguments based on database backend (SQLite vs PostgreSQL/Supabase)
+# Configure engine arguments based on database backend (SQLite vs PostgreSQL/MySQL/Supabase)
 if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
         DATABASE_URL,
         connect_args={"check_same_thread": False}
     )
 else:
-    # PostgreSQL / Supabase configuration with connection pooling & liveness ping
+    # PostgreSQL / MySQL / Supabase configuration with connection pooling & liveness ping
     engine = create_engine(
         DATABASE_URL,
         pool_pre_ping=True,

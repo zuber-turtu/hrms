@@ -169,7 +169,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label for="department_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Department</label>
-                        {% if user.role in ['admin', 'hr_admin'] %}
+                        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
                         <a href="/departments" target="_blank" class="text-[11px] font-medium text-teal-700 hover:underline inline-flex items-center" title="Manage Departments">
                             <i data-lucide="external-link" class="w-3 h-3 mr-0.5"></i> Manage
                         </a>
@@ -181,7 +181,7 @@
                         hx-trigger="change"
                         hx-include="this"
                         hx-swap="innerHTML"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                         <option value="">-- Select Department --</option>
                         {% for dept in departments %}
                         <option value="{{ dept.id }}" {% if employee and employee.department_id == dept.id %}selected{% endif %}>
@@ -197,7 +197,7 @@
                         <label for="designation_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Job Designation / Title</label>
                     </div>
                     <select name="designation_id" id="designation_id"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                         <option value="">-- Select Designation --</option>
                         {% for des in designations %}
                         <option value="{{ des.id }}" data-dept="{{ des.department_id or '' }}" {% if employee and employee.designation_id == des.id %}selected{% endif %}>
@@ -210,13 +210,18 @@
                 <!-- Role -->
                 <div>
                     <label for="role" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">System Access Role</label>
-                    <select name="role" id="role" {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
-                        <option value="intern" {% if employee and employee.role == 'intern' %}selected{% endif %}>Intern (Basic Access)</option>
-                        <option value="employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee (Standard)</option>
-                        <option value="manager" {% if employee and employee.role == 'manager' %}selected{% endif %}>Manager (Team Oversight)</option>
-                        <option value="hr_admin" {% if employee and employee.role == 'hr_admin' %}selected{% endif %}>HR Admin (Workforce & Payroll)</option>
-                        {% if user.role == 'admin' %}
-                        <option value="admin" {% if employee and employee.role == 'admin' %}selected{% endif %}>Admin (Full Control)</option>
+                    <select name="role" id="role" {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        <option value="intern" {% if employee and employee.role == 'intern' %}selected{% endif %}>Intern</option>
+                        <option value="employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee</option>
+                        <option value="manager" {% if employee and employee.role == 'manager' %}selected{% endif %}>Manager</option>
+                        <option value="hr" {% if employee and employee.role in ['hr', 'hr_admin'] %}selected{% endif %}>HR</option>
+                        {% if user.role == 'super_admin' %}
+                        <option value="admin" {% if employee and employee.role == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="super_admin" {% if employee and employee.role == 'super_admin' %}selected{% endif %}>Super Admin</option>
+                        {% elif user.role == 'admin' %}
+                        {% if employee and employee.role == 'admin' %}
+                        <option value="admin" selected>Admin</option>
+                        {% endif %}
                         {% endif %}
                     </select>
                 </div>
@@ -228,7 +233,7 @@
                     </label>
                     <input type="date" name="joining_date" id="joining_date"
                         value="{{ employee.joining_date.strftime('%Y-%m-%d') if (employee and employee.joining_date) else (today.strftime('%Y-%m-%d') if today else '') }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
 
                 <!-- Qualification -->
@@ -264,7 +269,7 @@
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" name="is_geofence_exempt" id="is_geofence_exempt" value="true" class="sr-only peer"
                             {% if employee and employee.is_geofence_exempt %}checked{% endif %}
-                            {% if user.role not in ['admin', 'hr_admin'] %}disabled{% endif %}>
+                            {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled{% endif %}>
                         <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-teal-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
                     </label>
                 </div>
@@ -380,27 +385,27 @@
                 <div>
                     <label for="base_salary" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Basic Pay ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="base_salary" id="base_salary" value="{{ employee.base_salary if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
                 <div>
                     <label for="hra" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">HRA ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="hra" id="hra" value="{{ employee.hra if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
                 <div>
                     <label for="custom_allowances" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Allowances ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="custom_allowances" id="custom_allowances" value="{{ employee.custom_allowances if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
                 <div>
                     <label for="pf_deduction" class="block text-xs font-semibold text-rose-700 uppercase tracking-wider mb-1">PF Deduction ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="pf_deduction" id="pf_deduction" value="{{ employee.pf_deduction if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-rose-700 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-rose-700 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
                 <div>
                     <label for="tax_deduction" class="block text-xs font-semibold text-rose-700 uppercase tracking-wider mb-1">Tax Deduction ({{ (company or get_company()).currency_symbol }})</label>
                     <input type="number" step="0.01" name="tax_deduction" id="tax_deduction" value="{{ employee.tax_deduction if employee else 0 }}"
-                        {% if user.role not in ['admin', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-rose-700 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed font-mono"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-rose-700 font-mono focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
                 </div>
             </div>
         </div>

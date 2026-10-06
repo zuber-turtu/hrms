@@ -33,6 +33,7 @@
 
         <!-- Action Buttons Group -->
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            {% if user.role != 'super_admin' %}
             <button onclick="openApplyLeaveModal()" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer group">
                 <i data-lucide="plane-takeoff" class="w-4 h-4 mr-2 text-teal-100 group-hover:-translate-y-0.5 transition-transform"></i>
                 <span>Apply for Leave</span>
@@ -45,16 +46,112 @@
                 <i data-lucide="pie-chart" class="w-4 h-4 mr-2 text-teal-700 group-hover:rotate-12 transition-transform"></i>
                 <span>Leave Quotas</span>
             </button>
+            {% endif %}
             {% if is_approver %}
-            <button onclick="openAllocateWfhModal()" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200/90 shadow-2xs transition-all active:scale-[0.98] cursor-pointer">
-                <i data-lucide="user-plus" class="w-4 h-4 mr-2 text-purple-700"></i>
-                <span>Allocate WFH</span>
+            <button onclick="openBulkAllocationModal('wfh')" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200/90 shadow-2xs transition-all active:scale-[0.98] cursor-pointer group" title="Bulk allocate WFH, grant leaves, or update quotas">
+                <i data-lucide="layers" class="w-4 h-4 mr-2 text-purple-700 group-hover:scale-110 transition-transform"></i>
+                <span>Bulk Allocation</span>
             </button>
+            {% endif %}
+            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+            <a href="/leaves/types" class="inline-flex items-center px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 shadow-2xs transition-all active:scale-[0.98] cursor-pointer group" title="Configure dynamic leave types, quota rules, and statutory policies">
+                <i data-lucide="calendar-cog" class="w-4 h-4 mr-1.5 text-teal-700 group-hover:rotate-45 transition-transform"></i>
+                <span>Leave Policies</span>
+            </a>
             {% endif %}
         </div>
     </div>
 
     <!-- 2. Annual Overview KPI Summary Ribbon -->
+    {% set total_used_all = my_balances|sum(attribute='used_days') if my_balances else 0.0 %}
+    {% set total_pending_all = my_balances|sum(attribute='pending_days') if my_balances else 0.0 %}
+    {% if user.role == 'super_admin' %}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Super Admin KPI 1: Total Active Staff -->
+        <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Workforce Base</p>
+                <div class="flex items-baseline space-x-1.5 mt-1">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-teal-900 font-mono">{{ team_members|length }}</h3>
+                    <span class="text-xs font-semibold text-slate-400">staff</span>
+                </div>
+                <div class="flex items-center text-[11px] font-medium text-teal-700 mt-1">
+                    <i data-lucide="users" class="w-3 h-3 mr-1 text-teal-600"></i> Active Non-Admin Accounts
+                </div>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-teal-50 border border-teal-200/80 text-teal-700 flex items-center justify-center shrink-0">
+                <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Super Admin KPI 2: Pending Leaves -->
+        <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Pending Leaves</p>
+                <div class="flex items-baseline space-x-1.5 mt-1">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold {% if pending_leaves|length > 0 %}text-amber-600{% else %}text-slate-900{% endif %} font-mono">
+                        {{ pending_leaves|length }}
+                    </h3>
+                    <span class="text-xs font-semibold text-slate-400">requests</span>
+                </div>
+                <div class="flex items-center text-[11px] font-medium {% if pending_leaves|length > 0 %}text-amber-700{% else %}text-emerald-700{% endif %} mt-1">
+                    {% if pending_leaves|length > 0 %}
+                    <i data-lucide="clock" class="w-3 h-3 mr-1 text-amber-600"></i> Awaiting Approval
+                    {% else %}
+                    <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> All Clear
+                    {% endif %}
+                </div>
+            </div>
+            <div class="w-11 h-11 rounded-xl {% if pending_leaves|length > 0 %}bg-amber-50 border border-amber-200/80 text-amber-700{% else %}bg-slate-50 border border-slate-200 text-slate-500{% endif %} flex items-center justify-center shrink-0">
+                <i data-lucide="plane-takeoff" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Super Admin KPI 3: Pending WFH -->
+        <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Pending WFH</p>
+                <div class="flex items-baseline space-x-1.5 mt-1">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold {% if pending_wfh|length > 0 %}text-amber-600{% else %}text-slate-900{% endif %} font-mono">
+                        {{ pending_wfh|length }}
+                    </h3>
+                    <span class="text-xs font-semibold text-slate-400">requests</span>
+                </div>
+                <div class="flex items-center text-[11px] font-medium {% if pending_wfh|length > 0 %}text-amber-700{% else %}text-emerald-700{% endif %} mt-1">
+                    {% if pending_wfh|length > 0 %}
+                    <i data-lucide="clock" class="w-3 h-3 mr-1 text-amber-600"></i> Awaiting Approval
+                    {% else %}
+                    <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> All Clear
+                    {% endif %}
+                </div>
+            </div>
+            <div class="w-11 h-11 rounded-xl {% if pending_wfh|length > 0 %}bg-amber-50 border border-amber-200/80 text-amber-700{% else %}bg-slate-50 border border-slate-200 text-slate-500{% endif %} flex items-center justify-center shrink-0">
+                <i data-lucide="home" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Super Admin KPI 4: Staff Out / WFH Today -->
+        <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Off / Remote Today</p>
+                <div class="flex items-baseline space-x-1.5 mt-1">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-teal-900 font-mono">
+                        {{ (active_today_leaves|length) + (active_today_wfh|length) }}
+                    </h3>
+                    <span class="text-xs font-semibold text-slate-400">staff</span>
+                </div>
+                <div class="flex items-center text-[11px] font-medium text-slate-500 mt-1">
+                    <span class="text-teal-700 font-semibold">{{ active_today_leaves|length }} Leaves</span>
+                    <span class="mx-1">•</span>
+                    <span class="text-purple-700 font-semibold">{{ active_today_wfh|length }} WFH</span>
+                </div>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-teal-50 border border-teal-200/80 text-teal-800 flex items-center justify-center shrink-0">
+                <i data-lucide="calendar-check" class="w-5 h-5"></i>
+            </div>
+        </div>
+    </div>
+    {% else %}
     {% set total_used_all = my_balances|sum(attribute='used_days') %}
     {% set total_pending_all = my_balances|sum(attribute='pending_days') %}
     
@@ -143,6 +240,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- 4. Interactive Navigation Tabs & Records Table Container -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
@@ -151,6 +249,7 @@
         <div class="border-b border-slate-200 bg-slate-50/70 px-4 sm:px-6 pt-3 flex items-center justify-between flex-wrap gap-3">
             <div class="flex space-x-1 sm:space-x-2 overflow-x-auto no-scrollbar">
                 
+                {% if user.role != 'super_admin' %}
                 <!-- Tab: My Leaves -->
                 <button onclick="switchTab('my_leaves')" id="tab-btn-my_leaves" class="tab-btn px-4 py-3 text-xs font-bold rounded-t-xl border-b-2 border-teal-600 text-teal-900 bg-white transition-all flex items-center space-x-2 shrink-0">
                     <i data-lucide="plane-takeoff" class="w-4 h-4 text-teal-600"></i>
@@ -164,6 +263,7 @@
                     <span>My WFH Requests</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-200 text-slate-700">{{ my_wfh|length }}</span>
                 </button>
+                {% endif %}
                 
                 <!-- Tab: Approvals Queue (Admin & Manager) -->
                 {% if is_approver %}
@@ -179,15 +279,27 @@
                 </button>
                 {% endif %}
 
-                <!-- Tab: Today's Remote & Off -->
+                {% if is_approver %}
+                <!-- Tab: Today's Remote & Off (Approvers/Management Only) -->
                 <button onclick="switchTab('today_status')" id="tab-btn-today_status" class="tab-btn px-4 py-3 text-xs font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/80 transition-all flex items-center space-x-2 shrink-0">
-                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <i data-lucide="users" class="w-4 h-4 text-sky-600"></i>
                     <span>Who is Off / WFH Today</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-200 text-slate-700">{{ (active_today_wfh|length) + (active_today_leaves|length) }}</span>
                 </button>
+                {% endif %}
+
+                <!-- Tab: Staff Quotas & Entitlements (Admin & Manager) -->
+                {% if is_approver %}
+                <button onclick="switchTab('team_balances')" id="tab-btn-team_balances" class="tab-btn px-4 py-3 text-xs font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/80 transition-all flex items-center space-x-2 shrink-0">
+                    <i data-lucide="pie-chart" class="w-4 h-4 text-teal-600"></i>
+                    <span>Staff Quotas & Balances</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-teal-100 text-teal-800">{{ team_leave_profiles|length }}</span>
+                </button>
+                {% endif %}
             </div>
         </div>
 
+        {% if user.role != 'super_admin' %}
         <!-- Tab Content 1: My Leave Applications -->
         <div id="tab-content-my_leaves" class="tab-pane p-5 sm:p-6 space-y-4">
             
@@ -205,6 +317,7 @@
                         <option value="approved">Approved</option>
                         <option value="pending">Pending</option>
                         <option value="rejected">Rejected</option>
+                        <option value="lapsed">Lapsed</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
@@ -264,8 +377,19 @@
                             </td>
 
                             <!-- Reason -->
-                            <td class="px-5 py-3.5 max-w-xs text-slate-700">
-                                <p class="truncate" title="{{ l.reason }}">{{ l.reason }}</p>
+                            <td class="px-5 py-3.5 max-w-xs text-slate-700 cursor-pointer group hover:bg-teal-50/30 transition-colors"
+                                data-title="{{ l.leave_type.name if l.leave_type else 'Leave Request' }}"
+                                data-reason="{{ l.reason }}"
+                                data-remarks="{{ l.rejection_reason or '' }}"
+                                data-emp="{{ l.employee.name if l.employee else user.name }}"
+                                data-dates="{{ l.start_date }} → {{ l.end_date }} ({{ l.total_days }} day(s))"
+                                data-status="{{ l.status }}"
+                                onclick="openReasonFromData(this)"
+                                title="Click to view full reason">
+                                <div class="flex items-center justify-between space-x-1.5">
+                                    <p class="truncate text-xs text-slate-800 group-hover:text-teal-700 font-medium transition-colors">{{ l.reason }}</p>
+                                    <span class="text-[10px] text-teal-600 font-semibold group-hover:underline shrink-0 bg-teal-50 group-hover:bg-teal-100 border border-teal-200 px-1.5 py-0.5 rounded transition-colors hidden sm:inline-block">Full view</span>
+                                </div>
                                 {% if l.rejection_reason %}
                                 <div class="text-rose-600 text-[11px] font-semibold mt-1 flex items-center space-x-1 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 w-fit">
                                     <i data-lucide="alert-circle" class="w-3 h-3 text-rose-500 shrink-0"></i>
@@ -283,6 +407,10 @@
                                 {% elif l.status == 'rejected' %}
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs">
                                     <i data-lucide="x-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i> Rejected
+                                </span>
+                                {% elif l.status == 'lapsed' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-300 shadow-2xs">
+                                    <i data-lucide="clock-alert" class="w-3.5 h-3.5 mr-1 text-slate-500"></i> Lapsed
                                 </span>
                                 {% elif l.status == 'cancelled' %}
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
@@ -349,6 +477,7 @@
                         <option value="approved">Approved</option>
                         <option value="pending">Pending</option>
                         <option value="rejected">Rejected</option>
+                        <option value="lapsed">Lapsed</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
@@ -412,8 +541,19 @@
                             </td>
 
                             <!-- Reason -->
-                            <td class="px-5 py-3.5 max-w-xs text-slate-700">
-                                <p class="truncate" title="{{ w.reason }}">{{ w.reason }}</p>
+                            <td class="px-5 py-3.5 max-w-xs text-slate-700 cursor-pointer group hover:bg-teal-50/30 transition-colors"
+                                data-title="Work From Home (WFH)"
+                                data-reason="{{ w.reason }}"
+                                data-remarks="{{ w.rejection_reason or '' }}"
+                                data-emp="{{ w.employee.name if w.employee else user.name }}"
+                                data-dates="{{ w.start_date }} → {{ w.end_date }} ({{ w.total_days }} day(s))"
+                                data-status="{{ w.status }}"
+                                onclick="openReasonFromData(this)"
+                                title="Click to view full reason">
+                                <div class="flex items-center justify-between space-x-1.5">
+                                    <p class="truncate text-xs text-slate-800 group-hover:text-teal-700 font-medium transition-colors">{{ w.reason }}</p>
+                                    <span class="text-[10px] text-teal-600 font-semibold group-hover:underline shrink-0 bg-teal-50 group-hover:bg-teal-100 border border-teal-200 px-1.5 py-0.5 rounded transition-colors hidden sm:inline-block">Full view</span>
+                                </div>
                                 {% if w.rejection_reason %}
                                 <div class="text-rose-600 text-[11px] font-semibold mt-1 flex items-center space-x-1 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 w-fit">
                                     <i data-lucide="alert-circle" class="w-3 h-3 text-rose-500 shrink-0"></i>
@@ -431,6 +571,10 @@
                                 {% elif w.status == 'rejected' %}
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs">
                                     <i data-lucide="x-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i> Rejected
+                                </span>
+                                {% elif w.status == 'lapsed' %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-300 shadow-2xs">
+                                    <i data-lucide="clock-alert" class="w-3.5 h-3.5 mr-1 text-slate-500"></i> Lapsed
                                 </span>
                                 {% elif w.status == 'cancelled' %}
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
@@ -485,6 +629,7 @@
                 </table>
             </div>
         </div>
+        {% endif %}
 
         {% if is_approver %}
         <!-- Tab Content 3: Approvals Queue (Admins & Managers) -->
@@ -573,8 +718,22 @@
                                     <div class="text-[10px] text-teal-800 font-semibold">{{ pl.total_days }} day(s) duration</div>
                                 </td>
 
-                                <td class="px-5 py-3.5 text-slate-700 max-w-xs">
-                                    <p class="text-xs italic bg-slate-50 p-2 rounded-lg border border-slate-200/80">"{{ pl.reason }}"</p>
+                                <td class="px-5 py-3.5 text-slate-700 max-w-xs cursor-pointer group"
+                                    data-title="{{ pl.leave_type.name if pl.leave_type else 'Leave Request' }}"
+                                    data-reason="{{ pl.reason }}"
+                                    data-remarks=""
+                                    data-emp="{{ pl.employee.name }}"
+                                    data-dates="{{ pl.start_date }} → {{ pl.end_date }} ({{ pl.total_days }} day(s))"
+                                    data-status="pending"
+                                    onclick="openReasonFromData(this)"
+                                    title="Click to view full statement">
+                                    <div class="bg-slate-50 hover:bg-teal-50/60 p-2 rounded-lg border border-slate-200/80 group-hover:border-teal-300 transition-colors">
+                                        <p class="text-xs italic text-slate-800 line-clamp-2">"{{ pl.reason }}"</p>
+                                        <div class="text-[10px] text-teal-700 font-semibold mt-1 flex items-center space-x-1">
+                                            <i data-lucide="eye" class="w-3 h-3 text-teal-600"></i>
+                                            <span>Read full reason</span>
+                                        </div>
+                                    </div>
                                 </td>
 
                                 <td class="px-5 py-3.5 whitespace-nowrap text-right space-x-2">
@@ -655,8 +814,22 @@
                                     </span>
                                 </td>
 
-                                <td class="px-5 py-3.5 text-slate-700 max-w-xs">
-                                    <p class="text-xs italic bg-slate-50 p-2 rounded-lg border border-slate-200/80">"{{ pw.reason }}"</p>
+                                <td class="px-5 py-3.5 text-slate-700 max-w-xs cursor-pointer group"
+                                    data-title="Work From Home (WFH)"
+                                    data-reason="{{ pw.reason }}"
+                                    data-remarks=""
+                                    data-emp="{{ pw.employee.name }}"
+                                    data-dates="{{ pw.start_date }} → {{ pw.end_date }} ({{ pw.total_days }} day(s))"
+                                    data-status="pending"
+                                    onclick="openReasonFromData(this)"
+                                    title="Click to view full statement">
+                                    <div class="bg-slate-50 hover:bg-teal-50/60 p-2 rounded-lg border border-slate-200/80 group-hover:border-teal-300 transition-colors">
+                                        <p class="text-xs italic text-slate-800 line-clamp-2">"{{ pw.reason }}"</p>
+                                        <div class="text-[10px] text-teal-700 font-semibold mt-1 flex items-center space-x-1">
+                                            <i data-lucide="eye" class="w-3 h-3 text-teal-600"></i>
+                                            <span>Read full reason</span>
+                                        </div>
+                                    </div>
                                 </td>
 
                                 <td class="px-5 py-3.5 whitespace-nowrap text-right space-x-2">
@@ -689,7 +862,8 @@
         </div>
         {% endif %}
 
-        <!-- Tab Content 4: Who is Off / WFH Today -->
+        {% if is_approver %}
+        <!-- Tab Content 4: Who is Off / WFH Today (Approvers/Management Only) -->
         <div id="tab-content-today_status" class="tab-pane p-5 sm:p-6 space-y-6 hidden">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
@@ -702,7 +876,7 @@
                                     <i data-lucide="home" class="w-4 h-4"></i>
                                 </div>
                                 <div>
-                                    <h4 class="text-sm font-bold text-slate-900 font-heading">🏠 Working Remotely Today</h4>
+                                    <h4 class="text-sm font-bold text-slate-900 font-heading">Working Remotely Today</h4>
                                     <p class="text-[11px] text-slate-500">Authorized WFH with remote punch enabled</p>
                                 </div>
                             </div>
@@ -749,7 +923,7 @@
                                     <i data-lucide="plane-takeoff" class="w-4 h-4"></i>
                                 </div>
                                 <div>
-                                    <h4 class="text-sm font-bold text-slate-900 font-heading">🌴 On Leave / Off Today</h4>
+                                    <h4 class="text-sm font-bold text-slate-900 font-heading">On Leave / Off Today</h4>
                                     <p class="text-[11px] text-slate-500">Approved time-off & statutory leave</p>
                                 </div>
                             </div>
@@ -789,11 +963,130 @@
 
             </div>
         </div>
+        {% endif %}
+
+        <!-- Tab Content 5: Staff Leave Entitlements & Balances (Admin & Manager) -->
+        {% if is_approver %}
+        <div id="tab-content-team_balances" class="tab-pane hidden p-5 sm:p-6 space-y-4">
+            <!-- Controls Bar: Search & Department Filter -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
+                <div class="relative flex-1 max-w-sm">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="team-balances-search" oninput="filterTeamBalancesTable()" placeholder="Search staff by name, code, or department..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white">
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-semibold text-slate-500">Active Policy Year:</span>
+                    <span class="px-2.5 py-1 rounded-md text-xs font-bold font-mono bg-teal-100 text-teal-800 border border-teal-200">
+                        {{ selected_year }}
+                    </span>
+                    {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+                    <button onclick="openBulkAllocationModal('quota')" class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors cursor-pointer">
+                        <i data-lucide="layers" class="w-3.5 h-3.5 mr-1.5 text-amber-600"></i> Bulk Update Quotas
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Team Balances Table -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
+                        <tr>
+                            <th class="px-5 py-3.5">Employee Member</th>
+                            <th class="px-4 py-3.5">Department & Role</th>
+                            <th class="px-4 py-3.5">Gender Policy</th>
+                            <th class="px-4 py-3.5">Category Leave Entitlements & Balances</th>
+                            <th class="px-4 py-3.5 text-center">Net Available</th>
+                            <th class="px-5 py-3.5 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-balances-table-body" class="divide-y divide-slate-100 bg-white">
+                        {% for prof in team_leave_profiles %}
+                        {% set emp = prof.employee %}
+                        <tr class="hover:bg-slate-50/80 transition-colors team-balance-row" 
+                            data-search="{{ emp.name|lower }} {{ emp.email|lower }} {{ (emp.department or '')|lower }} {{ format_emp_code(emp)|lower }}">
+                            
+                            <!-- Employee Info -->
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold text-xs font-heading shrink-0 shadow-2xs">
+                                        {{ emp.name[0]|upper }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <a href="/employees/{{ emp.id }}/view#leaves" class="font-bold text-slate-900 hover:text-teal-700 transition-colors truncate block">
+                                            {{ emp.name }}
+                                        </a>
+                                        <p class="text-[11px] text-slate-400 font-mono">{{ format_emp_code(emp) }}</p>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Dept & Role -->
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <span class="font-semibold text-slate-800 text-xs block">{{ emp.department or 'General' }}</span>
+                                <span class="text-[11px] text-slate-400 capitalize">{{ emp.role.replace('_', ' ') }}</span>
+                            </td>
+
+                            <!-- Gender Policy -->
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold capitalize
+                                    {{ 'bg-pink-50 text-pink-700 border border-pink-200' if emp.gender in ['female', 'f', 'woman'] else 'bg-blue-50 text-blue-700 border border-blue-200' if emp.gender else 'bg-slate-100 text-slate-600 border border-slate-200' }}">
+                                    {{ emp.gender or 'All' }}
+                                </span>
+                            </td>
+
+                            <!-- Category Entitlements Badges -->
+                            <td class="px-4 py-3.5">
+                                <div class="flex flex-wrap gap-1.5 max-w-lg">
+                                    {% for b in prof.balances %}
+                                    <div class="inline-flex items-center space-x-1.5 px-2 py-1 rounded-lg border border-slate-200 bg-slate-50/90 text-[10px]" title="{{ b.leave_type.name }}: {{ b.total_allocated }}d Quota, {{ b.used_days }}d Availed, {{ b.pending_days }}d Pending, {{ b.remaining_days }}d Remaining">
+                                        <span class="w-2 h-2 rounded-full shrink-0" style="background-color: {{ b.leave_type.color_code or '#008080' }};"></span>
+                                        <span class="font-mono font-bold text-slate-800">{{ b.leave_type.code }}:</span>
+                                        <span class="font-mono font-bold text-teal-800">{{ b.remaining_days|int if b.remaining_days.is_integer() else b.remaining_days }}</span><span class="text-slate-400">/{{ b.total_allocated|int if b.total_allocated.is_integer() else b.total_allocated }}d</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </td>
+
+                            <!-- Net Available Days -->
+                            <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                <span class="font-mono font-extrabold text-sm text-teal-900 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200/80">
+                                    {{ prof.total_remaining|int if prof.total_remaining.is_integer() else prof.total_remaining }} days
+                                </span>
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-5 py-3.5 whitespace-nowrap text-right space-x-1">
+                                {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+                                <button type="button" onclick="openAdjustQuotaModal({{ emp.id }}, '{{ emp.name|e }}', {{ prof.balances|map(attribute='id')|list|tojson }}, {{ prof.balances|map(attribute='leave_type.name')|list|tojson }}, {{ prof.balances|map(attribute='total_allocated')|list|tojson }}, {{ prof.balances|map(attribute='used_days')|list|tojson }}, {{ prof.balances|map(attribute='remaining_days')|list|tojson }})" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors cursor-pointer" title="Adjust specific leave quota for this employee">
+                                    <i data-lucide="sliders" class="w-3.5 h-3.5 mr-1 text-teal-600"></i> Adjust Quota
+                                </button>
+                                {% endif %}
+                                <a href="/employees/{{ emp.id }}/view#leaves" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" title="View detailed leave history on dossier">
+                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="py-12 text-center text-slate-400 text-xs">
+                                <i data-lucide="users" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+                                No active employee records found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
 
     </div>
 
 </div>
 
+{% if user.role != 'super_admin' %}
 <!-- ========================================================================= -->
 <!-- MODAL: Apply for Leave (Professional Alignment & Auto-Calculations) -->
 <!-- ========================================================================= -->
@@ -821,11 +1114,12 @@
                 <label class="block text-xs font-bold text-slate-700 mb-1.5">
                     Leave Category <span class="text-rose-500">*</span>
                 </label>
-                <select name="leave_type_id" id="modal-leave-type-select" required onchange="updateSelectedLeaveQuota()" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-medium">
+                <select name="leave_type_id" id="modal-leave-type-select" required onchange="updateSelectedLeaveQuota(); calculateDuration();" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-medium">
                     {% for lt in leave_types %}
                     {% set b_match = my_balances|selectattr('leave_type_id', 'equalto', lt.id)|first %}
-                    <option value="{{ lt.id }}" data-remaining="{{ b_match.remaining_days if b_match else lt.default_days_per_year }}" data-paid="{{ 'true' if lt.is_paid else 'false' }}">
-                        {{ lt.name }} ({{ lt.code }}) — Available: {{ b_match.remaining_days|int if b_match and b_match.remaining_days.is_integer() else (b_match.remaining_days if b_match else lt.default_days_per_year) }} day(s) [{{ 'Paid' if lt.is_paid else 'Unpaid' }}]
+                    {% set rem_val = b_match.remaining_days if b_match else lt.default_days_per_year %}
+                    <option value="{{ lt.id }}" data-remaining="{{ rem_val }}" data-paid="{{ 'true' if lt.is_paid else 'false' }}" data-code="{{ lt.code }}" data-name="{{ lt.name }}">
+                        {{ lt.name }} ({{ lt.code }}) — Available: {{ rem_val|int if rem_val.is_integer() else rem_val }} day(s) [{{ 'Paid' if lt.is_paid else 'Unpaid' }}]
                     </option>
                     {% endfor %}
                 </select>
@@ -887,7 +1181,7 @@
                 <button type="button" onclick="closeApplyLeaveModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
                     Cancel
                 </button>
-                <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all active:scale-95">
+                <button type="submit" id="leave-submit-btn" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all active:scale-95 cursor-pointer">
                     Submit Leave Application
                 </button>
             </div>
@@ -947,64 +1241,378 @@
         </form>
     </div>
 </div>
+{% endif %}
 
 {% if is_approver %}
 <!-- ========================================================================= -->
-<!-- MODAL: Direct WFH Allocation (Managers & Admins) -->
+<!-- MODAL: Bulk Allocation Center (WFH, Leave Grants, Quotas) -->
 <!-- ========================================================================= -->
-<div id="allocate-wfh-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
-        <div class="px-6 py-4 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="p-2 rounded-xl bg-purple-100 text-purple-800">
-                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+<div id="bulk-allocation-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn flex flex-col max-h-[90vh]">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-gradient-to-r from-purple-50 via-slate-50 to-teal-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold shrink-0 shadow-2xs border border-purple-200">
+                    <i data-lucide="layers" class="w-5 h-5 text-purple-700"></i>
                 </div>
-                <div>
-                    <h3 class="text-sm font-bold text-purple-900 font-heading">Direct WFH Allocation</h3>
-                    <p class="text-[11px] text-purple-700">Allocate remote days directly to a team member (Instant Approval).</p>
+                <div class="min-w-0">
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900 font-heading">Bulk & Team Allocation Center</h3>
+                    <p class="text-[11px] text-slate-500 truncate">Allocate WFH, grant company-wide leaves, or update annual quotas in one go.</p>
                 </div>
             </div>
-            <button onclick="closeAllocateWfhModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-purple-100/60 transition-colors">
+            <button onclick="closeBulkAllocationModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <form method="POST" action="/leaves/wfh/allocate" class="p-6 space-y-4">
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Select Team Member <span class="text-rose-500">*</span></label>
-                <select name="employee_id" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-medium">
-                    <option value="">-- Choose employee from list --</option>
-                    {% for m in team_members %}
-                    <option value="{{ m.id }}">{{ m.name }} ({{ m.email }}) — {{ m.department.name if m.department else 'General' }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <!-- Mode Sub-Tabs Switcher -->
+        <div class="flex border-b border-slate-200 bg-slate-100/70 p-1.5 gap-1 shrink-0 px-6">
+            <button type="button" onclick="switchBulkTab('wfh')" id="bulk-tab-btn-wfh" class="bulk-tab-btn flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-2 bg-white text-purple-900 shadow-2xs cursor-pointer">
+                <i data-lucide="home" class="w-4 h-4 text-purple-600"></i>
+                <span>Allocate WFH</span>
+            </button>
+            <button type="button" onclick="switchBulkTab('leave')" id="bulk-tab-btn-leave" class="bulk-tab-btn flex-1 py-2 px-3 text-xs font-semibold rounded-xl transition-all flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900 cursor-pointer">
+                <i data-lucide="plane-takeoff" class="w-4 h-4 text-teal-600"></i>
+                <span>Grant Leave Day</span>
+            </button>
+            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+            <button type="button" onclick="switchBulkTab('quota')" id="bulk-tab-btn-quota" class="bulk-tab-btn flex-1 py-2 px-3 text-xs font-semibold rounded-xl transition-all flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900 cursor-pointer">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-amber-600"></i>
+                <span>Annual Quotas</span>
+            </button>
+            {% endif %}
+        </div>
 
-            <div class="grid grid-cols-2 gap-3.5">
+        <!-- Scrollable Form Container -->
+        <div class="p-6 overflow-y-auto flex-1 space-y-4">
+            
+            <!-- ============================================================= -->
+            <!-- TAB 1: WORK FROM HOME ALLOCATION -->
+            <!-- ============================================================= -->
+            <form id="bulk-form-wfh" method="POST" action="/leaves/wfh/allocate" class="bulk-pane space-y-4">
+                <!-- Target Selector Pill -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Start Date <span class="text-rose-500">*</span></label>
-                    <input type="date" name="start_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Target Audience <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-purple-300 transition-all text-xs font-bold text-slate-700 has-checked:border-purple-600 has-checked:bg-purple-50/70 has-checked:text-purple-900">
+                            <input type="radio" name="target_type" value="all" checked onchange="toggleTargetFields('wfh', 'all')" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-purple-600"></i>
+                                <span>All Staff</span>
+                            </div>
+                        </label>
+                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-purple-300 transition-all text-xs font-bold text-slate-700 has-checked:border-purple-600 has-checked:bg-purple-50/70 has-checked:text-purple-900">
+                            <input type="radio" name="target_type" value="department" onchange="toggleTargetFields('wfh', 'department')" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="building-2" class="w-3.5 h-3.5 text-purple-600"></i>
+                                <span>Department</span>
+                            </div>
+                        </label>
+                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-purple-300 transition-all text-xs font-bold text-slate-700 has-checked:border-purple-600 has-checked:bg-purple-50/70 has-checked:text-purple-900">
+                            <input type="radio" name="target_type" value="individual" onchange="toggleTargetFields('wfh', 'individual')" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="user" class="w-3.5 h-3.5 text-purple-600"></i>
+                                <span>Individual</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
+
+                <!-- Conditional Department Dropdown -->
+                <div id="wfh-target-dept-box" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Department <span class="text-rose-500">*</span></label>
+                    <select name="department_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-medium bg-white">
+                        <option value="">-- Choose Department --</option>
+                        {% for d in all_departments %}
+                        <option value="{{ d.id }}">{{ d.name }} ({{ d.code if d.code else 'DEPT' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Conditional Individual Member Dropdown -->
+                <div id="wfh-target-emp-box" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Employee <span class="text-rose-500">*</span></label>
+                    <select name="employee_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-medium bg-white">
+                        <option value="">-- Choose Employee --</option>
+                        {% for m in team_members %}
+                        <option value="{{ m.id }}">{{ m.name }} ({{ m.email }}) — {{ m.department.name if m.department else 'General' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Date Range & Quick Presets -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-slate-700">Date Range <span class="text-rose-500">*</span></label>
+                        <div class="flex items-center space-x-1 text-[10px]">
+                            <button type="button" onclick="setQuickDatePreset('wfh', 'today')" class="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold border border-purple-200 cursor-pointer">Today</button>
+                            <button type="button" onclick="setQuickDatePreset('wfh', 'tomorrow')" class="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold border border-purple-200 cursor-pointer">Tomorrow</button>
+                            <button type="button" onclick="setQuickDatePreset('wfh', 'week')" class="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold border border-purple-200 cursor-pointer">Full Week</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <input type="date" id="wfh-start-date" name="start_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
+                        </div>
+                        <div>
+                            <input type="date" id="wfh-end-date" name="end_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reason with Presets -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">End Date <span class="text-rose-500">*</span></label>
-                    <input type="date" name="end_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Directive / Reason</label>
+                    <textarea id="wfh-reason-input" name="reason" rows="2" placeholder="e.g., Company-wide remote sprint, severe weather advisory..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500">Direct WFH Allocation by Management</textarea>
+                    <div class="flex flex-wrap gap-1.5 mt-1.5">
+                        <button type="button" onclick="setReasonText('wfh-reason-input', 'Company-wide Remote Work Directive')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-purple-800 transition-colors cursor-pointer">Remote Directive</button>
+                        <button type="button" onclick="setReasonText('wfh-reason-input', 'Severe Weather / Public Transit Advisory')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-purple-800 transition-colors cursor-pointer">Weather Advisory</button>
+                        <button type="button" onclick="setReasonText('wfh-reason-input', 'Office Deep Cleaning & IT Infrastructure Maintenance')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-purple-800 transition-colors cursor-pointer">Office Maintenance</button>
+                    </div>
                 </div>
-            </div>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Allocation Directive / Reason</label>
-                <textarea name="reason" rows="2" placeholder="e.g., Remote sprint, Severe weather directive, Client site..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500">Direct WFH Allocation by Management</textarea>
-            </div>
+                <!-- Notification Checkbox -->
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="checkbox" id="wfh-send-email" name="send_email" value="true" checked class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300">
+                    <label for="wfh-send-email" class="text-xs text-slate-600 font-medium">Send automatic email notification to all allocated team members</label>
+                </div>
 
-            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
-                <button type="button" onclick="closeAllocateWfhModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
-                    Cancel
-                </button>
-                <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-sm transition-all active:scale-95">
-                    Allocate & Notify Employee
-                </button>
-            </div>
-        </form>
+                <!-- Footer / Actions -->
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeBulkAllocationModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                        <span>Allocate WFH (Instant Approval)</span>
+                    </button>
+                </div>
+            </form>
+
+
+            <!-- ============================================================= -->
+            <!-- TAB 2: DIRECT LEAVE GRANT (ALL / DEPT / INDIVIDUAL) -->
+            <!-- ============================================================= -->
+            <form id="bulk-form-leave" method="POST" action="/leaves/bulk-grant" class="bulk-pane hidden space-y-4">
+                <!-- Target Selector Pill -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Target Audience <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
+                            <input type="radio" name="target_type" value="all" checked onchange="toggleTargetFields('leave', 'all')" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>All Staff</span>
+                            </div>
+                        </label>
+                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
+                            <input type="radio" name="target_type" value="department" onchange="toggleTargetFields('leave', 'department')" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="building-2" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>Department</span>
+                            </div>
+                        </label>
+                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
+                            <input type="radio" name="target_type" value="individual" onchange="toggleTargetFields('leave', 'individual')" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="user" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>Individual</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Conditional Department Dropdown -->
+                <div id="leave-target-dept-box" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Department <span class="text-rose-500">*</span></label>
+                    <select name="department_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-medium bg-white">
+                        <option value="">-- Choose Department --</option>
+                        {% for d in all_departments %}
+                        <option value="{{ d.id }}">{{ d.name }} ({{ d.code if d.code else 'DEPT' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Conditional Individual Member Dropdown -->
+                <div id="leave-target-emp-box" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Employee <span class="text-rose-500">*</span></label>
+                    <select name="employee_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-medium bg-white">
+                        <option value="">-- Choose Employee --</option>
+                        {% for m in team_members %}
+                        <option value="{{ m.id }}">{{ m.name }} ({{ m.email }}) — {{ m.department.name if m.department else 'General' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Leave Type Category -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Leave Category <span class="text-rose-500">*</span></label>
+                    <select name="leave_type_id" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-medium bg-white">
+                        {% for lt in all_leave_types %}
+                        <option value="{{ lt.id }}">{{ lt.name }} ({{ lt.code }}) — {{ 'Paid' if lt.is_paid else 'Unpaid' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Date Range & Quick Presets -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-slate-700">Date Range <span class="text-rose-500">*</span></label>
+                        <div class="flex items-center space-x-1 text-[10px]">
+                            <button type="button" onclick="setQuickDatePreset('leave', 'today')" class="px-2 py-0.5 rounded bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold border border-teal-200 cursor-pointer">Today</button>
+                            <button type="button" onclick="setQuickDatePreset('leave', 'tomorrow')" class="px-2 py-0.5 rounded bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold border border-teal-200 cursor-pointer">Tomorrow</button>
+                            <button type="button" onclick="setQuickDatePreset('leave', 'week')" class="px-2 py-0.5 rounded bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold border border-teal-200 cursor-pointer">Full Week</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <input type="date" id="leave-start-date" name="start_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
+                        </div>
+                        <div>
+                            <input type="date" id="leave-end-date" name="end_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quota Deduction Toggle -->
+                <div class="p-3 bg-amber-50/60 rounded-xl border border-amber-200/80 flex items-start space-x-2.5">
+                    <input type="checkbox" id="leave-deduct-quota" name="deduct_quota" value="true" class="w-4 h-4 mt-0.5 rounded text-teal-600 focus:ring-teal-500 border-slate-300">
+                    <div>
+                        <label for="leave-deduct-quota" class="text-xs font-bold text-slate-800 cursor-pointer">Deduct days from employee annual leave balance</label>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Leave unchecked if this is an extra company-granted holiday, festive day, or management gift leave without reducing quota.</p>
+                    </div>
+                </div>
+
+                <!-- Reason with Presets -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Grant Reason / Directive</label>
+                    <textarea id="leave-reason-input" name="reason" rows="2" placeholder="e.g., Company Foundation Day, Festive Holiday, Office shutdown..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500">Direct Leave Grant by Management</textarea>
+                    <div class="flex flex-wrap gap-1.5 mt-1.5">
+                        <button type="button" onclick="setReasonText('leave-reason-input', 'Annual Company Foundation Day Holiday')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-800 transition-colors cursor-pointer">Foundation Day</button>
+                        <button type="button" onclick="setReasonText('leave-reason-input', 'Special Festive & Cultural Celebration Grant')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-800 transition-colors cursor-pointer">Festive Grant</button>
+                        <button type="button" onclick="setReasonText('leave-reason-input', 'Emergency Office Shutdown / Natural Calamity')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-800 transition-colors cursor-pointer">Emergency Shutdown</button>
+                    </div>
+                </div>
+
+                <!-- Notification Checkbox -->
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="checkbox" id="leave-send-email" name="send_email" value="true" checked class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300">
+                    <label for="leave-send-email" class="text-xs text-slate-600 font-medium">Send automatic email notification to all granted team members</label>
+                </div>
+
+                <!-- Footer / Actions -->
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeBulkAllocationModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                        <span>Grant & Auto-Approve Leave</span>
+                    </button>
+                </div>
+            </form>
+
+
+            <!-- ============================================================= -->
+            <!-- TAB 3: ANNUAL LEAVE QUOTAS ALLOCATION -->
+            <!-- ============================================================= -->
+            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+            <form id="bulk-form-quota" method="POST" action="/leaves/balances/bulk-allocate" class="bulk-pane hidden space-y-4">
+                <!-- Target Selector -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Target Audience <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-amber-300 transition-all text-xs font-bold text-slate-700 has-checked:border-amber-600 has-checked:bg-amber-50/70 has-checked:text-amber-900">
+                            <input type="radio" name="target_type" value="all" checked onchange="toggleTargetFields('quota', 'all')" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-amber-600"></i>
+                                <span>All Active Staff</span>
+                            </div>
+                        </label>
+                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-amber-300 transition-all text-xs font-bold text-slate-700 has-checked:border-amber-600 has-checked:bg-amber-50/70 has-checked:text-amber-900">
+                            <input type="radio" name="target_type" value="department" onchange="toggleTargetFields('quota', 'department')" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="building-2" class="w-3.5 h-3.5 text-amber-600"></i>
+                                <span>Specific Department</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Conditional Department Dropdown -->
+                <div id="quota-target-dept-box" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Department <span class="text-rose-500">*</span></label>
+                    <select name="department_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 font-medium bg-white">
+                        <option value="">-- Choose Department --</option>
+                        {% for d in all_departments %}
+                        <option value="{{ d.id }}">{{ d.name }} ({{ d.code if d.code else 'DEPT' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Policy Year -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Policy Year <span class="text-rose-500">*</span></label>
+                        <select name="year" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 font-mono font-bold bg-white">
+                            <option value="{{ selected_year }}" selected>{{ selected_year }} (Current Policy Year)</option>
+                            <option value="{{ selected_year + 1 }}">{{ selected_year + 1 }} (Upcoming Policy Year)</option>
+                            <option value="{{ selected_year - 1 }}">{{ selected_year - 1 }} (Previous Year)</option>
+                        </select>
+                    </div>
+
+                    <!-- Leave Category -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Leave Category <span class="text-rose-500">*</span></label>
+                        <select name="leave_type_id" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 font-medium bg-white">
+                            {% for lt in all_leave_types %}
+                            <option value="{{ lt.id }}">{{ lt.name }} ({{ lt.code }}) — Default: {{ lt.default_days_per_year }}d</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Allocation Mode Switch -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Allocation Mode <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="relative flex items-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-amber-300 transition-all text-xs font-medium text-slate-700 has-checked:border-amber-600 has-checked:bg-amber-50/70 has-checked:text-amber-900">
+                            <input type="radio" name="allocation_mode" value="set_fixed" checked class="sr-only">
+                            <div>
+                                <span class="font-bold block">Set Fixed Quota</span>
+                                <span class="text-[11px] text-slate-500">Sets the exact total quota (e.g. 12 days)</span>
+                            </div>
+                        </label>
+                        <label class="relative flex items-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-amber-300 transition-all text-xs font-medium text-slate-700 has-checked:border-amber-600 has-checked:bg-amber-50/70 has-checked:text-amber-900">
+                            <input type="radio" name="allocation_mode" value="add_bonus" class="sr-only">
+                            <div>
+                                <span class="font-bold block">Add Bonus Days</span>
+                                <span class="text-[11px] text-slate-500">Adds +X extra days to current quota</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Days Count -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Number of Days <span class="text-rose-500">*</span></label>
+                    <input type="number" step="0.5" min="0" max="365" name="days" value="12.0" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 font-mono font-bold">
+                </div>
+
+                <!-- Footer / Actions -->
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeBulkAllocationModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                        <span>Update Annual Quotas</span>
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+
+        </div>
     </div>
 </div>
 
@@ -1045,6 +1653,67 @@
 {% endif %}
 
 <!-- ========================================================================= -->
+<!-- MODAL: View Full Reason & Request Details -->
+<!-- ========================================================================= -->
+<div id="reason-details-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn flex flex-col max-h-[90vh]">
+        <!-- Header -->
+        <div class="px-5 sm:px-6 py-4 bg-teal-50/90 border-b border-teal-100 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-2.5 text-teal-950 font-heading min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold shrink-0">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0">
+                    <h3 id="reason-modal-title" class="text-sm sm:text-base font-bold truncate">Request Statement & Details</h3>
+                    <p id="reason-modal-emp" class="text-[11px] text-teal-800 font-semibold truncate"></p>
+                </div>
+            </div>
+            <button onclick="closeReasonDetailsModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-teal-100/60 transition-colors cursor-pointer shrink-0">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs">
+            <!-- Meta Pills -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Requested Period</span>
+                    <span id="reason-modal-dates" class="font-mono font-bold text-slate-800 text-xs"></span>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Current Status</span>
+                    <span id="reason-modal-status" class="inline-block mt-0.5 font-bold capitalize"></span>
+                </div>
+            </div>
+
+            <!-- Full Reason Statement -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>Full Employee Statement / Reason:</span>
+                    <span class="text-[10px] font-normal text-slate-400">Complete text</span>
+                </label>
+                <div id="reason-modal-text" class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-slate-800 leading-relaxed font-sans whitespace-pre-wrap select-text break-words max-h-56 overflow-y-auto"></div>
+            </div>
+
+            <!-- Reviewer Remarks (if any) -->
+            <div id="reason-modal-remark-wrapper" class="hidden">
+                <label class="block text-xs font-bold text-rose-800 mb-1.5">Reviewer Remarks / Reason for Decline:</label>
+                <div id="reason-modal-remark" class="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 leading-relaxed font-sans whitespace-pre-wrap select-text break-words"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end shrink-0">
+            <button type="button" onclick="closeReasonDetailsModal()" class="px-5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 transition-colors shadow-2xs cursor-pointer">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+{% if user.role != 'super_admin' %}
 <!-- MODAL: Category-Wise Leave Quota & Balance Breakdown -->
 <!-- ========================================================================= -->
 <div id="quota-breakdown-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
@@ -1065,9 +1734,17 @@
                     <p class="text-xs text-slate-500 mt-0.5 truncate">Detailed category breakdown of statutory allocations, utilized days, and active balances.</p>
                 </div>
             </div>
-            <button onclick="closeQuotaBreakdownModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+            <div class="flex items-center space-x-2 shrink-0">
+                {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+                <a href="/leaves/types" class="text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200/90 px-3 py-1.5 rounded-xl hidden sm:inline-flex items-center space-x-1.5 transition-colors">
+                    <i data-lucide="settings" class="w-3.5 h-3.5 text-teal-700"></i>
+                    <span>Configure Policies</span>
+                </a>
+                {% endif %}
+                <button onclick="closeQuotaBreakdownModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Policy Summary Metric Ribbon -->
@@ -1171,6 +1848,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <script>
     // Tab Switching Helper
@@ -1189,6 +1867,10 @@
             activePane.classList.remove('hidden');
         }
     }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        switchTab('{{ tab }}');
+    });
 
     // Client-side Filter for Leaves Table
     function filterLeavesTable() {
@@ -1240,22 +1922,41 @@
     function updateSelectedLeaveQuota() {
         const select = document.getElementById('modal-leave-type-select');
         const badge = document.getElementById('quota-hint-badge');
+        const submitBtn = document.getElementById('leave-submit-btn');
         if (!select || !badge) return;
         const opt = select.options[select.selectedIndex];
-        const rem = opt.getAttribute('data-remaining') || '0';
+        if (!opt) return;
+        const rem = parseFloat(opt.getAttribute('data-remaining') || '0');
         const isPaid = opt.getAttribute('data-paid') === 'true';
-        badge.innerHTML = `💡 <em>Available quota for selected category: <strong>${rem} day(s)</strong> (${isPaid ? 'Paid' : 'Unpaid'}).</em>`;
+        const code = opt.getAttribute('data-code') || '';
+        const name = opt.getAttribute('data-name') || '';
+
+        if (code === 'LWP') {
+            badge.innerHTML = `💡 <em>Loss of Pay (Unpaid Leave) — No salary entitlement.</em>`;
+        } else if (rem <= 0) {
+            badge.innerHTML = `🚫 <span class="text-rose-600 font-bold">Quota Exhausted: 0 day(s) remaining for ${name}. Cannot submit request.</span>`;
+        } else {
+            badge.innerHTML = `💡 <em>Available quota for ${name}: <strong>${rem} day(s)</strong> (${isPaid ? 'Paid' : 'Unpaid'}).</em>`;
+        }
     }
 
-    // Duration Auto-Calculator
+    // Duration Auto-Calculator with Real-time Balance Checking
     function calculateDuration() {
+        const select = document.getElementById('modal-leave-type-select');
         const s = document.getElementById('leave_start_date');
         const e = document.getElementById('leave_end_date');
         const isHalfDay = document.getElementById('is_half_day_cb')?.checked;
         const banner = document.getElementById('leave-calc-banner');
         const text = document.getElementById('leave-calc-text');
+        const submitBtn = document.getElementById('leave-submit-btn');
 
-        if (s && e && s.value) {
+        if (!select || !s) return;
+        const opt = select.options[select.selectedIndex];
+        const rem = parseFloat(opt?.getAttribute('data-remaining') || '0');
+        const code = opt?.getAttribute('data-code') || '';
+        const name = opt?.getAttribute('data-name') || '';
+
+        if (s && s.value) {
             if (!e.value) e.value = s.value;
             const d1 = new Date(s.value);
             const d2 = new Date(e.value);
@@ -1263,9 +1964,34 @@
                 const diffTime = Math.abs(d2 - d1);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
                 const total = isHalfDay ? 0.5 : diffDays;
+
                 if (banner && text) {
                     banner.classList.remove('hidden');
-                    text.innerHTML = `⏱ <strong>Calculated Duration:</strong> ${total} Day(s) (${isHalfDay ? 'Half-Day' : (diffDays === 1 ? 'Single Day' : diffDays + ' Days')})`;
+
+                    if (code !== 'LWP' && total > rem) {
+                        banner.className = 'p-3 rounded-xl bg-rose-50 border border-rose-300 text-xs text-rose-900 font-medium';
+                        text.innerHTML = `🚫 <strong>Insufficient Quota:</strong> You requested <strong>${total} day(s)</strong>, but only have <strong>${rem} day(s)</strong> available for ${name}. Requests cannot exceed available balance.`;
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                        }
+                    } else {
+                        banner.className = 'p-3 rounded-xl bg-teal-50 border border-teal-200 text-xs text-teal-900 font-medium';
+                        const quotaInfo = code === 'LWP' ? 'Unpaid LWP' : `Quota Available: ${rem} day(s)`;
+                        text.innerHTML = `⏱ <strong>Calculated Duration:</strong> ${total} Day(s) (${isHalfDay ? 'Half-Day' : (diffDays === 1 ? 'Single Day' : diffDays + ' Days')}) • <span class="text-teal-700 font-semibold">${quotaInfo}</span>`;
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                        }
+                    }
+                }
+            } else if (banner && text && d2 < d1) {
+                banner.classList.remove('hidden');
+                banner.className = 'p-3 rounded-xl bg-rose-50 border border-rose-300 text-xs text-rose-900 font-medium';
+                text.innerHTML = `⚠️ <strong>Invalid Date Range:</strong> End date cannot be earlier than start date.`;
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
                 }
             }
         }
@@ -1349,21 +2075,107 @@
         }
     }
 
-    function openAllocateWfhModal() {
-        const modal = document.getElementById('allocate-wfh-modal');
+    // Bulk Allocation Modal Handlers
+    function openBulkAllocationModal(defaultTab = 'wfh') {
+        const modal = document.getElementById('bulk-allocation-modal');
         if (modal) {
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            switchBulkTab(defaultTab);
+            // Default today's date if empty
+            const today = new Date().toISOString().split('T')[0];
+            ['wfh', 'leave'].forEach(prefix => {
+                const s = document.getElementById(prefix + '-start-date');
+                const e = document.getElementById(prefix + '-end-date');
+                if (s && !s.value) s.value = today;
+                if (e && !e.value) e.value = today;
+            });
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
         }
     }
-    function closeAllocateWfhModal() {
-        const modal = document.getElementById('allocate-wfh-modal');
+
+    function closeBulkAllocationModal() {
+        const modal = document.getElementById('bulk-allocation-modal');
         if (modal) {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+        }
+    }
+
+    // Backward compatibility aliases
+    function openAllocateWfhModal() { openBulkAllocationModal('wfh'); }
+    function closeAllocateWfhModal() { closeBulkAllocationModal(); }
+
+    function switchBulkTab(tabName) {
+        document.querySelectorAll('.bulk-tab-btn').forEach(btn => {
+            btn.classList.remove('bg-white', 'text-purple-900', 'text-teal-900', 'text-amber-900', 'shadow-2xs');
+            btn.classList.add('text-slate-600', 'hover:text-slate-900');
+        });
+        document.querySelectorAll('.bulk-pane').forEach(p => p.classList.add('hidden'));
+
+        const btn = document.getElementById('bulk-tab-btn-' + tabName);
+        const pane = document.getElementById('bulk-form-' + tabName);
+        if (btn && pane) {
+            btn.classList.remove('text-slate-600', 'hover:text-slate-900');
+            btn.classList.add('bg-white', 'shadow-2xs');
+            if (tabName === 'wfh') btn.classList.add('text-purple-900');
+            else if (tabName === 'leave') btn.classList.add('text-teal-900');
+            else if (tabName === 'quota') btn.classList.add('text-amber-900');
+            pane.classList.remove('hidden');
+        }
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    function toggleTargetFields(formType, targetType) {
+        const deptBox = document.getElementById(formType + '-target-dept-box');
+        const empBox = document.getElementById(formType + '-target-emp-box');
+        if (deptBox) {
+            if (targetType === 'department') deptBox.classList.remove('hidden');
+            else deptBox.classList.add('hidden');
+        }
+        if (empBox) {
+            if (targetType === 'individual') empBox.classList.remove('hidden');
+            else empBox.classList.add('hidden');
+        }
+    }
+
+    function setQuickDatePreset(formType, preset) {
+        const s = document.getElementById(formType + '-start-date');
+        const e = document.getElementById(formType + '-end-date');
+        if (!s || !e) return;
+        const now = new Date();
+        const formatDate = (d) => d.toISOString().split('T')[0];
+
+        if (preset === 'today') {
+            const todayStr = formatDate(now);
+            s.value = todayStr;
+            e.value = todayStr;
+        } else if (preset === 'tomorrow') {
+            const tmrw = new Date(now);
+            tmrw.setDate(tmrw.getDate() + 1);
+            const tmrwStr = formatDate(tmrw);
+            s.value = tmrwStr;
+            e.value = tmrwStr;
+        } else if (preset === 'week') {
+            const d = new Date(now);
+            const day = d.getDay();
+            const diffToMon = d.getDate() - day + (day === 0 ? -6 : 1);
+            const mon = new Date(d.setDate(diffToMon));
+            const fri = new Date(mon);
+            fri.setDate(fri.getDate() + 4);
+            s.value = formatDate(mon);
+            e.value = formatDate(fri);
+        }
+    }
+
+    function setReasonText(inputId, text) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.value = text;
         }
     }
 
@@ -1388,6 +2200,70 @@
             modal.classList.remove('flex');
         }
     }
+
+    // Reason Details Modal Handlers
+    function openReasonFromData(el) {
+        if (!el) return;
+        const title = el.getAttribute('data-title') || 'Request Details';
+        const reason = el.getAttribute('data-reason') || '';
+        const remarks = el.getAttribute('data-remarks') || '';
+        const empName = el.getAttribute('data-emp') || '';
+        const dates = el.getAttribute('data-dates') || '';
+        const status = el.getAttribute('data-status') || 'pending';
+        openReasonDetailsModal(title, reason, remarks, empName, dates, status);
+    }
+
+    function openReasonDetailsModal(title, reason, remarks, empName, dates, status) {
+        const modal = document.getElementById('reason-details-modal');
+        if (!modal) return;
+
+        document.getElementById('reason-modal-title').textContent = title || 'Request Details';
+        document.getElementById('reason-modal-emp').textContent = empName ? `Submitted by: ${empName}` : '';
+        document.getElementById('reason-modal-dates').textContent = dates || '—';
+        
+        const statusEl = document.getElementById('reason-modal-status');
+        const cleanStatus = (status || 'pending').replace('_', ' ');
+        statusEl.textContent = cleanStatus;
+        if (status === 'approved') {
+            statusEl.className = 'text-emerald-700 font-bold';
+        } else if (status === 'rejected') {
+            statusEl.className = 'text-rose-700 font-bold';
+        } else if (status === 'cancelled' || status === 'lapsed') {
+            statusEl.className = 'text-slate-600 font-bold';
+        } else {
+            statusEl.className = 'text-amber-700 font-bold';
+        }
+
+        document.getElementById('reason-modal-text').textContent = reason || 'No details provided.';
+
+        const remarkWrap = document.getElementById('reason-modal-remark-wrapper');
+        const remarkEl = document.getElementById('reason-modal-remark');
+        if (remarks && remarks.trim()) {
+            remarkEl.textContent = remarks.trim();
+            remarkWrap.classList.remove('hidden');
+        } else {
+            remarkWrap.classList.add('hidden');
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeReasonDetailsModal() {
+        const modal = document.getElementById('reason-details-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        const modal = document.getElementById('reason-details-modal');
+        if (modal && e.target === modal) {
+            closeReasonDetailsModal();
+        }
+    });
 
     // Horizontal Approvals Sub-Tab Switcher
     function switchApprovalSubTab(subTab) {
@@ -1439,5 +2315,122 @@
             }
         });
     }
+
+    // Client-side search for Team Balances
+    function filterTeamBalancesTable() {
+        const q = (document.getElementById('team-balances-search')?.value || '').toLowerCase().trim();
+        document.querySelectorAll('.team-balance-row').forEach(row => {
+            const data = (row.getAttribute('data-search') || '').toLowerCase();
+            if (!q || data.includes(q)) {
+                row.classList.remove('hidden');
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+    }
+
+    let currentAdjustBalances = [];
+
+    function openAdjustQuotaModal(empId, empName, ids, names, allocs, useds, rems) {
+        const modal = document.getElementById('adjust-quota-modal');
+        const select = document.getElementById('adjust_balance_id');
+        const empNameLabel = document.getElementById('adjust-quota-emp-name');
+        if (!modal || !select) return;
+
+        empNameLabel.textContent = empName;
+        select.innerHTML = '';
+        currentAdjustBalances = [];
+
+        for (let i = 0; i < ids.length; i++) {
+            currentAdjustBalances.push({
+                id: ids[i],
+                name: names[i],
+                allocated: allocs[i],
+                used: useds[i],
+                remaining: rems[i]
+            });
+            const opt = document.createElement('option');
+            opt.value = ids[i];
+            opt.textContent = `${names[i]} (Current: ${allocs[i]}d quota, ${useds[i]}d availed)`;
+            select.appendChild(opt);
+        }
+
+        onAdjustCategoryChange();
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function onAdjustCategoryChange() {
+        const select = document.getElementById('adjust_balance_id');
+        const form = document.getElementById('adjust-quota-form');
+        const allocInput = document.getElementById('adjust_total_allocated');
+        const infoDiv = document.getElementById('adjust-quota-info');
+        if (!select || !form || !allocInput) return;
+
+        const balId = parseInt(select.value);
+        const item = currentAdjustBalances.find(b => b.id === balId);
+        if (item) {
+            form.action = `/leaves/balances/${item.id}/adjust`;
+            allocInput.value = item.allocated;
+            if (infoDiv) {
+                infoDiv.innerHTML = `Category: <strong>${item.name}</strong> • Availed: <strong>${item.used}d</strong> • Available: <strong>${item.remaining}d</strong>`;
+            }
+        }
+    }
+
+    function closeAdjustQuotaModal() {
+        const modal = document.getElementById('adjust-quota-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
 </script>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Adjust Individual Staff Leave Quota -->
+<!-- ========================================================================= -->
+<div id="adjust-quota-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn">
+        <div class="px-6 py-4 bg-teal-50 border-b border-teal-100 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5 text-teal-950 font-heading">
+                <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold shrink-0">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm sm:text-base font-bold">Adjust Leave Entitlement Quota</h3>
+                    <p id="adjust-quota-emp-name" class="text-[11px] text-teal-800 font-semibold"></p>
+                </div>
+            </div>
+            <button onclick="closeAdjustQuotaModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-teal-100/60 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <form id="adjust-quota-form" method="POST" action="" class="p-6 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Select Leave Category <span class="text-rose-500">*</span></label>
+                <select id="adjust_balance_id" onchange="onAdjustCategoryChange()" required class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 bg-white font-medium"></select>
+                <p id="adjust-quota-info" class="text-[11px] text-slate-500 mt-1.5 p-2 bg-slate-50 rounded-lg border border-slate-200"></p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">New Total Annual Quota (Days) <span class="text-rose-500">*</span></label>
+                <input type="number" step="0.5" min="0" max="365" name="total_allocated" id="adjust_total_allocated" required class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-mono font-bold">
+                <span class="text-[11px] text-slate-400 mt-1 block">Modifies the total yearly days allocated without resetting already availed days.</span>
+            </div>
+
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeAdjustQuotaModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Save Quota</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

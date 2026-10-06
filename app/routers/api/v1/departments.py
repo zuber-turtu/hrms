@@ -15,7 +15,7 @@ from app.schemas.department import (
 )
 
 router = APIRouter(prefix="/departments", tags=["Departments & Designations"])
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 
 
 @router.get("", response_model=List[DepartmentOut])

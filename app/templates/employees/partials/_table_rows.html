@@ -56,10 +56,12 @@
         <a href="/employees/{{ emp.id }}/view" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-colors shadow-2xs" title="View Dossier">
             <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-500"></i> View
         </a>
-        {% if user.role in ['admin', 'hr_admin'] %}
+        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+        {% if emp.role != 'super_admin' %}
         <button onclick="openGeneratePayslipModal({{ emp.id }})" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors cursor-pointer shadow-2xs" title="Generate Draft Payslip">
             <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1"></i> Payslip
         </button>
+        {% endif %}
         <button onclick="openPasswordResetModal({{ emp.id }}, '{{ emp.name }}')" class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors cursor-pointer shadow-2xs" title="Reset Password">
             <i data-lucide="key" class="w-3.5 h-3.5 mr-1"></i> Reset
         </button>

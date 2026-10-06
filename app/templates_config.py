@@ -78,6 +78,8 @@ def format_emp_code(emp_or_id, company_or_prefix=None) -> str:
     return f"#{emp_id:04d}"
 
 
+from app.utils.flash import extract_flash_messages
+
 templates = Jinja2Templates(directory="app/templates")
 
 # Register Global Helpers across all Jinja templates
@@ -86,4 +88,5 @@ templates.env.globals["app_settings"] = settings
 templates.env.globals["app_year"] = settings.APP_COPYRIGHT_YEAR or get_ist_today().year
 templates.env.globals["get_today"] = get_ist_today
 templates.env.globals["format_emp_code"] = format_emp_code
+templates.env.globals["get_flash_messages"] = extract_flash_messages
 templates.env.filters["format_emp_code"] = format_emp_code

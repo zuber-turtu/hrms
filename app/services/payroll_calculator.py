@@ -24,7 +24,7 @@ def calculate_pro_rata(amount: float, days_worked: float, payable_days: int) -> 
 
 def generate_draft_payslip(db: Session, employee_id: int, month: int, year: int) -> Optional[dict]:
     employee = db.query(Employee).filter(Employee.id == employee_id).first()
-    if not employee:
+    if not employee or employee.role == "super_admin":
         return None
 
     company = db.query(Company).first()
@@ -125,7 +125,7 @@ def bulk_generate_payslips(
       - If overwrite_drafts is False, skips employees with existing 'draft'.
       - Inserts new 'draft' payslips for employees who don't have one yet.
     """
-    query = db.query(Employee).filter(Employee.is_active == True, Employee.role != "admin")
+    query = db.query(Employee).filter(Employee.is_active == True, Employee.role != "super_admin")
     if department_id:
         query = query.filter(Employee.department_id == department_id)
 

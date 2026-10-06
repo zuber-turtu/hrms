@@ -1,4 +1,10 @@
-{% if user and user.role != 'admin' %}
+{% if user and user.role == 'super_admin' %}
+    <div class="inline-flex items-center px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-100 to-indigo-50 border border-purple-200/80 text-purple-900 text-xs font-bold space-x-1.5 shadow-2xs">
+        <i data-lucide="crown" class="w-4 h-4 text-amber-500 fill-amber-400 shrink-0"></i>
+        <span class="font-heading hidden sm:inline">Super Admin</span>
+        <span class="font-heading sm:hidden">Super</span>
+    </div>
+{% elif user %}
 {% if request.state.is_checked_in %}
     <div class="flex items-center space-x-1.5 sm:space-x-2">
         {% if request.state.is_lunch_window %}
@@ -62,3 +68,4 @@
     </div>
 {% endif %}
 {% endif %}
+

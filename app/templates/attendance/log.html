@@ -125,7 +125,7 @@
                         <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Session(s) / Timestamps</th>
                         <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Active Time</th>
                         <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                        {% if user.role in ['admin', 'hr_admin'] %}
+                        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
                         <th scope="col" class="px-5 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
                         {% endif %}
                     </tr>
@@ -140,7 +140,7 @@
 </div>
 
 <!-- Override Modal -->
-{% if user.role in ['admin', 'hr_admin'] %}
+{% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
 <div id="overrideModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closeOverrideModal()"></div>

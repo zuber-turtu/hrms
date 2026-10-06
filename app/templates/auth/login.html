@@ -87,9 +87,11 @@
             </h1>
 
             <!-- Subtitle -->
+            {% if (company or get_company()).tagline %}
             <p class="text-xs sm:text-sm text-[#6B7F7F] mt-1 font-medium">
-                {{ (company or get_company()).tagline or 'Enterprise Workforce & Payroll Portal' }}
+                {{ (company or get_company()).tagline }}
             </p>
+            {% endif %}
         </div>
 
         <!-- Main Login Card: Pure White with Teal Light Border (#B3E3E3) -->

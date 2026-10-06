@@ -137,7 +137,34 @@ class Employee(Base):
 
     @property
     def is_geofence_exempt(self):
+        if self.role == "super_admin":
+            return True
         return self.profile.is_geofence_exempt if self.profile else False
+
+    @property
+    def is_super_admin(self) -> bool:
+        return self.role == "super_admin"
+
+    @property
+    def is_attendance_exempt(self) -> bool:
+        return self.role == "super_admin"
+
+    @property
+    def is_payroll_exempt(self) -> bool:
+        return self.role == "super_admin"
+
+    @property
+    def hierarchy_level(self) -> int:
+        levels = {
+            "super_admin": 6,
+            "admin": 5,
+            "hr": 4,
+            "hr_admin": 4,
+            "manager": 3,
+            "employee": 2,
+            "intern": 1,
+        }
+        return levels.get(self.role, 1)
 
 
 class EmployeeProfile(Base):

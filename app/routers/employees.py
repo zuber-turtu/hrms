@@ -35,7 +35,7 @@ from app.services.email_service import (
 
 router = APIRouter(prefix="/employees")
 
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 
 def clean_str(val):
     if val is None:
@@ -110,7 +110,7 @@ async def list_employees(
     if current_user.role == "manager":
         base_query = base_query.filter(
             Employee.department_id == current_user.department_id,
-            Employee.role.notin_(["admin", "hr_admin"])
+            Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
         )
 
     # Calculate letter counts for active A-Z indicators
@@ -281,6 +281,18 @@ async def create_employee(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
+    # Privilege Escalation Defense
+    if role in ["super_admin", "admin"] and current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only Super Admin can create Admin or Super Admin accounts."
+        )
+    if current_user.role in ["hr", "hr_admin"] and role not in ["manager", "employee", "intern"]:
+        raise HTTPException(
+            status_code=403,
+            detail="HR can only create Manager, Employee, or Intern accounts."
+        )
+
     hashed_password = get_password_hash(password)
     resolved_dept_id, resolved_desig_id = resolve_dept_and_desig(
         db, department_id, designation_id, department, designation
@@ -405,14 +417,14 @@ async def view_employee(
 
     # Authorization Check:
     # 1. Self access is permitted
-    # 2. Admins and HR Admins can view any employee record
+    # 2. Super Admin, Admin, and HR can view any employee record
     # 3. Managers can only view subordinate employees/interns within their own department
-    if current_user.id != emp_id and current_user.role not in ["admin", "hr_admin"]:
+    if current_user.id != emp_id and current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
         if current_user.role == "manager":
             if (
                 not current_user.department_id
                 or employee.department_id != current_user.department_id
-                or employee.role in ["admin", "hr_admin"]
+                or employee.role in ["super_admin", "admin", "hr", "hr_admin"]
             ):
                 raise HTTPException(status_code=403, detail="Operation not permitted")
         else:
@@ -426,9 +438,9 @@ async def view_employee(
         .all()
     )
 
-    # 2. Fetch and group attendance logs for this employee (only for non-admin workforce)
+    # 2. Fetch and group attendance logs for this employee (only for non-super-admin workforce)
     attendance_data = []
-    if employee.role != "admin":
+    if employee.role != "super_admin":
         raw_logs = (
             db.query(Attendance)
             .filter(Attendance.employee_id == emp_id)
@@ -496,6 +508,25 @@ async def view_employee(
     from app.routers.documents import get_employee_document_checklist
     doc_data = get_employee_document_checklist(employee, db)
 
+    # 4. Fetch Leave Entitlements, Quotas & History
+    from app.routers.leaves import ensure_employee_leave_balances, auto_lapse_pending_requests
+    from app.models.leave import LeaveApplication, WfhRequest
+    auto_lapse_pending_requests(db)
+    current_year = get_ist_today().year
+    employee_leave_balances = ensure_employee_leave_balances(db, emp_id, current_year)
+    employee_leaves = (
+        db.query(LeaveApplication)
+        .filter(LeaveApplication.employee_id == emp_id)
+        .order_by(LeaveApplication.created_at.desc())
+        .all()
+    )
+    employee_wfh = (
+        db.query(WfhRequest)
+        .filter(WfhRequest.employee_id == emp_id)
+        .order_by(WfhRequest.created_at.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
         request=request,
         name="employees/view.html",
@@ -507,6 +538,10 @@ async def view_employee(
             "doc_checklist": doc_data["checklist"],
             "doc_unmapped": doc_data["unmapped_docs"],
             "doc_summary": doc_data,
+            "leave_balances": employee_leave_balances,
+            "employee_leaves": employee_leaves,
+            "employee_wfh": employee_wfh,
+            "current_year": current_year,
         },
     )
 
@@ -518,7 +553,7 @@ async def edit_employee_form(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role not in ["admin", "hr_admin"] and current_user.id != emp_id:
+    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and current_user.id != emp_id:
         raise HTTPException(status_code=403, detail="Operation not permitted")
         
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
@@ -579,12 +614,22 @@ async def edit_employee(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role not in ["admin", "hr_admin"] and current_user.id != emp_id:
+    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and current_user.id != emp_id:
         raise HTTPException(status_code=403, detail="Operation not permitted")
         
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+
+    # Protection & Privilege Escalation Guards
+    if employee.role == "super_admin" and current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Cannot modify a Super Admin account.")
+
+    if employee.role == "admin" and current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Only Super Admin can edit an Administrator account.")
+
+    if role in ["super_admin", "admin"] and current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Only Super Admin can assign the Admin or Super Admin role.")
 
     # Check for email collision with other accounts
     clean_email = email.strip().lower()
@@ -598,8 +643,8 @@ async def edit_employee(
     employee.name = name.strip()
     employee.email = clean_email
     
-    # Only Admins can modify role, department, designation, joining_date, and salary components
-    if current_user.role in ["admin", "hr_admin"]:
+    # Only Admins / HRs can modify role, department, designation, joining_date, and salary components
+    if current_user.role in ["super_admin", "admin", "hr", "hr_admin"]:
         old_role = employee.role
         if role:
             employee.role = role
@@ -670,7 +715,7 @@ async def edit_employee(
     employee.profile.pan_number = pan_number
     employee.profile.uan_number = uan_number
     
-    if current_user.role in ["admin", "hr_admin"]:
+    if current_user.role in ["super_admin", "admin", "hr", "hr_admin"]:
         employee.profile.is_geofence_exempt = is_geofence_exempt
 
     # Handle Photo Upload if present
@@ -877,10 +922,15 @@ async def admin_reset_password(
         raise HTTPException(status_code=404, detail="Employee not found")
 
     # Privilege Escalation Defense: Only a Super Admin can reset credentials for an Administrator account
-    if employee.role == "admin" and current_user.role != "admin":
+    if employee.role == "super_admin" and current_user.role != "super_admin":
         raise HTTPException(
             status_code=403,
-            detail="Operation not permitted: Only Admins can reset credentials for an Administrator account."
+            detail="Operation not permitted: Cannot reset credentials for a Super Admin account."
+        )
+    if employee.role == "admin" and current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Operation not permitted: Only Super Admin can reset credentials for an Administrator account."
         )
 
     base_url = settings.APP_BASE_URL.rstrip("/") if settings.APP_BASE_URL else str(request.base_url).rstrip("/")

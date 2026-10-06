@@ -12,6 +12,7 @@ from app.models.payroll import Payslip
 from app.models.department import Department
 from app.utils.timezone import get_ist_today
 from app.templates_config import templates
+from app.routers.leaves import auto_lapse_pending_requests
 
 router = APIRouter()
 
@@ -22,6 +23,7 @@ async def dashboard(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
+    auto_lapse_pending_requests(db)
     today = get_ist_today()
     attendance_today = db.query(Attendance).filter(
         Attendance.employee_id == current_user.id,
@@ -30,13 +32,13 @@ async def dashboard(
     
     stats = {}
     recent_attendances = []
-    if current_user.role in ['admin', 'hr_admin']:
-        stats['total_employees'] = db.query(Employee).filter(Employee.is_active == True, Employee.role != 'admin').count()
+    if current_user.role in ['super_admin', 'admin', 'hr', 'hr_admin']:
+        stats['total_employees'] = db.query(Employee).filter(Employee.is_active == True, Employee.role != 'super_admin').count()
         stats['present_today'] = (
             db.query(Attendance)
             .join(Employee, Attendance.employee_id == Employee.id)
             .filter(
-                Employee.role != 'admin',
+                Employee.role != 'super_admin',
                 Attendance.date == today,
                 Attendance.check_in.isnot(None)
             )
@@ -52,7 +54,7 @@ async def dashboard(
             db.query(Attendance)
             .join(Employee, Attendance.employee_id == Employee.id)
             .filter(
-                Employee.role != 'admin',
+                Employee.role != 'super_admin',
                 Attendance.date == today
             )
             .order_by(Attendance.check_in.desc())

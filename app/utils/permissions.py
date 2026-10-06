@@ -69,6 +69,39 @@ AVAILABLE_PERMISSIONS = [
 ]
 
 DEFAULT_ROLE_PERMISSIONS: Dict[str, Dict[str, bool]] = {
+    "super_admin": {
+        "employees_view": True,
+        "employees_manage": True,
+        "attendance_view": True,
+        "attendance_override": True,
+        "leaves_approve": True,
+        "payroll_manage": True,
+        "documents_verify": True,
+        "company_settings": True,
+        "audit_logs": True,
+    },
+    "admin": {
+        "employees_view": True,
+        "employees_manage": True,
+        "attendance_view": True,
+        "attendance_override": True,
+        "leaves_approve": True,
+        "payroll_manage": True,
+        "documents_verify": True,
+        "company_settings": True,
+        "audit_logs": True,
+    },
+    "hr": {
+        "employees_view": True,
+        "employees_manage": True,
+        "attendance_view": True,
+        "attendance_override": True,
+        "leaves_approve": True,
+        "payroll_manage": True,
+        "documents_verify": True,
+        "company_settings": True,
+        "audit_logs": True,
+    },
     "hr_admin": {
         "employees_view": True,
         "employees_manage": True,
@@ -115,18 +148,22 @@ DEFAULT_ROLE_PERMISSIONS: Dict[str, Dict[str, bool]] = {
     },
 }
 
+ALL_CONFIGURABLE_ROLES = ["admin", "hr", "hr_admin", "manager", "employee", "intern"]
+
 def get_company_permissions(company: Optional[Company]) -> Dict[str, Dict[str, bool]]:
     """
     Returns the parsed role permission matrix for the company, falling back to default standards.
+    Super Admin is always fully enabled.
     """
-    matrix = {r: {p["key"]: DEFAULT_ROLE_PERMISSIONS.get(r, {}).get(p["key"], False) for p in AVAILABLE_PERMISSIONS} for r in ["hr_admin", "manager", "employee", "intern"]}
+    matrix = {r: {p["key"]: DEFAULT_ROLE_PERMISSIONS.get(r, {}).get(p["key"], False) for p in AVAILABLE_PERMISSIONS} for r in ALL_CONFIGURABLE_ROLES}
+    matrix["super_admin"] = {p["key"]: True for p in AVAILABLE_PERMISSIONS}
     
     if company and company.role_permissions:
         try:
             stored = json.loads(company.role_permissions)
             if isinstance(stored, dict):
                 for role, perms in stored.items():
-                    if role in matrix and isinstance(perms, dict):
+                    if role in matrix and role != "super_admin" and isinstance(perms, dict):
                         for k, v in perms.items():
                             matrix[role][k] = bool(v)
         except Exception:
@@ -137,10 +174,12 @@ def get_company_permissions(company: Optional[Company]) -> Dict[str, Dict[str, b
 
 def has_role_permission(company: Optional[Company], role: str, perm_key: str) -> bool:
     """
-    Checks if a role has the specified permission. Admin always has full access.
+    Checks if a role has the specified permission. Super Admin always has full access.
     """
-    if role == "admin":
+    if role in ["super_admin", "admin"]:
         return True
     
+    # Normalize hr alias
+    lookup_role = "hr" if role == "hr_admin" else role
     matrix = get_company_permissions(company)
-    return bool(matrix.get(role, {}).get(perm_key, False))
+    return bool(matrix.get(lookup_role, {}).get(perm_key, False) or matrix.get(role, {}).get(perm_key, False))

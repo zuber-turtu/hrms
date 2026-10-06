@@ -10,7 +10,7 @@ from app.schemas.company import CompanyProfileOut, CompanyProfileUpdate
 from app.utils.geofence import get_or_create_company
 
 router = APIRouter(prefix="/company", tags=["Company"])
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 
 
 @router.get("/profile", response_model=CompanyProfileOut)

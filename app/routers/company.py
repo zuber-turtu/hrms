@@ -15,7 +15,7 @@ from app.utils.permissions import AVAILABLE_PERMISSIONS, get_company_permissions
 
 router = APIRouter(prefix="/company")
 
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 
 
 @router.get("/profile", response_class=HTMLResponse)
@@ -208,7 +208,9 @@ async def update_company_profile(
         form_data = await request.form()
         current_matrix = get_company_permissions(company)
         
-        for role in ["hr_admin", "manager", "employee", "intern"]:
+        for role in ["admin", "hr", "hr_admin", "manager", "employee", "intern"]:
+            if role not in current_matrix:
+                current_matrix[role] = {}
             for perm in AVAILABLE_PERMISSIONS:
                 k = perm["key"]
                 form_key = f"perm_{role}_{k}"
@@ -232,7 +234,7 @@ async def assign_employee_role(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
-    valid_roles = ["admin", "hr_admin", "manager", "employee", "intern"]
+    valid_roles = ["super_admin", "admin", "hr", "hr_admin", "manager", "employee", "intern"]
     role_clean = role.strip().lower()
     if role_clean not in valid_roles:
         raise HTTPException(status_code=400, detail="Invalid system role")
@@ -240,6 +242,16 @@ async def assign_employee_role(
     target_employee = db.query(Employee).filter(Employee.id == employee_id).first()
     if not target_employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+
+    # Protection & Privilege Escalation Guards
+    if target_employee.role == "super_admin" and current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Cannot modify a Super Admin account.")
+
+    if role_clean in ["super_admin", "admin"] and current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Only Super Admin can assign the Admin or Super Admin role.")
+
+    if current_user.role in ["hr", "hr_admin"] and role_clean not in ["manager", "employee", "intern"]:
+        raise HTTPException(status_code=403, detail="HR can only assign Manager, Employee, or Intern roles.")
 
     old_role = target_employee.role
     target_employee.role = role_clean
@@ -258,25 +270,33 @@ async def assign_employee_role(
 
     if request.headers.get("HX-Request"):
         role_badges = {
-            "admin": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Super Admin</span>',
-            "hr_admin": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">HR Admin</span>',
-            "manager": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Manager</span>',
-            "intern": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Intern</span>',
-            "employee": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Employee</span>',
+            "super_admin": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-900 border border-purple-300">👑 Super Admin</span>',
+            "admin": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🛡️ Admin</span>',
+            "hr": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">📋 HR</span>',
+            "hr_admin": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">📋 HR</span>',
+            "manager": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">👔 Manager</span>',
+            "intern": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">🌱 Intern</span>',
+            "employee": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">💼 Employee</span>',
         }
         badge_html = role_badges.get(role_clean, role_badges["employee"])
         initials = (target_employee.name[:2] if target_employee.name else "EM").upper()
         dept = target_employee.department.name if hasattr(target_employee.department, "name") else (str(target_employee.department) if target_employee.department else "Unassigned")
         desig = target_employee.designation.name if hasattr(target_employee.designation, "name") else (str(target_employee.designation) if target_employee.designation else "Staff")
         
-        options = []
-        for r_val, r_label in [
+        all_opts = [
             ("employee", "Employee"),
             ("intern", "Intern"),
             ("manager", "Manager"),
-            ("hr_admin", "HR Admin"),
-            ("admin", "Super Admin"),
-        ]:
+            ("hr", "HR"),
+        ]
+        if current_user.role == "super_admin":
+            all_opts.append(("admin", "Admin"))
+            all_opts.append(("super_admin", "Super Admin"))
+        elif current_user.role == "admin" and role_clean == "admin":
+            all_opts.append(("admin", "Admin"))
+
+        options = []
+        for r_val, r_label in all_opts:
             selected = "selected" if r_val == role_clean else ""
             options.append(f'<option value="{r_val}" {selected}>{r_label}</option>')
         options_html = "\n".join(options)

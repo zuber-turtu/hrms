@@ -11,6 +11,7 @@ class LeaveTypeOut(BaseModel):
     default_days_per_year: float
     is_paid: bool
     color_code: str
+    applicable_gender: Optional[str] = "all"
     is_active: bool
 
     class Config:

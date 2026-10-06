@@ -37,8 +37,8 @@ from app.services.email_service import (
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
-allow_managers = RoleChecker(["admin", "hr_admin", "manager"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
+allow_managers = RoleChecker(["super_admin", "admin", "hr", "hr_admin", "manager"])
 
 
 def _format_employee_out(emp: Employee) -> EmployeeOut:
@@ -103,7 +103,7 @@ async def api_list_employees(
     if current_user.role == "manager":
         query = query.filter(
             Employee.department_id == current_user.department_id,
-            Employee.role.notin_(["admin", "hr_admin"]),
+            Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"]),
         )
     elif department_id:
         query = query.filter(Employee.department_id == department_id)
@@ -302,12 +302,12 @@ async def api_get_employee(
         )
 
     # Authorization / Scoping
-    if current_user.id != emp_id and current_user.role not in ["admin", "hr_admin"]:
+    if current_user.id != emp_id and current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
         if current_user.role == "manager":
             if (
                 not current_user.department_id
                 or employee.department_id != current_user.department_id
-                or employee.role in ["admin", "hr_admin"]
+                or employee.role in ["super_admin", "admin", "hr", "hr_admin"]
             ):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
@@ -337,7 +337,7 @@ async def api_update_employee(
             status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
         )
 
-    is_admin = current_user.role in ["admin", "hr_admin"]
+    is_admin = current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False)
     if current_user.id != emp_id and not is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted"
@@ -492,7 +492,7 @@ async def api_upload_employee_avatar(
             status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
         )
 
-    is_admin = current_user.role in ["admin", "hr_admin"]
+    is_admin = current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False)
     if current_user.id != emp_id and not is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted"
@@ -543,10 +543,15 @@ async def api_admin_reset_password(
         )
 
     # Privilege Escalation Protection
-    if employee.role == "admin" and current_user.role != "admin":
+    if employee.role == "super_admin" and current_user.role != "super_admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Operation not permitted: Only Admins can reset credentials for an Administrator account.",
+            detail="Operation not permitted: Cannot reset credentials for a Super Admin account.",
+        )
+    if employee.role == "admin" and current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operation not permitted: Only Super Admin can reset credentials for an Administrator account.",
         )
 
     if len(payload.new_password) < 6:

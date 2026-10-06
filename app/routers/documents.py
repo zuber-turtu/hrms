@@ -15,13 +15,14 @@ from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.services.storage import get_storage_provider
 from app.utils.timezone import get_ist_now
+from app.utils.flash import flash_redirect
 
 from app.templates_config import templates
 
 router = APIRouter()
 
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
-allow_manager_or_hr = RoleChecker(["admin", "hr_admin", "manager"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
+allow_manager_or_hr = RoleChecker(["super_admin", "admin", "hr", "hr_admin", "manager"])
 
 
 def slugify(text: str) -> str:
@@ -122,7 +123,7 @@ async def create_document_type(
     db.add(audit)
     db.commit()
 
-    return RedirectResponse(url="/documents/types?success=Document+field+created+successfully", status_code=303)
+    return flash_redirect(url="/documents/types", message="Document field created successfully", category="success")
 
 
 @router.post("/documents/types/{type_id}/edit")
@@ -160,7 +161,7 @@ async def edit_document_type(
     doc_type.display_order = display_order
 
     db.commit()
-    return RedirectResponse(url="/documents/types?success=Document+field+updated+successfully", status_code=303)
+    return flash_redirect(url="/documents/types", message="Document field updated successfully", category="success")
 
 
 @router.post("/documents/types/{type_id}/delete")
@@ -175,7 +176,7 @@ async def delete_document_type(
 
     db.delete(doc_type)
     db.commit()
-    return RedirectResponse(url="/documents/types?success=Document+field+removed", status_code=303)
+    return flash_redirect(url="/documents/types", message="Document field removed", category="success")
 
 
 # =========================================================================
@@ -279,7 +280,7 @@ async def upload_employee_document(
         raise HTTPException(status_code=404, detail="Employee not found")
 
     # Authorization Check
-    is_hr = current_user.role in ["admin", "hr_admin"]
+    is_hr = current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False)
     is_self = current_user.id == emp_id
     if not is_self and not is_hr:
         raise HTTPException(status_code=403, detail="Operation not permitted")
@@ -383,11 +384,11 @@ async def upload_employee_document(
     db.commit()
 
     if redirect_target:
-        return RedirectResponse(url=f"{redirect_target}?success=Document+uploaded+successfully", status_code=303)
+        return flash_redirect(url=redirect_target, message="Document uploaded successfully", category="success")
     
-    if is_self and current_user.role not in ["admin", "hr_admin"]:
-        return RedirectResponse(url="/my-documents?success=Document+uploaded+successfully", status_code=303)
-    return RedirectResponse(url=f"/employees/{employee.id}#documents", status_code=303)
+    if is_self and current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
+        return flash_redirect(url="/my-documents", message="Document uploaded successfully", category="success")
+    return flash_redirect(url=f"/employees/{employee.id}#documents", message="Document uploaded successfully", category="success")
 
 
 # =========================================================================
@@ -395,14 +396,14 @@ async def upload_employee_document(
 # =========================================================================
 
 def check_document_access(document: EmployeeDocument, current_user: Employee):
-    """Enforces strict RBAC: Owner, Manager of same dept, or HR Admin."""
-    if current_user.role in ["admin", "hr_admin"]:
+    """Enforces strict RBAC: Owner, Manager of same dept, or HR Admin / Super Admin."""
+    if current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False):
         return True
     if document.employee_id == current_user.id:
         return True
     if current_user.role == "manager":
         emp = document.employee
-        if emp and emp.department_id == current_user.department_id and emp.role not in ["admin", "hr_admin"]:
+        if emp and emp.department_id == current_user.department_id and emp.role not in ["super_admin", "admin", "hr", "hr_admin"]:
             return True
     return False
 
@@ -528,7 +529,7 @@ async def delete_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    is_hr = current_user.role in ["admin", "hr_admin"]
+    is_hr = current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False)
     is_self = current_user.id == document.employee_id
     if not is_self and not is_hr:
         raise HTTPException(status_code=403, detail="Operation not permitted")
@@ -543,9 +544,9 @@ async def delete_document(
     db.delete(document)
     db.commit()
 
-    if is_self and current_user.role not in ["admin", "hr_admin"]:
-        return RedirectResponse(url="/my-documents?success=Document+deleted", status_code=303)
-    return RedirectResponse(url=f"/employees/{emp_id}#documents", status_code=303)
+    if is_self and current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
+        return flash_redirect(url="/my-documents", message="Document deleted successfully", category="success")
+    return flash_redirect(url=f"/employees/{emp_id}#documents", message="Document deleted successfully", category="success")
 
 
 # =========================================================================

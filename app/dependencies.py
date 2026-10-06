@@ -73,9 +73,20 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: Employee = Depends(require_auth)):
+        # Super Admin has unconditional universal access across all routes
+        if user.role == "super_admin" or getattr(user, "is_super_admin", False):
+            return user
         if user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Operation not permitted"
             )
         return user
+
+
+# Convenient Preconfigured Role Dependency Checkers
+require_super_admin = RoleChecker(["super_admin"])
+require_admin = RoleChecker(["super_admin", "admin"])
+require_hr = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
+require_manager = RoleChecker(["super_admin", "admin", "hr", "hr_admin", "manager"])
+

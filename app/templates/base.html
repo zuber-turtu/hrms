@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ (company or get_company()).name }} — Enterprise HR & Payroll{% endblock %}</title>
+    <title>{% block title %}{{ (company or get_company()).name }}{% if (company or get_company()).tagline %} — {{ (company or get_company()).tagline }}{% endif %}{% endblock %}</title>
 
     <!-- Google Fonts: Nunito (UI/Body), Poppins (Headings/Brand), Noto Sans Kannada (Regional), JetBrains Mono (Financials/Data) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -178,8 +178,10 @@
                 <div class="flex flex-col min-w-0 truncate sidebar-brand-text">
                     <span class="text-sm font-bold text-white tracking-tight leading-tight font-heading truncate">{{
                         (company or get_company()).name }}</span>
+                    {% if (company or get_company()).tagline %}
                     <span class="text-[10px] uppercase font-semibold tracking-wider text-teal-300/80 truncate">{{
-                        (company or get_company()).tagline or 'Enterprise Platform' }}</span>
+                        (company or get_company()).tagline }}</span>
+                    {% endif %}
                 </div>
             </a>
             <!-- Mobile Close Button -->
@@ -277,7 +279,7 @@
             </div>
 
             <!-- Administration Section -->
-            {% if user.role in ['admin', 'hr_admin'] %}
+            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
             <div>
                 <div class="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-400/70 sidebar-section-header">Administration</div>
                 <div class="sidebar-section-divider hidden"></div>
@@ -298,6 +300,15 @@
                                 class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors shrink-0"></i>
                             <span class="sidebar-text truncate">KYC Compliance Matrix</span>
                             <span class="sidebar-tooltip">KYC Compliance Matrix</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/leaves/types" data-nav-link="/leaves/types"
+                            class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group relative">
+                            <i data-lucide="calendar-cog"
+                                class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors shrink-0"></i>
+                            <span class="sidebar-text truncate">Leave Types & Policies</span>
+                            <span class="sidebar-tooltip">Leave Types & Policies</span>
                         </a>
                     </li>
                     <li>
@@ -327,7 +338,7 @@
                             <span class="sidebar-tooltip">Company Settings</span>
                         </a>
                     </li>
-                    {% if user.role == 'admin' %}
+                    {% if user.role in ['super_admin', 'admin'] %}
                     <li>
                         <a href="/audit" data-nav-link="/audit"
                             class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group relative">
@@ -402,7 +413,7 @@
                 </div>
             </div>
 
-            {% if user and user.role != 'admin' %}
+            {% if user %}
             <div id="topbar-attendance-widget" class="flex items-center space-x-2 shrink-0">
                 {% include "attendance/partials/_topbar_widget.html" %}
             </div>
@@ -411,46 +422,61 @@
 
         <!-- Main Scrollable Body Content -->
         <div class="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7 touch-scroll">
-            <!-- Toast notification stack for real-time alerts -->
+            <!-- Floating Toast Notification Stack (Fully Responsive for Mobile & Desktop) -->
             <div id="toast-container"
-                class="fixed top-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none max-w-sm w-full px-4 sm:px-0">
+                class="fixed top-4 left-3 right-3 sm:left-auto sm:right-5 sm:top-5 z-[9999] flex flex-col space-y-2.5 pointer-events-none max-w-sm sm:max-w-md w-auto">
+                
+                <!-- Server-Side Rendered Flash Messages -->
+                {% set flash_list = get_flash_messages(request) %}
+                {% for f in flash_list %}
+                <div class="toast-item pointer-events-auto rounded-2xl shadow-xl border backdrop-blur-md p-3.5 flex items-start space-x-3 transition-all transform duration-300 animate-fadeIn relative overflow-hidden
+                    {% if f.category == 'error' %} bg-rose-50/95 border-rose-200 text-rose-900 shadow-rose-500/10
+                    {% elif f.category == 'warning' %} bg-amber-50/95 border-amber-200 text-amber-900 shadow-amber-500/10
+                    {% elif f.category == 'info' %} bg-teal-50/95 border-teal-200 text-teal-900 shadow-teal-500/10
+                    {% else %} bg-emerald-50/95 border-emerald-200 text-emerald-900 shadow-emerald-500/10 {% endif %}">
+                    
+                    <div class="p-1 rounded-xl shrink-0 mt-0.5
+                        {% if f.category == 'error' %} bg-rose-100 text-rose-700
+                        {% elif f.category == 'warning' %} bg-amber-100 text-amber-700
+                        {% elif f.category == 'info' %} bg-teal-100 text-teal-700
+                        {% else %} bg-emerald-100 text-emerald-700 {% endif %}">
+                        {% if f.category == 'error' %}
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                        {% elif f.category == 'warning' %}
+                            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        {% elif f.category == 'info' %}
+                            <i data-lucide="info" class="w-4 h-4"></i>
+                        {% else %}
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex-1 text-xs sm:text-sm font-medium leading-snug pt-0.5 pr-2">
+                        {{ f.message }}
+                    </div>
+
+                    <button onclick="dismissToast(this.closest('.toast-item'))"
+                        class="p-1 rounded-lg transition-colors shrink-0
+                        {% if f.category == 'error' %} text-rose-500 hover:text-rose-800 hover:bg-rose-100
+                        {% elif f.category == 'warning' %} text-amber-500 hover:text-amber-800 hover:bg-amber-100
+                        {% elif f.category == 'info' %} text-teal-500 hover:text-teal-800 hover:bg-teal-100
+                        {% else %} text-emerald-500 hover:text-emerald-800 hover:bg-emerald-100 {% endif %}"
+                        aria-label="Close notification">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+
+                    <!-- Auto-dismiss Progress Bar -->
+                    <div class="toast-progress absolute bottom-0 left-0 right-0 h-1
+                        {% if f.category == 'error' %} bg-rose-400/50
+                        {% elif f.category == 'warning' %} bg-amber-400/50
+                        {% elif f.category == 'info' %} bg-teal-400/50
+                        {% else %} bg-emerald-400/50 {% endif %}">
+                    </div>
+                </div>
+                {% endfor %}
             </div>
 
             <div class="max-w-7xl mx-auto space-y-5 sm:space-y-6">
-
-                <!-- Global Flash Notifications -->
-                {% if request.query_params.get('success') %}
-                <div
-                    class="flash-message bg-emerald-50 border border-emerald-200 rounded-xl p-3 sm:p-3.5 shadow-xs flex items-start space-x-2.5 sm:space-x-3 animate-fadeIn">
-                    <div class="p-1 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
-                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-                    </div>
-                    <div class="flex-1 text-xs sm:text-sm font-medium text-emerald-800 leading-snug pt-0.5">
-                        {{ request.query_params.get('success') }}
-                    </div>
-                    <button onclick="this.closest('.flash-message').remove()"
-                        class="text-emerald-600 hover:text-emerald-800 p-1 rounded-lg hover:bg-emerald-100 transition-colors shrink-0">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-                {% endif %}
-
-                {% if request.query_params.get('error') %}
-                <div
-                    class="flash-message bg-rose-50 border border-rose-200 rounded-xl p-3 sm:p-3.5 shadow-xs flex items-start space-x-2.5 sm:space-x-3 animate-fadeIn">
-                    <div class="p-1 rounded-lg bg-rose-100 text-rose-700 shrink-0">
-                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                    </div>
-                    <div class="flex-1 text-xs sm:text-sm font-medium text-rose-800 leading-snug pt-0.5">
-                        {{ request.query_params.get('error') }}
-                    </div>
-                    <button onclick="this.closest('.flash-message').remove()"
-                        class="text-rose-500 hover:text-rose-700 p-1 rounded-lg hover:bg-rose-100 transition-colors shrink-0">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-                {% endif %}
-
                 {% block content %}{% endblock %}
             </div>
         </div>
@@ -461,32 +487,69 @@
         // Initialize Lucide icons
         lucide.createIcons();
 
-        // Toast notification helper
-        function showToast(message, type = 'info') {
+        // Dismiss individual toast smoothly
+        function dismissToast(toastEl) {
+            if (!toastEl) return;
+            toastEl.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            toastEl.style.opacity = '0';
+            toastEl.style.transform = 'translateY(-12px) scale(0.95)';
+            setTimeout(() => {
+                if (toastEl.parentNode) {
+                    toastEl.remove();
+                }
+            }, 300);
+        }
+
+        // Toast notification helper for dynamic / HTMX triggers
+        function showToast(message, type = 'info', duration = 4500) {
             const container = document.getElementById('toast-container');
             if (!container) return;
 
             const toast = document.createElement('div');
-            toast.className = `pointer-events-auto flex items-start space-x-3 p-3.5 rounded-xl border shadow-xl transition-all duration-300 transform translate-y-[-10px] opacity-0 ${type === 'error' ? 'bg-slate-900 text-white border-rose-500/80 shadow-rose-950/20' :
-                    type === 'success' ? 'bg-slate-900 text-white border-emerald-500/80 shadow-emerald-950/20' :
-                        'bg-slate-900 text-white border-teal-500/80'
-                }`;
+            const category = (type || 'info').toLowerCase();
+            
+            let bgClass = 'bg-teal-50/95 border-teal-200 text-teal-900 shadow-teal-500/10';
+            let iconBg = 'bg-teal-100 text-teal-700';
+            let iconName = 'info';
+            let btnClass = 'text-teal-500 hover:text-teal-800 hover:bg-teal-100';
+            let barClass = 'bg-teal-400/50';
 
-            const iconColor = type === 'error' ? 'text-rose-400' : (type === 'success' ? 'text-emerald-400' : 'text-teal-400');
-            const iconBg = type === 'error' ? 'bg-rose-950/80 border border-rose-700/50' : (type === 'success' ? 'bg-emerald-950/80 border border-emerald-700/50' : 'bg-teal-950/80 border border-teal-700/50');
-            const iconName = type === 'error' ? 'alert-octagon' : (type === 'success' ? 'check-circle-2' : 'info');
+            if (category === 'error') {
+                bgClass = 'bg-rose-50/95 border-rose-200 text-rose-900 shadow-rose-500/10';
+                iconBg = 'bg-rose-100 text-rose-700';
+                iconName = 'alert-triangle';
+                btnClass = 'text-rose-500 hover:text-rose-800 hover:bg-rose-100';
+                barClass = 'bg-rose-400/50';
+            } else if (category === 'warning') {
+                bgClass = 'bg-amber-50/95 border-amber-200 text-amber-900 shadow-amber-500/10';
+                iconBg = 'bg-amber-100 text-amber-700';
+                iconName = 'alert-circle';
+                btnClass = 'text-amber-500 hover:text-amber-800 hover:bg-amber-100';
+                barClass = 'bg-amber-400/50';
+            } else if (category === 'success') {
+                bgClass = 'bg-emerald-50/95 border-emerald-200 text-emerald-900 shadow-emerald-500/10';
+                iconBg = 'bg-emerald-100 text-emerald-700';
+                iconName = 'check-circle-2';
+                btnClass = 'text-emerald-500 hover:text-emerald-800 hover:bg-emerald-100';
+                barClass = 'bg-emerald-400/50';
+            }
 
+            toast.className = `toast-item pointer-events-auto rounded-2xl shadow-xl border backdrop-blur-md p-3.5 flex items-start space-x-3 transition-all transform duration-300 opacity-0 translate-y-[-10px] relative overflow-hidden ${bgClass}`;
+            
             toast.innerHTML = `
-              <div class="p-1.5 rounded-lg ${iconBg} ${iconColor} shrink-0 mt-0.5">
-                  <i data-lucide="${iconName}" class="w-4 h-4"></i>
-              </div>
-              <div class="flex-1 text-xs sm:text-sm font-medium text-slate-100 leading-snug pt-0.5">
-                  ${message}
-              </div>
-              <button onclick="this.closest('div.pointer-events-auto').remove()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0">
-                  <i data-lucide="x" class="w-4 h-4"></i>
-              </button>
-          `;
+                <div class="p-1 rounded-xl shrink-0 mt-0.5 ${iconBg}">
+                    <i data-lucide="${iconName}" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1 text-xs sm:text-sm font-medium leading-snug pt-0.5 pr-2">
+                    ${message}
+                </div>
+                <button onclick="dismissToast(this.closest('.toast-item'))"
+                    class="p-1 rounded-lg transition-colors shrink-0 ${btnClass}"
+                    aria-label="Close notification">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+                <div class="toast-progress absolute bottom-0 left-0 right-0 h-1 ${barClass}"></div>
+            `;
 
             container.appendChild(toast);
             if (window.lucide) lucide.createIcons();
@@ -496,11 +559,59 @@
                 toast.classList.add('translate-y-0', 'opacity-100');
             });
 
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-[-10px]');
-                setTimeout(() => toast.remove(), 300);
-            }, 7000);
+            // Animate progress bar & auto-dismiss
+            setupToastAutoDismiss(toast, duration);
         }
+
+        // Setup countdown timer and progress bar animation
+        function setupToastAutoDismiss(toastEl, duration = 4500) {
+            const progressBar = toastEl.querySelector('.toast-progress');
+            if (progressBar) {
+                progressBar.style.transition = `width ${duration}ms linear`;
+                progressBar.style.width = '100%';
+                requestAnimationFrame(() => {
+                    progressBar.style.width = '0%';
+                });
+            }
+
+            setTimeout(() => {
+                dismissToast(toastEl);
+            }, duration);
+        }
+
+        // Clean query parameters like ?success=... or ?error=... from the URL bar immediately without reload
+        function cleanUrlHistory() {
+            try {
+                if (window.history && window.history.replaceState) {
+                    const url = new URL(window.location.href);
+                    const flashKeys = ['success', 'error', 'warning', 'info', 'msg', 'msg_type'];
+                    let hasFlashParams = false;
+
+                    flashKeys.forEach(k => {
+                        if (url.searchParams.has(k)) {
+                            url.searchParams.delete(k);
+                            hasFlashParams = true;
+                        }
+                    });
+
+                    if (hasFlashParams) {
+                        const cleanQuery = url.searchParams.toString();
+                        const newUrl = url.pathname + (cleanQuery ? '?' + cleanQuery : '') + url.hash;
+                        window.history.replaceState(null, '', newUrl);
+                    }
+                }
+            } catch (e) {
+                console.warn('[cleanUrlHistory error]', e);
+            }
+        }
+
+        // Initialize existing server-rendered toasts and sanitize address bar on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            cleanUrlHistory();
+            document.querySelectorAll('#toast-container .toast-item').forEach(toast => {
+                setupToastAutoDismiss(toast, 4500);
+            });
+        });
 
         // Geofence Punch Trigger Handler
         function triggerPunch(btn, endpoint, extraVals = {}) {

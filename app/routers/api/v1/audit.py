@@ -9,7 +9,7 @@ from app.dependencies import RoleChecker
 from app.schemas.audit import AuditLogOut
 
 router = APIRouter(prefix="/audit", tags=["Audit Logs"])
-allow_admin_only = RoleChecker(["admin"])
+allow_admin_only = RoleChecker(["super_admin", "admin"])
 
 
 @router.get("", response_model=List[AuditLogOut])

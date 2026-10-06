@@ -9,10 +9,11 @@ from app.models.department import Department, Designation
 from app.dependencies import RoleChecker
 from app.models.audit import AuditLog
 from app.templates_config import templates
+from app.utils.flash import flash_redirect
 
 router = APIRouter(prefix="/departments")
 
-allow_hr_admin = RoleChecker(["admin", "hr_admin"])
+allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 
 
 @router.get("", response_class=HTMLResponse)
@@ -48,7 +49,7 @@ async def create_department(
     clean_name = name.strip()
     existing = db.query(Department).filter(Department.name == clean_name).first()
     if existing:
-        return RedirectResponse(url="/departments?error=Department+already+exists", status_code=302)
+        return flash_redirect(url="/departments", message="Department already exists", category="error")
 
     dept = Department(
         name=clean_name,
@@ -71,7 +72,7 @@ async def create_department(
     db.add(audit)
     db.commit()
 
-    return RedirectResponse(url="/departments?success=Department+created+successfully", status_code=302)
+    return flash_redirect(url="/departments", message="Department created successfully", category="success")
 
 
 @router.post("/{dept_id}/edit")
@@ -106,7 +107,7 @@ async def edit_department(
     db.add(audit)
     db.commit()
 
-    return RedirectResponse(url="/departments?success=Department+updated+successfully", status_code=302)
+    return flash_redirect(url="/departments", message="Department updated successfully", category="success")
 
 
 @router.post("/{dept_id}/delete")
@@ -123,9 +124,10 @@ async def delete_department(
     # Safety check: Cannot delete if active employees belong to this department
     assigned_employees = db.query(Employee).filter(Employee.department_id == dept_id).count()
     if assigned_employees > 0:
-        return RedirectResponse(
-            url=f"/departments?error=Cannot+delete+department+with+{assigned_employees}+assigned+employees",
-            status_code=302,
+        return flash_redirect(
+            url="/departments",
+            message=f"Cannot delete department with {assigned_employees} assigned employees",
+            category="error",
         )
 
     dept_name = dept.name
@@ -143,7 +145,7 @@ async def delete_department(
     db.add(audit)
     db.commit()
 
-    return RedirectResponse(url="/departments?success=Department+deleted+successfully", status_code=302)
+    return flash_redirect(url="/departments", message="Department deleted successfully", category="success")
 
 
 # ================= DESIGNATIONS =================
@@ -178,7 +180,7 @@ async def create_designation(
     db.add(audit)
     db.commit()
 
-    return RedirectResponse(url="/departments?success=Designation+created+successfully", status_code=302)
+    return flash_redirect(url="/departments", message="Designation created successfully", category="success")
 
 
 @router.post("/designations/{desig_id}/edit")
@@ -212,7 +214,7 @@ async def edit_designation(
     db.add(audit)
     db.commit()
 
-    return RedirectResponse(url="/departments?success=Designation+updated+successfully", status_code=302)
+    return flash_redirect(url="/departments", message="Designation updated successfully", category="success")
 
 
 @router.post("/designations/{desig_id}/delete")
@@ -228,9 +230,10 @@ async def delete_designation(
 
     assigned_employees = db.query(Employee).filter(Employee.designation_id == desig_id).count()
     if assigned_employees > 0:
-        return RedirectResponse(
-            url=f"/departments?error=Cannot+delete+designation+with+{assigned_employees}+assigned+employees",
-            status_code=302,
+        return flash_redirect(
+            url="/departments",
+            message=f"Cannot delete designation with {assigned_employees} assigned employees",
+            category="error",
         )
 
     desig_title = desig.title
@@ -248,7 +251,7 @@ async def delete_designation(
     db.add(audit)
     db.commit()
 
-    return RedirectResponse(url="/departments?success=Designation+deleted+successfully", status_code=302)
+    return flash_redirect(url="/departments", message="Designation deleted successfully", category="success")
 
 
 # ================= API ENDPOINT FOR DYNAMIC DROPDOWNS =================
@@ -278,7 +281,7 @@ async def get_designations_options(
     department_id: Optional[str] = None,
     selected_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: Employee = Depends(RoleChecker(["admin", "hr_admin", "manager", "employee", "intern"])),
+    current_user: Employee = Depends(RoleChecker(["super_admin", "admin", "hr", "hr_admin", "manager", "employee", "intern"])),
 ):
     target_id = dept_id or department_id or request.query_params.get("department_id") or request.query_params.get("department")
     if not target_id or target_id in ("all", "", "0"):

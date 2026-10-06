@@ -10,7 +10,7 @@ from app.templates_config import templates
 
 router = APIRouter(prefix="/audit")
 
-allow_admin = RoleChecker(["admin"])
+allow_admin = RoleChecker(["super_admin", "admin"])
 
 
 @router.get("", response_class=HTMLResponse)
