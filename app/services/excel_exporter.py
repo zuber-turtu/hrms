@@ -101,7 +101,7 @@ def export_employees_excel(employees: List[Any], company: Optional[Any] = None) 
     ws.views.sheetView[0].showGridLines = True
 
     # Title Block
-    comp_name = company.name if company and company.name else "Turtu HRMS"
+    comp_name = company.name if company and company.name else "Company HRMS"
     ws.merge_cells("A1:K1")
     ws["A1"] = f"{comp_name} — Workforce & Employee Directory"
     ws["A1"].font = TITLE_FONT
@@ -260,7 +260,7 @@ def export_payroll_excel(payslips: List[Any], company: Optional[Any] = None, mon
     ws.title = "Payroll Register"
     ws.views.sheetView[0].showGridLines = True
 
-    comp_name = company.name if company and company.name else "Turtu HRMS"
+    comp_name = company.name if company and company.name else "Company HRMS"
     currency = company.currency_symbol if company and company.currency_symbol else "₹"
     
     month_names = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
@@ -416,7 +416,7 @@ def export_attendance_excel(logs_data: List[Dict[str, Any]], company: Optional[A
     ws.title = "Attendance Logs"
     ws.views.sheetView[0].showGridLines = True
 
-    comp_name = company.name if company and company.name else "Turtu HRMS"
+    comp_name = company.name if company and company.name else "Company HRMS"
     filter_label = f"Date Filter: {date_filter}" if date_filter else "Consolidated Punch History"
 
     ws.merge_cells("A1:J1")
@@ -503,7 +503,7 @@ def export_attendance_monthly_matrix_excel(
     _, days_in_month = calendar.monthrange(year, month)
     month_names = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-    comp_name = company.name if company and company.name else "Turtu HRMS"
+    comp_name = company.name if company and company.name else "Company HRMS"
     total_cols = 3 + days_in_month + 5
 
     # Top Title
@@ -590,7 +590,7 @@ def export_leaves_excel(
     ws.title = "Leaves Register"
     ws.views.sheetView[0].showGridLines = True
 
-    comp_name = company.name if company and company.name else "Turtu HRMS"
+    comp_name = company.name if company and company.name else "Company HRMS"
     yr_label = f"Year {year}" if year else "All Years"
     st_label = f"Status: {status_filter.title()}" if (status_filter and status_filter != 'all') else "All Statuses"
 
@@ -669,7 +669,7 @@ def export_leave_balances_excel(balances_data: List[Any], company: Optional[Any]
     ws.title = "Leave Balances & Quotas"
     ws.views.sheetView[0].showGridLines = True
 
-    comp_name = company.name if company and company.name else "Turtu HRMS"
+    comp_name = company.name if company and company.name else "Company HRMS"
     yr = year or datetime.date.today().year
 
     ws.merge_cells("A1:H1")
@@ -750,7 +750,7 @@ def export_kyc_compliance_excel(compliance_data: List[Dict[str, Any]], company: 
     ws.title = "KYC Compliance Report"
     ws.views.sheetView[0].showGridLines = True
 
-    comp_name = company.name if company and company.name else "Turtu HRMS"
+    comp_name = company.name if company and company.name else "Company HRMS"
 
     ws.merge_cells("A1:H1")
     ws["A1"] = f"{comp_name} — Workforce KYC & Document Compliance Audit"
@@ -827,7 +827,7 @@ def export_audit_logs_excel(logs: List[Any], company: Optional[Any] = None) -> R
     ws.title = "Security Audit Trail"
     ws.views.sheetView[0].showGridLines = True
 
-    comp_name = company.name if company and company.name else "Turtu HRMS"
+    comp_name = company.name if company and company.name else "Company HRMS"
 
     ws.merge_cells("A1:G1")
     ws["A1"] = f"{comp_name} — Administrative Security & Activity Audit Trail"
@@ -897,7 +897,7 @@ def export_departments_excel(departments: List[Any], company: Optional[Any] = No
     ws.title = "Departments Master"
     ws.views.sheetView[0].showGridLines = True
 
-    comp_name = company.name if company and company.name else "Turtu HRMS"
+    comp_name = company.name if company and company.name else "Company HRMS"
 
     ws.merge_cells("A1:F1")
     ws["A1"] = f"{comp_name} — Departments & Organization Hierarchy"

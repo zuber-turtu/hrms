@@ -42,3 +42,18 @@ class Company(Base):
 
     # Employee ID Prefix (e.g. 'Company', 'EMP' -> Company-0001; if null/empty -> #0001)
     employee_id_prefix = Column(String, nullable=True)
+
+
+class OfficeLocation(Base):
+    __tablename__ = "office_locations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)  # e.g., "HQ - Bengaluru", "Mumbai Hub", "Warehouse 2"
+    code = Column(String, nullable=True)  # e.g., "BLR-01", "MUM-01"
+    address = Column(String, nullable=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    radius_meters = Column(Integer, default=200)  # Perimeter radius in meters
+    is_primary = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+

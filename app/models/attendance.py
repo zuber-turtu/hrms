@@ -20,11 +20,13 @@ class Attendance(Base):
     check_in_lon = Column(Float, nullable=True)
     check_in_distance_m = Column(Float, nullable=True)
     check_in_in_range = Column(Boolean, nullable=True)
+    check_in_location_name = Column(String, nullable=True)
 
     check_out_lat = Column(Float, nullable=True)
     check_out_lon = Column(Float, nullable=True)
     check_out_distance_m = Column(Float, nullable=True)
     check_out_in_range = Column(Boolean, nullable=True)
+    check_out_location_name = Column(String, nullable=True)
 
     # Work Mode & WFH Linkage
     work_mode = Column(String(50), default="office")  # 'office', 'wfh', 'remote'

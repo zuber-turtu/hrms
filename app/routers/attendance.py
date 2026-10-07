@@ -117,6 +117,7 @@ async def attendance_log(
         latest_in_range = group_logs[0].check_in_in_range if group_logs[0].check_in_in_range is not None else group_logs[-1].check_out_in_range
         is_exempt = bool(employee and employee.profile and employee.profile.is_geofence_exempt)
         work_mode = group_logs[0].work_mode or ("wfh" if group_logs[0].wfh_request_id else "office")
+        loc_name = group_logs[0].check_in_location_name or group_logs[-1].check_out_location_name or ("Office" if latest_in_range else "Outside Perimeter")
 
         item = {
             "id": group_logs[0].id,  # primary ID for override actions
@@ -133,6 +134,7 @@ async def attendance_log(
             "in_range": latest_in_range,
             "is_exempt": is_exempt,
             "work_mode": work_mode,
+            "location_name": loc_name,
         }
 
         # Apply search filter (date or employee name)
@@ -197,26 +199,24 @@ async def check_in(
         return RedirectResponse(url=safe_target, status_code=302)
 
     # 1. Validate Geofence
-    is_allowed, geofence_msg, dist_m, is_exempt, company = validate_punch_geofence(
-        db, current_user, lat, lon
-    )
+    geo_res = validate_punch_geofence(db, current_user, lat, lon)
 
-    if not is_allowed:
+    if not geo_res.is_allowed:
         if request.headers.get("HX-Request"):
-            error_data = json.dumps({"message": geofence_msg or "Check-in outside office perimeter blocked.", "type": "error"})
+            error_data = json.dumps({"message": geo_res.message or "Check-in outside office perimeter blocked.", "type": "error"})
             headers = {"HX-Trigger": f'{{"showErrorToast": {error_data}}}'}
             update_attendance_request_state(db, current_user, request)
             return templates.TemplateResponse(
                 request,
                 "attendance/partials/_topbar_widget.html",
-                {"user": current_user, "punch_error": geofence_msg},
+                {"user": current_user, "punch_error": geo_res.message},
                 headers=headers
             )
 
         safe_target = get_safe_redirect(request, default="/dashboard")
         separator = "&" if "?" in safe_target else "?"
         return RedirectResponse(
-            url=f"{safe_target}{separator}error={quote_plus(geofence_msg or 'Punch outside allowed perimeter')}",
+            url=f"{safe_target}{separator}error={quote_plus(geo_res.message or 'Punch outside allowed perimeter')}",
             status_code=302
         )
 
@@ -229,13 +229,8 @@ async def check_in(
     ).first()
 
     if not active_log:
-        allowed_radius = company.geofence_radius_meters or settings.GEOFENCE_DEFAULT_RADIUS_METERS
-        in_range = True
-        if dist_m is not None:
-            in_range = (dist_m <= allowed_radius)
-
         active_wfh = get_active_wfh_request(db, current_user.id, today)
-        mode = "wfh" if active_wfh else ("office" if not is_exempt else "remote")
+        mode = "wfh" if active_wfh else ("office" if not geo_res.is_exempt else "remote")
         wfh_id = active_wfh.id if active_wfh else None
 
         log = Attendance(
@@ -244,8 +239,9 @@ async def check_in(
             check_in=get_ist_now(),
             check_in_lat=lat,
             check_in_lon=lon,
-            check_in_distance_m=dist_m,
-            check_in_in_range=in_range,
+            check_in_distance_m=geo_res.distance_meters,
+            check_in_in_range=geo_res.in_range,
+            check_in_location_name=geo_res.location_name,
             work_mode=mode,
             wfh_request_id=wfh_id,
         )
@@ -280,26 +276,24 @@ async def check_out(
         return RedirectResponse(url=safe_target, status_code=302)
 
     # 1. Validate Geofence
-    is_allowed, geofence_msg, dist_m, is_exempt, company = validate_punch_geofence(
-        db, current_user, lat, lon
-    )
+    geo_res = validate_punch_geofence(db, current_user, lat, lon)
 
-    if not is_allowed:
+    if not geo_res.is_allowed:
         if request.headers.get("HX-Request"):
-            error_data = json.dumps({"message": geofence_msg or "Check-out outside office perimeter blocked.", "type": "error"})
+            error_data = json.dumps({"message": geo_res.message or "Check-out outside office perimeter blocked.", "type": "error"})
             headers = {"HX-Trigger": f'{{"showErrorToast": {error_data}}}'}
             update_attendance_request_state(db, current_user, request)
             return templates.TemplateResponse(
                 request,
                 "attendance/partials/_topbar_widget.html",
-                {"user": current_user, "punch_error": geofence_msg},
+                {"user": current_user, "punch_error": geo_res.message},
                 headers=headers
             )
 
         safe_target = get_safe_redirect(request, default="/dashboard")
         separator = "&" if "?" in safe_target else "?"
         return RedirectResponse(
-            url=f"{safe_target}{separator}error={quote_plus(geofence_msg or 'Punch outside allowed perimeter')}",
+            url=f"{safe_target}{separator}error={quote_plus(geo_res.message or 'Punch outside allowed perimeter')}",
             status_code=302
         )
 
@@ -312,16 +306,12 @@ async def check_out(
     ).order_by(Attendance.check_in.desc()).first()
 
     if log:
-        allowed_radius = company.geofence_radius_meters or settings.GEOFENCE_DEFAULT_RADIUS_METERS
-        in_range = True
-        if dist_m is not None:
-            in_range = (dist_m <= allowed_radius)
-
         log.check_out = get_ist_now()
         log.check_out_lat = lat
         log.check_out_lon = lon
-        log.check_out_distance_m = dist_m
-        log.check_out_in_range = in_range
+        log.check_out_distance_m = geo_res.distance_meters
+        log.check_out_in_range = geo_res.in_range
+        log.check_out_location_name = geo_res.location_name
         if punch_reason and "lunch" in punch_reason.lower():
             log.override_reason = "Lunch Break"
         db.commit()

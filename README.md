@@ -1,4 +1,4 @@
-# Turtu HRMS — Modern Enterprise Human Resource Management System
+# Company HRMS — Modern Enterprise Human Resource Management System
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
@@ -8,9 +8,12 @@
 
 A dynamic, full-featured, enterprise-grade **Human Resource Management System (HRMS)** built with **FastAPI**, **SQLAlchemy 2.0**, **Jinja2**, and **Tailwind CSS**. Designed for modern organizations, featuring multi-database support (SQLite, MySQL, PostgreSQL), pluggable multi-cloud storage, GPS geofencing attendance, dynamic payroll calculation, PDF payslip generation, multi-tier leave workflows, and granular role-based access control.
 
+> 📖 **Looking for deployment instructions?** See the full **[Complete Setup & Deployment Guide (SETUP.md)](SETUP.md)** for production Linux/Gunicorn/Nginx, Docker, and local development walkthroughs.
+
 ---
 
 ## 📑 Table of Contents
+- [Setup & Deployment Guide (SETUP.md)](SETUP.md)
 - [Key Features](#-key-features)
 - [Tech Stack](#-tech-stack)
 - [Directory Structure](#-directory-structure)
@@ -34,7 +37,7 @@ A dynamic, full-featured, enterprise-grade **Human Resource Management System (H
 ### 🏢 1. Company & Corporate Branding
 - **Dynamic Identity**: Configurable company logo, stamp/signature, brand colors, slogan, website, and support email.
 - **Statutory Details**: Enterprise registration fields including **CIN**, **GSTIN**, and **PAN**.
-- **Customizable Employee ID Prefix**: Configure customized code prefixes (e.g. `TURTU-0001`, `ACME-0042`) with graceful fallback to standard sequential formatting (`#0001`).
+- **Customizable Employee ID Prefix**: Configure customized code prefixes (e.g. `Company-0001`, `ACME-0042`) with graceful fallback to standard sequential formatting (`#0001`).
 - **Work Hours & Break Policies**: Flexible standard hours/day, half-day thresholds, and automated lunch break tracking.
 
 ### 📍 2. GPS Geofenced Attendance System

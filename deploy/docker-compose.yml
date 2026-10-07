@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  hrms-web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: turtu-hrms-web
+    restart: always
+    env_file:
+      - ../.env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=mysql+pymysql://hrms_user:hrms_secure_pass@hrms-mysql:3306/hrms_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      hrms-mysql:
+        condition: service_healthy
+    volumes:
+      - hrms_uploads:/app/static/uploads
+      - hrms_logs:/app/logs
+
+  # Primary Database: MySQL 8.0 (InnoDB utf8mb4)
+  hrms-mysql:
+    image: mysql:8.0
+    container_name: turtu-hrms-mysql
+    restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root_master_password
+      MYSQL_DATABASE: hrms_db
+      MYSQL_USER: hrms_user
+      MYSQL_PASSWORD: hrms_secure_pass
+    volumes:
+      - hrms_mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "hrms_user", "-phrms_secure_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hrms_mysql_data:
+  hrms_uploads:
+  hrms_logs:

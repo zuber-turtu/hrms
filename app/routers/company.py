@@ -7,11 +7,12 @@ from urllib.parse import quote_plus
 
 from app.database import get_db
 from app.models.employee import Employee
-from app.models.company import Company
+from app.models.company import Company, OfficeLocation
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.templates_config import templates
 from app.utils.permissions import AVAILABLE_PERMISSIONS, get_company_permissions
+from app.utils.geofence import get_active_office_locations, get_or_create_company
 
 router = APIRouter(prefix="/company")
 
@@ -24,12 +25,7 @@ async def company_profile(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
-    company = db.query(Company).first()
-    if not company:
-        company = Company()
-        db.add(company)
-        db.commit()
-        db.refresh(company)
+    company = get_or_create_company(db)
 
     employees = (
         db.query(Employee)
@@ -38,6 +34,7 @@ async def company_profile(
     )
 
     permissions_matrix = get_company_permissions(company)
+    locations = get_active_office_locations(db, company)
     
     dept_set = set()
     for emp in employees:
@@ -55,6 +52,7 @@ async def company_profile(
             "company": company,
             "employees": employees,
             "departments": departments,
+            "locations": locations,
             "available_permissions": AVAILABLE_PERMISSIONS,
             "permissions_matrix": permissions_matrix,
         }
@@ -344,3 +342,202 @@ async def assign_employee_role(
         url=f"/company/profile?tab=permissions&success={quote_plus(f'Role for {target_employee.name} updated to {role_clean}')}",
         status_code=302
     )
+
+
+# =========================================================================
+# NAMED GEOFENCE LOCATIONS CRUD
+# =========================================================================
+
+@router.post("/locations/create")
+async def create_office_location(
+    request: Request,
+    name: str = Form(...),
+    code: Optional[str] = Form(None),
+    address: Optional[str] = Form(None),
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    radius_meters: int = Form(200),
+    is_primary: bool = Form(False),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    clean_name = name.strip()
+    if not clean_name:
+        raise HTTPException(status_code=400, detail="Location name is required")
+
+    company = get_or_create_company(db)
+
+    # If this is marked primary, unset other primaries
+    if is_primary:
+        db.query(OfficeLocation).update({OfficeLocation.is_primary: False})
+        company.office_latitude = latitude
+        company.office_longitude = longitude
+        company.geofence_radius_meters = radius_meters
+
+    # Check if this is the very first location created
+    existing_count = db.query(OfficeLocation).count()
+    if existing_count == 0:
+        is_primary = True
+        company.office_latitude = latitude
+        company.office_longitude = longitude
+        company.geofence_radius_meters = radius_meters
+
+    loc = OfficeLocation(
+        name=clean_name,
+        code=code.strip().upper() if code and code.strip() else None,
+        address=address.strip() if address and address.strip() else None,
+        latitude=latitude,
+        longitude=longitude,
+        radius_meters=max(10, radius_meters),
+        is_primary=is_primary,
+        is_active=True,
+    )
+    db.add(loc)
+    db.commit()
+
+    # Audit Log
+    audit = AuditLog(
+        actor_id=current_user.id,
+        actor_email=current_user.email,
+        action="CREATE_GEOFENCE_LOCATION",
+        entity="OfficeLocation",
+        entity_id=loc.id,
+        new_value=f"{loc.name} ({loc.latitude}, {loc.longitude} • {loc.radius_meters}m)",
+    )
+    db.add(audit)
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/company/profile?tab=geofence&success={quote_plus(f'Geofence location «{loc.name}» created successfully')}",
+        status_code=302,
+    )
+
+
+@router.post("/locations/{loc_id}/edit")
+async def edit_office_location(
+    loc_id: int,
+    request: Request,
+    name: str = Form(...),
+    code: Optional[str] = Form(None),
+    address: Optional[str] = Form(None),
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    radius_meters: int = Form(200),
+    is_primary: bool = Form(False),
+    is_active: bool = Form(True),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    loc = db.query(OfficeLocation).filter(OfficeLocation.id == loc_id).first()
+    if not loc:
+        raise HTTPException(status_code=404, detail="Location not found")
+
+    company = get_or_create_company(db)
+
+    if is_primary:
+        db.query(OfficeLocation).filter(OfficeLocation.id != loc_id).update({OfficeLocation.is_primary: False})
+        company.office_latitude = latitude
+        company.office_longitude = longitude
+        company.geofence_radius_meters = radius_meters
+
+    loc.name = name.strip()
+    loc.code = code.strip().upper() if code and code.strip() else None
+    loc.address = address.strip() if address and address.strip() else None
+    loc.latitude = latitude
+    loc.longitude = longitude
+    loc.radius_meters = max(10, radius_meters)
+    loc.is_primary = is_primary
+    loc.is_active = is_active
+
+    db.commit()
+
+    # Audit Log
+    audit = AuditLog(
+        actor_id=current_user.id,
+        actor_email=current_user.email,
+        action="EDIT_GEOFENCE_LOCATION",
+        entity="OfficeLocation",
+        entity_id=loc.id,
+        new_value=f"{loc.name} ({loc.latitude}, {loc.longitude} • {loc.radius_meters}m)",
+    )
+    db.add(audit)
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/company/profile?tab=geofence&success={quote_plus(f'Location «{loc.name}» updated successfully')}",
+        status_code=302,
+    )
+
+
+@router.post("/locations/{loc_id}/delete")
+async def delete_office_location(
+    loc_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    loc = db.query(OfficeLocation).filter(OfficeLocation.id == loc_id).first()
+    if not loc:
+        raise HTTPException(status_code=404, detail="Location not found")
+
+    loc_name = loc.name
+    was_primary = loc.is_primary
+
+    db.delete(loc)
+    db.commit()
+
+    # If primary was deleted, elect another location as primary if available
+    if was_primary:
+        next_loc = db.query(OfficeLocation).filter(OfficeLocation.is_active == True).first()
+        if next_loc:
+            next_loc.is_primary = True
+            company = get_or_create_company(db)
+            company.office_latitude = next_loc.latitude
+            company.office_longitude = next_loc.longitude
+            company.geofence_radius_meters = next_loc.radius_meters
+            db.commit()
+
+    # Audit Log
+    audit = AuditLog(
+        actor_id=current_user.id,
+        actor_email=current_user.email,
+        action="DELETE_GEOFENCE_LOCATION",
+        entity="OfficeLocation",
+        entity_id=loc_id,
+        old_value=loc_name,
+    )
+    db.add(audit)
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/company/profile?tab=geofence&success={quote_plus(f'Location «{loc_name}» deleted successfully')}",
+        status_code=302,
+    )
+
+
+@router.post("/locations/{loc_id}/set-primary")
+async def set_primary_location(
+    loc_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    loc = db.query(OfficeLocation).filter(OfficeLocation.id == loc_id).first()
+    if not loc:
+        raise HTTPException(status_code=404, detail="Location not found")
+
+    db.query(OfficeLocation).update({OfficeLocation.is_primary: False})
+    loc.is_primary = True
+
+    company = get_or_create_company(db)
+    company.office_latitude = loc.latitude
+    company.office_longitude = loc.longitude
+    company.geofence_radius_meters = loc.radius_meters
+
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/company/profile?tab=geofence&success={quote_plus(f'«{loc.name}» set as primary office headquarters')}",
+        status_code=302,
+    )
+

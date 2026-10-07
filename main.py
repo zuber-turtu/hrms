@@ -624,6 +624,27 @@ app.include_router(leaves.router)
 # Include REST API v1 Routers (JSON / Mobile / SPA)
 app.include_router(api_v1_router)
 
+@app.get("/health", tags=["Health"])
+@app.get("/api/v1/health", tags=["Health"])
+def health_check():
+    """Health check endpoint for load balancers, container orchestrators, and monitoring."""
+    from sqlalchemy import text
+    from app.utils.timezone import get_ist_now
+    db_ok = True
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+    except Exception as e:
+        db_ok = False
+    
+    return {
+        "status": "healthy" if db_ok else "degraded",
+        "database": "connected" if db_ok else "unreachable",
+        "timestamp": get_ist_now().isoformat(),
+        "environment": settings.ENVIRONMENT,
+    }
+
 @app.get("/")
 def root():
     return RedirectResponse(url="/dashboard")

@@ -1,0 +1,31 @@
+[Unit]
+Description=Company HRMS Enterprise Application (Gunicorn + Uvicorn ASGI)
+After=network.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/var/www/hrms
+EnvironmentFile=/var/www/hrms/.env
+Environment="PATH=/var/www/hrms/venv/bin"
+
+# Start Gunicorn with the production configuration file
+ExecStart=/var/www/hrms/venv/bin/gunicorn main:app -c gunicorn_conf.py
+
+# Graceful zero-downtime reloads on SIGHUP
+ExecReload=/bin/kill -s HUP $MAINPID
+
+# Process Management
+KillMode=mixed
+TimeoutStopSec=30
+PrivateTmp=true
+Restart=always
+RestartSec=5
+
+# Resource Limits (Optional Hardening)
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

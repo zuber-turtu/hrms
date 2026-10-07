@@ -146,6 +146,13 @@ class Employee(Base):
             return True
         return self.profile.is_geofence_exempt if self.profile else False
 
+    @is_geofence_exempt.setter
+    def is_geofence_exempt(self, value: bool):
+        from app.models.employee import EmployeeProfile
+        if not self.profile:
+            self.profile = EmployeeProfile(employee_id=self.id)
+        self.profile.is_geofence_exempt = value
+
     @property
     def is_super_admin(self) -> bool:
         return self.role == "super_admin"

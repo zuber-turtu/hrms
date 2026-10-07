@@ -81,14 +81,18 @@
                                 </span>
                                 {% elif log.distance_m is not none %}
                                     {% if log.in_range %}
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80" title="Punched within office perimeter ({{ log.distance_m|round|int }}m)">
-                                        <i data-lucide="map-pin" class="w-2.5 h-2.5 mr-1 text-emerald-600"></i> Office ({{ log.distance_m|round|int }}m)
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80" title="Punched within {{ log.location_name or 'office' }} perimeter ({{ log.distance_m|round|int }}m)">
+                                        <i data-lucide="map-pin" class="w-2.5 h-2.5 mr-1 text-emerald-600"></i> {{ log.location_name or 'Office' }} ({{ log.distance_m|round|int }}m)
                                     </span>
                                     {% else %}
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200/80" title="Outside office perimeter ({{ log.distance_m|round|int }}m)">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200/80" title="Outside office perimeter ({{ log.distance_m|round|int }}m to {{ log.location_name or 'nearest site' }})">
                                         <i data-lucide="map-pin" class="w-2.5 h-2.5 mr-1 text-amber-600"></i> Outside ({{ log.distance_m|round|int }}m)
                                     </span>
                                     {% endif %}
+                                {% elif log.location_name %}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-200/80" title="Punched at {{ log.location_name }}">
+                                    <i data-lucide="map-pin" class="w-2.5 h-2.5 mr-1 text-teal-600"></i> {{ log.location_name }}
+                                </span>
                                 {% endif %}
                             </div>
                         </td>

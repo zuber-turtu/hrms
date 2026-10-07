@@ -83,14 +83,12 @@ async def api_check_in(
     lon = payload.longitude if payload else None
 
     # Validate Geofence
-    is_allowed, geofence_msg, dist_m, is_exempt, company = validate_punch_geofence(
-        db, current_user, lat, lon
-    )
+    geo_res = validate_punch_geofence(db, current_user, lat, lon)
 
-    if not is_allowed:
+    if not geo_res.is_allowed:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=geofence_msg or "Check-in blocked: Outside permitted office location.",
+            detail=geo_res.message or "Check-in blocked: Outside permitted office location.",
         )
 
     today = get_ist_today()
@@ -105,13 +103,8 @@ async def api_check_in(
     )
 
     if not active_log:
-        allowed_radius = company.geofence_radius_meters or settings.GEOFENCE_DEFAULT_RADIUS_METERS
-        in_range = True
-        if dist_m is not None:
-            in_range = (dist_m <= allowed_radius)
-
         active_wfh = get_active_wfh_request(db, current_user.id, today)
-        mode = "wfh" if active_wfh else ("office" if not is_exempt else "remote")
+        mode = "wfh" if active_wfh else ("office" if not geo_res.is_exempt else "remote")
         wfh_id = active_wfh.id if active_wfh else None
 
         log = Attendance(
@@ -120,8 +113,9 @@ async def api_check_in(
             check_in=get_ist_now(),
             check_in_lat=lat,
             check_in_lon=lon,
-            check_in_distance_m=dist_m,
-            check_in_in_range=in_range,
+            check_in_distance_m=geo_res.distance_meters,
+            check_in_in_range=geo_res.in_range,
+            check_in_location_name=geo_res.location_name,
             work_mode=mode,
             wfh_request_id=wfh_id,
         )
@@ -147,14 +141,12 @@ async def api_check_out(
     lon = payload.longitude if payload else None
 
     # Validate Geofence
-    is_allowed, geofence_msg, dist_m, is_exempt, company = validate_punch_geofence(
-        db, current_user, lat, lon
-    )
+    geo_res = validate_punch_geofence(db, current_user, lat, lon)
 
-    if not is_allowed:
+    if not geo_res.is_allowed:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=geofence_msg or "Check-out blocked: Outside permitted office location.",
+            detail=geo_res.message or "Check-out blocked: Outside permitted office location.",
         )
 
     today = get_ist_today()
@@ -170,16 +162,12 @@ async def api_check_out(
     )
 
     if log:
-        allowed_radius = company.geofence_radius_meters or settings.GEOFENCE_DEFAULT_RADIUS_METERS
-        in_range = True
-        if dist_m is not None:
-            in_range = (dist_m <= allowed_radius)
-
         log.check_out = get_ist_now()
         log.check_out_lat = lat
         log.check_out_lon = lon
-        log.check_out_distance_m = dist_m
-        log.check_out_in_range = in_range
+        log.check_out_distance_m = geo_res.distance_meters
+        log.check_out_in_range = geo_res.in_range
+        log.check_out_location_name = geo_res.location_name
         db.commit()
 
     return await api_get_attendance_status(db, current_user)
