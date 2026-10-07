@@ -8,20 +8,17 @@
     <!-- Top Action Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <div class="flex items-center space-x-2">
-                <a href="/dashboard" class="text-xs font-semibold text-slate-500 hover:text-teal-700 transition-colors flex items-center">
-                    <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1"></i> Dashboard
-                </a>
-            </div>
+            
             <h2 class="text-lg sm:text-xl font-bold font-heading text-slate-900 tracking-tight mt-1">
                 KYC Compliance & Verification Report
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">
-                Audit company-wide document verification progress, identify missing paperwork, and review submissions
-            </p>
+            
         </div>
 
         <div class="flex items-center space-x-2 w-full sm:w-auto">
+            <a href="/documents/compliance/export-excel?department_id={{ selected_dept or '' }}&status_filter={{ selected_status or 'all' }}" class="w-full sm:w-auto justify-center inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs" title="Export KYC Compliance Audit to Excel">
+                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 mr-1.5 text-emerald-600"></i> Export Excel
+            </a>
             {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
             <a href="/documents/types" class="w-full sm:w-auto justify-center inline-flex items-center px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs">
                 <i data-lucide="settings" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Configure Fields

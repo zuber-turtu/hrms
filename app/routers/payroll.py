@@ -24,6 +24,7 @@ from app.services.pdf_generator import generate_payslip_pdf
 from app.services.formatters import number_to_words, get_month_name, mask_account_number, get_payslip_pdf_filename
 from app.templates_config import templates
 from app.utils.flash import flash_redirect
+from app.services.excel_exporter import export_payroll_excel
 
 router = APIRouter(prefix="/payroll")
 
@@ -34,24 +35,57 @@ allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 @router.get("/", response_class=HTMLResponse)
 async def list_payroll(
     request: Request,
+    page: Optional[int] = 1,
+    page_size: Optional[int] = 25,
+    month: Optional[int] = None,
+    year: Optional[int] = None,
+    status: Optional[str] = None,
+    dept_id: Optional[int] = None,
+    q: Optional[str] = None,
     msg: Optional[str] = None,
     msg_type: Optional[str] = "success",
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
+    from sqlalchemy import or_, func, cast, String
+    from app.utils.pagination import paginate_query
+
+    query = db.query(Payslip).join(Employee, Payslip.employee_id == Employee.id)
+
     if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
-        payslips = (
-            db.query(Payslip)
-            .filter(
-                Payslip.employee_id == current_user.id,
-                Payslip.status.in_(["finalized", "paid"])
-            )
-            .order_by(Payslip.year.desc(), Payslip.month.desc())
-            .all()
+        query = query.filter(
+            Payslip.employee_id == current_user.id,
+            Payslip.status.in_(["finalized", "paid"])
         )
     else:
-        payslips = db.query(Payslip).order_by(Payslip.year.desc(), Payslip.month.desc()).all()
+        # Department filter
+        if dept_id and dept_id > 0:
+            query = query.filter(Employee.department_id == dept_id)
 
+    # Search filter
+    if q and q.strip():
+        search_term = f"%{q.strip().lower()}%"
+        query = query.filter(
+            or_(
+                Employee.name.ilike(search_term),
+                Employee.email.ilike(search_term),
+                cast(Payslip.id, String).ilike(search_term),
+            )
+        )
+
+    # Month and Year filter
+    if month and month > 0:
+        query = query.filter(Payslip.month == month)
+    if year and year > 0:
+        query = query.filter(Payslip.year == year)
+
+    # Status filter
+    if status and status.strip() and status.lower() != "all":
+        query = query.filter(Payslip.status == status.strip().lower())
+
+    query = query.order_by(Payslip.year.desc(), Payslip.month.desc(), Employee.name.asc())
+
+    page_data = paginate_query(query, page=page, page_size=page_size)
 
     employees = db.query(Employee).filter(Employee.is_active == True, Employee.role != "super_admin").all()
     departments = db.query(Department).all()
@@ -60,31 +94,38 @@ async def list_payroll(
     current_month = today.month
     current_year = today.year
     
-    db_years = set()
-    for p in payslips:
-        if p and p.year is not None:
-            try:
-                db_years.add(int(p.year))
-            except (ValueError, TypeError):
-                pass
-    db_years.update(range(current_year - 2, current_year + 3))
-    available_years = sorted(list(db_years), reverse=True)
+    available_years = sorted(list(range(current_year - 3, current_year + 3)), reverse=True)
+
+    context = {
+        "request": request,
+        "user": current_user,
+        "page_data": page_data,
+        "payslips": page_data.items,
+        "employees": employees,
+        "departments": departments,
+        "current_month": month if month is not None else 0,
+        "current_year": year if year is not None else current_year,
+        "available_years": available_years,
+        "selected_status": status or "all",
+        "selected_dept": dept_id or 0,
+        "q": q or "",
+        "flash_msg": msg,
+        "flash_msg_type": msg_type,
+    }
+
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(
+            request,
+            "payroll/partials/_table.html",
+            context,
+        )
 
     return templates.TemplateResponse(
         request,
         "payroll/list.html",
-        {
-            "user": current_user,
-            "payslips": payslips,
-            "employees": employees,
-            "departments": departments,
-            "current_month": current_month,
-            "current_year": current_year,
-            "available_years": available_years,
-            "flash_msg": msg,
-            "flash_msg_type": msg_type,
-        },
+        context,
     )
+
 
 
 
@@ -221,6 +262,52 @@ async def bulk_export_zip(
         media_type="application/zip",
         headers=headers,
     )
+
+
+@router.get("/export-excel")
+async def export_payroll_spreadsheet(
+    month: Optional[int] = None,
+    year: Optional[int] = None,
+    status: Optional[str] = None,
+    dept_id: Optional[int] = None,
+    q: Optional[str] = None,
+    ids: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """Exports payroll and banking register to styled Excel sheet matching active filters."""
+    from sqlalchemy import or_, cast, String
+    query = db.query(Payslip).join(Employee, Payslip.employee_id == Employee.id)
+
+    if ids and ids.strip():
+        id_list = [int(x.strip()) for x in ids.split(",") if x.strip().isdigit()]
+        if id_list:
+            query = query.filter(Payslip.id.in_(id_list))
+    else:
+        if dept_id and dept_id > 0:
+            query = query.filter(Employee.department_id == dept_id)
+
+        if q and q.strip():
+            search_term = f"%{q.strip().lower()}%"
+            query = query.filter(
+                or_(
+                    Employee.name.ilike(search_term),
+                    Employee.email.ilike(search_term),
+                    cast(Payslip.id, String).ilike(search_term),
+                )
+            )
+
+        if month and month > 0:
+            query = query.filter(Payslip.month == month)
+        if year and year > 0:
+            query = query.filter(Payslip.year == year)
+
+        if status and status.strip() and status.lower() != "all":
+            query = query.filter(Payslip.status == status.strip().lower())
+
+    payslips = query.order_by(Payslip.year.desc(), Payslip.month.desc(), Employee.name.asc()).all()
+    company = db.query(Company).first()
+    return export_payroll_excel(payslips, company, month=month, year=year)
 
 
 @router.get("/{payslip_id}/edit", response_class=HTMLResponse)

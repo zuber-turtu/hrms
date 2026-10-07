@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Boolean, Float
+from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Boolean, Float, Index
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -6,8 +6,8 @@ class Attendance(Base):
     __tablename__ = "attendance"
 
     id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer, ForeignKey("employees.id"))
-    date = Column(Date, nullable=False)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False, index=True)
+    date = Column(Date, nullable=False, index=True)
     check_in = Column(DateTime)
     check_out = Column(DateTime)
     
@@ -28,7 +28,12 @@ class Attendance(Base):
 
     # Work Mode & WFH Linkage
     work_mode = Column(String(50), default="office")  # 'office', 'wfh', 'remote'
-    wfh_request_id = Column(Integer, ForeignKey("wfh_requests.id"), nullable=True)
+    wfh_request_id = Column(Integer, ForeignKey("wfh_requests.id"), nullable=True, index=True)
 
     employee = relationship("Employee", back_populates="attendances")
     wfh_request = relationship("WfhRequest", foreign_keys=[wfh_request_id])
+
+    __table_args__ = (
+        Index("idx_attendance_emp_date", "employee_id", "date"),
+    )
+

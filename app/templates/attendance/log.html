@@ -11,10 +11,9 @@
             <div class="flex items-center space-x-2.5">
                 <h2 class="text-lg sm:text-xl font-bold font-heading text-slate-900 tracking-tight">Time & Attendance Ledger</h2>
                 <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200" id="log-count-badge">
-                    {{ logs|length }}
+                    {{ page_data.total_records }}
                 </span>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">Chronological daily work sessions, punch timestamps & active durations</p>
         </div>
 
         {% set comp = company or get_company() %}
@@ -29,6 +28,18 @@
                 <span class="text-amber-800 font-medium">Lunch Break:</span>
                 <span class="font-bold font-mono text-amber-900">{{ comp.lunch_start_time or '13:00' }} – {{ comp.lunch_end_time or '14:00' }} ({{ comp.lunch_break_hours or 1.0 }}h)</span>
             </div>
+
+            <button type="button" onclick="exportAttendanceLogs()" class="inline-flex items-center px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 active:scale-95 transition-all shadow-xs cursor-pointer" title="Export current attendance view as Excel spreadsheet">
+                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 mr-1.5 text-emerald-600"></i>
+                <span>Export Excel</span>
+            </button>
+
+            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+            <a href="/attendance/export-monthly-matrix" class="inline-flex items-center px-3 py-1.5 border border-teal-300 rounded-lg text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 active:scale-95 transition-all shadow-xs cursor-pointer" title="Download Full 31-Day Attendance Matrix Spreadsheet">
+                <i data-lucide="calendar-range" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i>
+                <span>31-Day Matrix</span>
+            </a>
+            {% endif %}
         </div>
     </div>
 
@@ -37,7 +48,7 @@
         <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card flex items-center justify-between">
             <div>
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Recorded Days</p>
-                <h4 class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-1">{{ logs|length }}</h4>
+                <h4 class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-1">{{ page_data.total_records }}</h4>
                 <div class="flex items-center text-[11px] font-medium text-slate-500 mt-0.5">
                     <i data-lucide="calendar" class="w-3 h-3 mr-1 text-slate-400"></i> Total Sessions
                 </div>
@@ -79,62 +90,74 @@
     </div>
 
     <!-- Search & Filter Controls -->
-    <div class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 shadow-card flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
-        <div class="relative flex-1">
+    <div class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 shadow-card flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <!-- Search Input -->
+        <div class="relative flex-1 min-w-[240px]">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <i data-lucide="search" class="w-4 h-4"></i>
             </div>
-            <input type="text" id="attendanceSearch" name="q" onkeyup="filterAttendance()"
+            <input type="text" id="attendanceSearch" name="q" value="{{ q }}"
                 hx-get="/attendance"
                 hx-trigger="keyup changed delay:300ms, search"
-                hx-target="#attendanceTableBody"
-                hx-include="#statusFilter"
+                hx-target="#attendanceTableContainer"
+                hx-include="#statusFilter, #dateFilter"
+                hx-push-url="true"
                 hx-indicator="#att-search-spinner"
-                placeholder="Search by employee name or date (YYYY-MM-DD)..."
+                placeholder="Search by employee name or keywords..."
                 class="w-full pl-9 pr-9 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
             <div id="att-search-spinner" class="htmx-indicator absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-teal-700">
                 <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
             </div>
         </div>
 
-        <div class="flex items-center space-x-2">
-            <label for="statusFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Status:</label>
-            <select id="statusFilter" name="status" onchange="filterAttendance()"
-                hx-get="/attendance"
-                hx-trigger="change"
-                hx-target="#attendanceTableBody"
-                hx-include="#attendanceSearch"
-                hx-indicator="#att-search-spinner"
-                class="w-full sm:w-auto py-2 px-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
-                <option value="all">All Records</option>
-                <option value="normal">Verified Normal</option>
-                <option value="missed">Missed Punch</option>
-                <option value="overridden">Overridden</option>
-            </select>
+        <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
+            <!-- Calendar Date Picker -->
+            <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1">
+                <label for="dateFilter" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider shrink-0 flex items-center space-x-1">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-teal-600"></i>
+                    <span>Date:</span>
+                </label>
+                <div class="relative flex items-center">
+                    <input type="date" id="dateFilter" name="date" value="{{ selected_date }}"
+                        hx-get="/attendance"
+                        hx-trigger="change"
+                        hx-target="#attendanceTableContainer"
+                        hx-include="#attendanceSearch, #statusFilter"
+                        hx-push-url="true"
+                        onchange="toggleDateClearBtn(this.value)"
+                        class="py-1 px-2 text-xs bg-white border border-slate-200 rounded-md text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 shadow-2xs">
+                    <button type="button" id="clearDateBtn" onclick="clearDateFilter()" title="Clear date selection" class="{% if not selected_date %}hidden{% endif %} ml-1.5 p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 transition-colors">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                <button type="button" onclick="setTodayDateFilter()" title="Select Today" class="px-2 py-0.5 rounded text-[11px] font-bold text-teal-800 bg-teal-100/70 hover:bg-teal-200/80 border border-teal-300/70 transition-colors cursor-pointer shadow-2xs">
+                    Today
+                </button>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1">
+                <label for="statusFilter" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider shrink-0">Status:</label>
+                <select id="statusFilter" name="status"
+                    hx-get="/attendance"
+                    hx-trigger="change"
+                    hx-target="#attendanceTableContainer"
+                    hx-include="#attendanceSearch, #dateFilter"
+                    hx-push-url="true"
+                    hx-indicator="#att-search-spinner"
+                    class="py-1 px-2 text-xs bg-white border border-slate-200 rounded-md text-slate-900 font-medium focus:outline-none focus:border-teal-600 shadow-2xs">
+                    <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Records</option>
+                    <option value="normal" {% if selected_status == 'normal' %}selected{% endif %}>Verified Normal</option>
+                    <option value="missed" {% if selected_status == 'missed' %}selected{% endif %}>Missed Punch</option>
+                    <option value="overridden" {% if selected_status == 'overridden' %}selected{% endif %}>Overridden</option>
+                </select>
+            </div>
         </div>
     </div>
 
     <!-- Attendance Log Table Card -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
-        <div class="overflow-x-auto touch-scroll">
-            <table class="min-w-full divide-y divide-slate-200" id="attendanceTable">
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                        <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
-                        <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Session(s) / Timestamps</th>
-                        <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Active Time</th>
-                        <th scope="col" class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                        <th scope="col" class="px-5 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 bg-white" id="attendanceTableBody">
-                    {% include "attendance/partials/_log_table.html" %}
-                </tbody>
-            </table>
-        </div>
+    <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden" id="attendanceTableCard">
+        {% include "attendance/partials/_log_table.html" %}
     </div>
 
 </div>
@@ -143,6 +166,7 @@
 {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
 <div id="overrideModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+
         <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closeOverrideModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
@@ -194,56 +218,78 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <script>
     function openOverrideModal(id, inTime, outTime) {
-        document.getElementById('overrideModal').classList.remove('hidden');
+        const modal = document.getElementById('overrideModal');
+        if (!modal) return;
+        modal.classList.remove('hidden');
         document.getElementById('overrideForm').action = "/attendance/" + id + "/override";
         document.getElementById('modal_check_in').value = inTime;
         document.getElementById('modal_check_out').value = outTime;
     }
     
     function closeOverrideModal() {
-        document.getElementById('overrideModal').classList.add('hidden');
+        const modal = document.getElementById('overrideModal');
+        if (modal) modal.classList.add('hidden');
     }
 
-    function filterAttendance() {
-        const query = document.getElementById('attendanceSearch').value.toLowerCase().trim();
-        const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
-        const rows = document.querySelectorAll('.att-row');
-        let visibleCount = 0;
-
-        rows.forEach(row => {
-            const date = row.getAttribute('data-date') || '';
-            const emp = row.getAttribute('data-emp') || '';
-            const status = row.getAttribute('data-status') || '';
-
-            const matchesQuery = !query || date.includes(query) || emp.includes(query);
-            const matchesStatus = (statusFilter === 'all') || (status === statusFilter);
-
-            if (matchesQuery && matchesStatus) {
-                row.style.display = '';
-                visibleCount++;
+    function toggleDateClearBtn(val) {
+        const btn = document.getElementById('clearDateBtn');
+        if (btn) {
+            if (val) {
+                btn.classList.remove('hidden');
             } else {
-                row.style.display = 'none';
+                btn.classList.add('hidden');
             }
-        });
-
-        const noResults = document.getElementById('noResultsRow');
-        if (noResults) {
-            if (visibleCount === 0 && rows.length > 0) {
-                noResults.classList.remove('hidden');
-            } else {
-                noResults.classList.add('hidden');
-            }
-        }
-
-        const badge = document.getElementById('log-count-badge');
-        if (badge) {
-            badge.textContent = visibleCount;
         }
     }
+
+    function setTodayDateFilter() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+
+        const dateInput = document.getElementById('dateFilter');
+        if (dateInput) {
+            dateInput.value = todayStr;
+            toggleDateClearBtn(todayStr);
+            htmx.trigger(dateInput, 'change');
+        }
+    }
+
+    function clearDateFilter() {
+        const dateInput = document.getElementById('dateFilter');
+        if (dateInput) {
+            dateInput.value = '';
+            toggleDateClearBtn('');
+            htmx.trigger(dateInput, 'change');
+        }
+    }
+
+    function exportAttendanceLogs() {
+        const q = encodeURIComponent(document.getElementById('attendanceSearch')?.value || '');
+        const date = encodeURIComponent(document.getElementById('dateFilter')?.value || '');
+        const status = encodeURIComponent(document.getElementById('statusFilter')?.value || 'all');
+        window.location.href = `/attendance/export-excel?q=${q}&date=${date}&status=${status}`;
+    }
+
+    // Refresh icons on HTMX partial swaps
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
 </script>
-{% endif %}
 
 {% endblock %}
+

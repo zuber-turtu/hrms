@@ -6,10 +6,12 @@ from typing import Optional
 from app.database import get_db
 from app.models.employee import Employee
 from app.models.department import Department, Designation
+from app.models.company import Company
 from app.dependencies import RoleChecker
 from app.models.audit import AuditLog
 from app.templates_config import templates
 from app.utils.flash import flash_redirect
+from app.services.excel_exporter import export_departments_excel
 
 router = APIRouter(prefix="/departments")
 
@@ -364,3 +366,14 @@ async def get_department_employees(
             "employees": employees,
         },
     )
+
+
+@router.get("/export-excel")
+async def export_departments_spreadsheet(
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """Exports corporate business units and headcount roster to Excel."""
+    departments = db.query(Department).order_by(Department.name.asc()).all()
+    company = db.query(Company).first()
+    return export_departments_excel(departments, company)

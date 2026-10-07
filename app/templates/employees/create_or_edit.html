@@ -16,9 +16,7 @@
             <h2 class="text-lg sm:text-xl font-bold font-heading text-slate-900 tracking-tight mt-1">
                 {{ 'Edit Employee Record' if employee else 'New Employee Onboarding' }}
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">
-                {{ 'Update details and compensation structure for ' ~ employee.name if employee else 'Provide personal identity, KYC, banking details, and payroll compensation slab' }}
-            </p>
+            
         </div>
 
         {% if employee %}
@@ -41,7 +39,6 @@
                 </div>
                 <div>
                     <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Personal & Contact Info</h3>
-                    <p class="text-xs text-slate-500">Core personal identity, profile photo, and communication details</p>
                 </div>
             </div>
 

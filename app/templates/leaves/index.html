@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Leaves & Work From Home — {{ (company or get_company()).name }}{% endblock %}
-{% block header_title %}Leave & Work From Home (WFH) Portal{% endblock %}
+{% block title %}Leaves — {{ (company or get_company()).name }}{% endblock %}
+{% block header_title %}Leave Portal{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -23,11 +23,9 @@
                     </span>
                 </div>
                 <h2 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight font-heading mt-1">
-                    Time-Off & Remote Workforce Hub
+                    Time-Off & Leave Management Hub
                 </h2>
-                <p class="text-xs text-slate-500 mt-0.5">
-                    Plan time-off, track annual statutory & paid leave balances, request remote work, or allocate WFH shifts.
-                </p>
+               
             </div>
         </div>
 
@@ -42,10 +40,6 @@
                 <i data-lucide="home" class="w-4 h-4 mr-2 text-teal-700"></i>
                 <span>Request WFH</span>
             </button>
-            <button onclick="openQuotaBreakdownModal()" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200/90 shadow-2xs transition-all active:scale-[0.98] cursor-pointer group" title="Click to view detailed category leave quota breakdown">
-                <i data-lucide="pie-chart" class="w-4 h-4 mr-2 text-teal-700 group-hover:rotate-12 transition-transform"></i>
-                <span>Leave Quotas</span>
-            </button>
             {% endif %}
             {% if is_approver %}
             <button onclick="openBulkAllocationModal('wfh')" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200/90 shadow-2xs transition-all active:scale-[0.98] cursor-pointer group" title="Bulk allocate WFH, grant leaves, or update quotas">
@@ -53,6 +47,11 @@
                 <span>Bulk Allocation</span>
             </button>
             {% endif %}
+            <!-- Export Excel -->
+            <a href="/leaves/export-excel?year={{ selected_year }}" class="inline-flex items-center px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-2xs transition-all active:scale-[0.98] cursor-pointer group" title="Export Leaves Register as Excel Spreadsheet">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5 text-emerald-600"></i>
+                <span>Export Excel</span>
+            </a>
             {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
             <a href="/leaves/types" class="inline-flex items-center px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 shadow-2xs transition-all active:scale-[0.98] cursor-pointer group" title="Configure dynamic leave types, quota rules, and statutory policies">
                 <i data-lucide="calendar-cog" class="w-4 h-4 mr-1.5 text-teal-700 group-hover:rotate-45 transition-transform"></i>
@@ -376,8 +375,8 @@
                                 {% endif %}
                             </td>
 
-                            <!-- Reason -->
-                            <td class="px-5 py-3.5 max-w-xs text-slate-700 cursor-pointer group hover:bg-teal-50/30 transition-colors"
+                            <!-- Reason & Reviewer Notes -->
+                            <td class="px-5 py-3.5 max-w-[260px] overflow-hidden text-slate-700 cursor-pointer group hover:bg-teal-50/30 transition-colors"
                                 data-title="{{ l.leave_type.name if l.leave_type else 'Leave Request' }}"
                                 data-reason="{{ l.reason }}"
                                 data-remarks="{{ l.rejection_reason or '' }}"
@@ -386,16 +385,18 @@
                                 data-status="{{ l.status }}"
                                 onclick="openReasonFromData(this)"
                                 title="Click to view full reason">
-                                <div class="flex items-center justify-between space-x-1.5">
-                                    <p class="truncate text-xs text-slate-800 group-hover:text-teal-700 font-medium transition-colors">{{ l.reason }}</p>
-                                    <span class="text-[10px] text-teal-600 font-semibold group-hover:underline shrink-0 bg-teal-50 group-hover:bg-teal-100 border border-teal-200 px-1.5 py-0.5 rounded transition-colors hidden sm:inline-block">Full view</span>
+                                <div class="w-full max-w-full min-w-0">
+                                    <div class="flex items-center justify-between space-x-1.5 min-w-0">
+                                        <p class="truncate text-xs text-slate-800 group-hover:text-teal-700 font-medium transition-colors min-w-0">{{ l.reason }}</p>
+                                        <span class="text-[10px] text-teal-600 font-semibold group-hover:underline shrink-0 bg-teal-50 group-hover:bg-teal-100 border border-teal-200 px-1.5 py-0.5 rounded transition-colors hidden sm:inline-block">Full view</span>
+                                    </div>
+                                    {% if l.rejection_reason %}
+                                    <div class="text-rose-700 text-[11px] font-semibold mt-1.5 flex items-center space-x-1.5 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/80 max-w-full overflow-hidden" title="Remark: {{ l.rejection_reason }}">
+                                        <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-500 shrink-0"></i>
+                                        <span class="truncate min-w-0 flex-1">Remark: {{ l.rejection_reason }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% if l.rejection_reason %}
-                                <div class="text-rose-600 text-[11px] font-semibold mt-1 flex items-center space-x-1 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 w-fit">
-                                    <i data-lucide="alert-circle" class="w-3 h-3 text-rose-500 shrink-0"></i>
-                                    <span class="truncate">Remark: {{ l.rejection_reason }}</span>
-                                </div>
-                                {% endif %}
                             </td>
 
                             <!-- Status Pill -->
@@ -457,6 +458,40 @@
                         {% endfor %}
                     </tbody>
                 </table>
+
+                <!-- Pagination Footer (25 records per section) -->
+                <div id="leavesPagination" class="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 select-none">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-slate-500">Showing</span>
+                        <span id="leavesStartRecord" class="font-bold font-mono text-slate-900">1</span>
+                        <span class="text-slate-400">–</span>
+                        <span id="leavesEndRecord" class="font-bold font-mono text-slate-900">25</span>
+                        <span class="text-slate-500">of</span>
+                        <span id="leavesTotalRecords" class="font-bold font-mono text-slate-900">{{ my_leaves|length }}</span>
+                        <span class="text-slate-500">applications</span>
+                        <span class="text-slate-300 mx-1">•</span>
+                        <span class="text-[11px] text-teal-800 font-semibold bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded">25 / page</span>
+                    </div>
+
+                    <!-- Page Navigation Controls -->
+                    <div class="flex items-center space-x-1.5">
+                        <button type="button" id="prevLeavesPageBtn" onclick="changeLeavesPage(currentLeavesPage - 1)" 
+                            class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer">
+                            <i data-lucide="chevron-left" class="w-3.5 h-3.5 mr-1 text-slate-500"></i>
+                            <span>Previous</span>
+                        </button>
+
+                        <div id="leavesPageNumberButtons" class="flex items-center space-x-1">
+                            <!-- Page buttons populated via JS -->
+                        </div>
+
+                        <button type="button" id="nextLeavesPageBtn" onclick="changeLeavesPage(currentLeavesPage + 1)" 
+                            class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer">
+                            <span>Next</span>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-500"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -540,8 +575,8 @@
                                 {% endif %}
                             </td>
 
-                            <!-- Reason -->
-                            <td class="px-5 py-3.5 max-w-xs text-slate-700 cursor-pointer group hover:bg-teal-50/30 transition-colors"
+                            <!-- Reason & Reviewer Notes -->
+                            <td class="px-5 py-3.5 max-w-[260px] overflow-hidden text-slate-700 cursor-pointer group hover:bg-teal-50/30 transition-colors"
                                 data-title="Work From Home (WFH)"
                                 data-reason="{{ w.reason }}"
                                 data-remarks="{{ w.rejection_reason or '' }}"
@@ -550,16 +585,18 @@
                                 data-status="{{ w.status }}"
                                 onclick="openReasonFromData(this)"
                                 title="Click to view full reason">
-                                <div class="flex items-center justify-between space-x-1.5">
-                                    <p class="truncate text-xs text-slate-800 group-hover:text-teal-700 font-medium transition-colors">{{ w.reason }}</p>
-                                    <span class="text-[10px] text-teal-600 font-semibold group-hover:underline shrink-0 bg-teal-50 group-hover:bg-teal-100 border border-teal-200 px-1.5 py-0.5 rounded transition-colors hidden sm:inline-block">Full view</span>
+                                <div class="w-full max-w-full min-w-0">
+                                    <div class="flex items-center justify-between space-x-1.5 min-w-0">
+                                        <p class="truncate text-xs text-slate-800 group-hover:text-teal-700 font-medium transition-colors min-w-0">{{ w.reason }}</p>
+                                        <span class="text-[10px] text-teal-600 font-semibold group-hover:underline shrink-0 bg-teal-50 group-hover:bg-teal-100 border border-teal-200 px-1.5 py-0.5 rounded transition-colors hidden sm:inline-block">Full view</span>
+                                    </div>
+                                    {% if w.rejection_reason %}
+                                    <div class="text-rose-700 text-[11px] font-semibold mt-1.5 flex items-center space-x-1.5 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/80 max-w-full overflow-hidden" title="Remark: {{ w.rejection_reason }}">
+                                        <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-500 shrink-0"></i>
+                                        <span class="truncate min-w-0 flex-1">Remark: {{ w.rejection_reason }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% if w.rejection_reason %}
-                                <div class="text-rose-600 text-[11px] font-semibold mt-1 flex items-center space-x-1 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 w-fit">
-                                    <i data-lucide="alert-circle" class="w-3 h-3 text-rose-500 shrink-0"></i>
-                                    <span class="truncate">Remark: {{ w.rejection_reason }}</span>
-                                </div>
-                                {% endif %}
                             </td>
 
                             <!-- Status -->
@@ -627,6 +664,40 @@
                         {% endfor %}
                     </tbody>
                 </table>
+
+                <!-- Pagination Footer (25 records per section) -->
+                <div id="wfhPagination" class="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 select-none">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-slate-500">Showing</span>
+                        <span id="wfhStartRecord" class="font-bold font-mono text-slate-900">1</span>
+                        <span class="text-slate-400">–</span>
+                        <span id="wfhEndRecord" class="font-bold font-mono text-slate-900">25</span>
+                        <span class="text-slate-500">of</span>
+                        <span id="wfhTotalRecords" class="font-bold font-mono text-slate-900">{{ my_wfh|length }}</span>
+                        <span class="text-slate-500">requests</span>
+                        <span class="text-slate-300 mx-1">•</span>
+                        <span class="text-[11px] text-teal-800 font-semibold bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded">25 / page</span>
+                    </div>
+
+                    <!-- Page Navigation Controls -->
+                    <div class="flex items-center space-x-1.5">
+                        <button type="button" id="prevWfhPageBtn" onclick="changeWfhPage(currentWfhPage - 1)" 
+                            class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer">
+                            <i data-lucide="chevron-left" class="w-3.5 h-3.5 mr-1 text-slate-500"></i>
+                            <span>Previous</span>
+                        </button>
+
+                        <div id="wfhPageNumberButtons" class="flex items-center space-x-1">
+                            <!-- Page buttons populated via JS -->
+                        </div>
+
+                        <button type="button" id="nextWfhPageBtn" onclick="changeWfhPage(currentWfhPage + 1)" 
+                            class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer">
+                            <span>Next</span>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-500"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         {% endif %}
@@ -635,20 +706,17 @@
         <!-- Tab Content 3: Approvals Queue (Admins & Managers) -->
         <div id="tab-content-approvals" class="tab-pane p-5 sm:p-6 space-y-5 hidden">
             
-            <!-- Approvals Sub-Header with Horizontal Pill Switcher -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold shrink-0 border border-purple-200/70">
-                        <i data-lucide="check-square" class="w-5 h-5 text-purple-700"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-900 font-heading">Subordinate Approvals Queue</h3>
-                        <p class="text-xs text-slate-500">Review, authorize, or decline employee time-off and remote punch shift applications.</p>
-                    </div>
+            <!-- Approvals Sub-Header with Dynamic Search & Horizontal Pill Switcher -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
+                <!-- Search Inputs (Dynamic per Sub-Tab, positioned on the left) -->
+                <div class="relative flex-1 max-w-md">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="pending-leaves-search" oninput="filterPendingLeavesTable()" placeholder="Search pending leaves by employee or reason..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600 shadow-2xs transition-colors">
+                    <input type="text" id="pending-wfh-search" oninput="filterPendingWfhTable()" placeholder="Search pending WFH by employee or task..." class="hidden w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600 shadow-2xs transition-colors">
                 </div>
 
                 <!-- Horizontal Segmented Sub-Tab Switcher -->
-                <div class="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/90 text-xs font-bold shrink-0 self-start md:self-auto">
+                <div class="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/90 text-xs font-bold shrink-0 self-start sm:self-auto">
                     <button type="button" onclick="switchApprovalSubTab('leaves')" id="approval-subtab-btn-leaves" class="approval-subtab-btn px-4 py-2 rounded-lg transition-all flex items-center space-x-2 bg-white text-purple-900 shadow-2xs cursor-pointer">
                         <i data-lucide="plane-takeoff" class="w-3.5 h-3.5 text-purple-700"></i>
                         <span>Leave Applications</span>
@@ -668,18 +736,6 @@
 
             <!-- Sub-Pane 1: Pending Leaves Approvals (Horizontal Single View) -->
             <div id="approval-subpane-leaves" class="approval-subpane space-y-3">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div class="relative flex-1 max-w-sm">
-                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="pending-leaves-search" oninput="filterPendingLeavesTable()" placeholder="Search pending leaves by employee or reason..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 bg-white">
-                    </div>
-                    {% if pending_leaves|length > 0 %}
-                    <span class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full font-mono flex items-center space-x-1 self-start sm:self-auto">
-                        <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
-                        <span>{{ pending_leaves|length }} Request(s) Awaiting Review</span>
-                    </span>
-                    {% endif %}
-                </div>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
@@ -765,18 +821,6 @@
 
             <!-- Sub-Pane 2: Pending WFH Approvals (Horizontal Single View) -->
             <div id="approval-subpane-wfh" class="approval-subpane space-y-3 hidden">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div class="relative flex-1 max-w-sm">
-                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="pending-wfh-search" oninput="filterPendingWfhTable()" placeholder="Search pending WFH by employee or task..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 bg-white">
-                    </div>
-                    {% if pending_wfh|length > 0 %}
-                    <span class="text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-200 px-3 py-1 rounded-full font-mono flex items-center space-x-1 self-start sm:self-auto">
-                        <i data-lucide="home" class="w-3.5 h-3.5 text-teal-600"></i>
-                        <span>{{ pending_wfh|length }} WFH Request(s) Awaiting Review</span>
-                    </span>
-                    {% endif %}
-                </div>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
@@ -980,6 +1024,9 @@
                     <span class="px-2.5 py-1 rounded-md text-xs font-bold font-mono bg-teal-100 text-teal-800 border border-teal-200">
                         {{ selected_year }}
                     </span>
+                    <a href="/leaves/balances/export-excel?year={{ selected_year }}" class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-2xs transition-colors cursor-pointer" title="Export Staff Quotas and Balances as Excel Spreadsheet">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 mr-1.5 text-emerald-600"></i> Export Balances
+                    </a>
                     {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
                     <button onclick="openBulkAllocationModal('quota')" class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors cursor-pointer">
                         <i data-lucide="layers" class="w-3.5 h-3.5 mr-1.5 text-amber-600"></i> Bulk Update Quotas
@@ -1078,6 +1125,40 @@
                         {% endfor %}
                     </tbody>
                 </table>
+
+                <!-- Pagination Footer (25 records per section) -->
+                <div id="teamBalancesPagination" class="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 select-none">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-slate-500">Showing</span>
+                        <span id="teamBalancesStartRecord" class="font-bold font-mono text-slate-900">1</span>
+                        <span class="text-slate-400">–</span>
+                        <span id="teamBalancesEndRecord" class="font-bold font-mono text-slate-900">25</span>
+                        <span class="text-slate-500">of</span>
+                        <span id="teamBalancesTotalRecords" class="font-bold font-mono text-slate-900">{{ team_leave_profiles|length }}</span>
+                        <span class="text-slate-500">employees</span>
+                        <span class="text-slate-300 mx-1">•</span>
+                        <span class="text-[11px] text-teal-800 font-semibold bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded">25 / page</span>
+                    </div>
+
+                    <!-- Page Navigation Controls -->
+                    <div class="flex items-center space-x-1.5">
+                        <button type="button" id="prevTeamBalancesPageBtn" onclick="changeTeamBalancesPage(currentTeamBalancesPage - 1)" 
+                            class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer">
+                            <i data-lucide="chevron-left" class="w-3.5 h-3.5 mr-1 text-slate-500"></i>
+                            <span>Previous</span>
+                        </button>
+
+                        <div id="teamBalancesPageNumberButtons" class="flex items-center space-x-1">
+                            <!-- Page buttons populated via JS -->
+                        </div>
+
+                        <button type="button" id="nextTeamBalancesPageBtn" onclick="changeTeamBalancesPage(currentTeamBalancesPage + 1)" 
+                            class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer">
+                            <span>Next</span>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-500"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         {% endif %}
@@ -1691,7 +1772,6 @@
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                     <span>Full Employee Statement / Reason:</span>
-                    <span class="text-[10px] font-normal text-slate-400">Complete text</span>
                 </label>
                 <div id="reason-modal-text" class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-slate-800 leading-relaxed font-sans whitespace-pre-wrap select-text break-words max-h-56 overflow-y-auto"></div>
             </div>
@@ -1872,14 +1952,106 @@
         switchTab('{{ tab }}');
     });
 
+    // Leaves Table Pagination & Filter
+    let currentLeavesPage = 1;
+    const leavesPageSize = 25;
+
+    function renderLeavesPagination(matchingRows, allRows, totalMatching) {
+        if (!matchingRows || !allRows) {
+            allRows = Array.from(document.querySelectorAll('.leave-row'));
+            matchingRows = allRows;
+            totalMatching = matchingRows.length;
+        }
+        const totalPages = Math.max(1, Math.ceil(totalMatching / leavesPageSize));
+        if (currentLeavesPage > totalPages) currentLeavesPage = totalPages;
+        if (currentLeavesPage < 1) currentLeavesPage = 1;
+
+        const startIndex = (currentLeavesPage - 1) * leavesPageSize;
+        const endIndex = startIndex + leavesPageSize;
+
+        allRows.forEach(row => row.classList.add('hidden'));
+        matchingRows.forEach((row, index) => {
+            if (index >= startIndex && index < endIndex) {
+                row.classList.remove('hidden');
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+
+        const emptyState = document.getElementById('leaves-empty-state');
+        if (emptyState) {
+            if (totalMatching === 0 && allRows.length > 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        }
+
+        const startElem = document.getElementById('leavesStartRecord');
+        const endElem = document.getElementById('leavesEndRecord');
+        const totalElem = document.getElementById('leavesTotalRecords');
+
+        if (startElem) startElem.textContent = totalMatching > 0 ? (startIndex + 1) : 0;
+        if (endElem) endElem.textContent = Math.min(endIndex, totalMatching);
+        if (totalElem) totalElem.textContent = totalMatching;
+
+        const prevBtn = document.getElementById('prevLeavesPageBtn');
+        const nextBtn = document.getElementById('nextLeavesPageBtn');
+
+        if (prevBtn) prevBtn.disabled = (currentLeavesPage <= 1);
+        if (nextBtn) nextBtn.disabled = (currentLeavesPage >= totalPages || totalMatching === 0);
+
+        const pageButtonsContainer = document.getElementById('leavesPageNumberButtons');
+        if (pageButtonsContainer) {
+            pageButtonsContainer.innerHTML = '';
+            let pageNumbers = [];
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+            } else {
+                if (currentLeavesPage <= 4) pageNumbers = [1, 2, 3, 4, 5, '...', totalPages];
+                else if (currentLeavesPage >= totalPages - 3) pageNumbers = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                else pageNumbers = [1, '...', currentLeavesPage - 1, currentLeavesPage, currentLeavesPage + 1, '...', totalPages];
+            }
+
+            pageNumbers.forEach(p => {
+                if (p === '...') {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-1.5 py-1 text-slate-400 font-bold';
+                    dots.textContent = '...';
+                    pageButtonsContainer.appendChild(dots);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.onclick = () => changeLeavesPage(p);
+                    btn.textContent = p;
+                    if (p === currentLeavesPage) {
+                        btn.className = 'px-2.5 py-1 rounded-md text-xs font-bold bg-[#008080] text-white shadow-2xs cursor-default';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80 bg-white transition-colors cursor-pointer';
+                    }
+                    pageButtonsContainer.appendChild(btn);
+                }
+            });
+        }
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function changeLeavesPage(page) {
+        currentLeavesPage = page;
+        filterLeavesTable(false);
+    }
+
     // Client-side Filter for Leaves Table
-    function filterLeavesTable() {
+    function filterLeavesTable(resetPage = true) {
+        if (resetPage) currentLeavesPage = 1;
         const query = (document.getElementById('leaves-search')?.value || '').toLowerCase().trim();
         const status = (document.getElementById('leaves-status-filter')?.value || 'all').toLowerCase();
-        const rows = document.querySelectorAll('.leave-row');
+        const allRows = Array.from(document.querySelectorAll('.leave-row'));
+        const matchingRows = [];
         let visibleCount = 0;
 
-        rows.forEach(row => {
+        allRows.forEach(row => {
             const searchData = row.getAttribute('data-search') || '';
             const rowStatus = row.getAttribute('data-status') || '';
             
@@ -1887,22 +2059,114 @@
             const matchesStatus = status === 'all' || rowStatus === status;
 
             if (matchesQuery && matchesStatus) {
-                row.classList.remove('hidden');
+                matchingRows.push(row);
                 visibleCount++;
+            }
+        });
+
+        renderLeavesPagination(matchingRows, allRows, visibleCount);
+    }
+
+    // WFH Table Pagination & Filter
+    let currentWfhPage = 1;
+    const wfhPageSize = 25;
+
+    function renderWfhPagination(matchingRows, allRows, totalMatching) {
+        if (!matchingRows || !allRows) {
+            allRows = Array.from(document.querySelectorAll('.wfh-row'));
+            matchingRows = allRows;
+            totalMatching = matchingRows.length;
+        }
+        const totalPages = Math.max(1, Math.ceil(totalMatching / wfhPageSize));
+        if (currentWfhPage > totalPages) currentWfhPage = totalPages;
+        if (currentWfhPage < 1) currentWfhPage = 1;
+
+        const startIndex = (currentWfhPage - 1) * wfhPageSize;
+        const endIndex = startIndex + wfhPageSize;
+
+        allRows.forEach(row => row.classList.add('hidden'));
+        matchingRows.forEach((row, index) => {
+            if (index >= startIndex && index < endIndex) {
+                row.classList.remove('hidden');
             } else {
                 row.classList.add('hidden');
             }
         });
+
+        const emptyState = document.getElementById('wfh-empty-state');
+        if (emptyState) {
+            if (totalMatching === 0 && allRows.length > 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        }
+
+        const startElem = document.getElementById('wfhStartRecord');
+        const endElem = document.getElementById('wfhEndRecord');
+        const totalElem = document.getElementById('wfhTotalRecords');
+
+        if (startElem) startElem.textContent = totalMatching > 0 ? (startIndex + 1) : 0;
+        if (endElem) endElem.textContent = Math.min(endIndex, totalMatching);
+        if (totalElem) totalElem.textContent = totalMatching;
+
+        const prevBtn = document.getElementById('prevWfhPageBtn');
+        const nextBtn = document.getElementById('nextWfhPageBtn');
+
+        if (prevBtn) prevBtn.disabled = (currentWfhPage <= 1);
+        if (nextBtn) nextBtn.disabled = (currentWfhPage >= totalPages || totalMatching === 0);
+
+        const pageButtonsContainer = document.getElementById('wfhPageNumberButtons');
+        if (pageButtonsContainer) {
+            pageButtonsContainer.innerHTML = '';
+            let pageNumbers = [];
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+            } else {
+                if (currentWfhPage <= 4) pageNumbers = [1, 2, 3, 4, 5, '...', totalPages];
+                else if (currentWfhPage >= totalPages - 3) pageNumbers = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                else pageNumbers = [1, '...', currentWfhPage - 1, currentWfhPage, currentWfhPage + 1, '...', totalPages];
+            }
+
+            pageNumbers.forEach(p => {
+                if (p === '...') {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-1.5 py-1 text-slate-400 font-bold';
+                    dots.textContent = '...';
+                    pageButtonsContainer.appendChild(dots);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.onclick = () => changeWfhPage(p);
+                    btn.textContent = p;
+                    if (p === currentWfhPage) {
+                        btn.className = 'px-2.5 py-1 rounded-md text-xs font-bold bg-[#008080] text-white shadow-2xs cursor-default';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80 bg-white transition-colors cursor-pointer';
+                    }
+                    pageButtonsContainer.appendChild(btn);
+                }
+            });
+        }
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function changeWfhPage(page) {
+        currentWfhPage = page;
+        filterWfhTable(false);
     }
 
     // Client-side Filter for WFH Table
-    function filterWfhTable() {
+    function filterWfhTable(resetPage = true) {
+        if (resetPage) currentWfhPage = 1;
         const query = (document.getElementById('wfh-search')?.value || '').toLowerCase().trim();
         const status = (document.getElementById('wfh-status-filter')?.value || 'all').toLowerCase();
-        const rows = document.querySelectorAll('.wfh-row');
+        const allRows = Array.from(document.querySelectorAll('.wfh-row'));
+        const matchingRows = [];
         let visibleCount = 0;
 
-        rows.forEach(row => {
+        allRows.forEach(row => {
             const searchData = row.getAttribute('data-search') || '';
             const rowStatus = row.getAttribute('data-status') || '';
             
@@ -1910,13 +2174,100 @@
             const matchesStatus = status === 'all' || rowStatus === status;
 
             if (matchesQuery && matchesStatus) {
-                row.classList.remove('hidden');
+                matchingRows.push(row);
                 visibleCount++;
+            }
+        });
+
+        renderWfhPagination(matchingRows, allRows, visibleCount);
+    }
+
+    // Team Balances Table Pagination & Filter
+    let currentTeamBalancesPage = 1;
+    const teamBalancesPageSize = 25;
+
+    function renderTeamBalancesPagination(matchingRows, allRows, totalMatching) {
+        if (!matchingRows || !allRows) {
+            allRows = Array.from(document.querySelectorAll('.team-balance-row'));
+            matchingRows = allRows;
+            totalMatching = matchingRows.length;
+        }
+        const totalPages = Math.max(1, Math.ceil(totalMatching / teamBalancesPageSize));
+        if (currentTeamBalancesPage > totalPages) currentTeamBalancesPage = totalPages;
+        if (currentTeamBalancesPage < 1) currentTeamBalancesPage = 1;
+
+        const startIndex = (currentTeamBalancesPage - 1) * teamBalancesPageSize;
+        const endIndex = startIndex + teamBalancesPageSize;
+
+        allRows.forEach(row => row.classList.add('hidden'));
+        matchingRows.forEach((row, index) => {
+            if (index >= startIndex && index < endIndex) {
+                row.classList.remove('hidden');
             } else {
                 row.classList.add('hidden');
             }
         });
+
+        const startElem = document.getElementById('teamBalancesStartRecord');
+        const endElem = document.getElementById('teamBalancesEndRecord');
+        const totalElem = document.getElementById('teamBalancesTotalRecords');
+
+        if (startElem) startElem.textContent = totalMatching > 0 ? (startIndex + 1) : 0;
+        if (endElem) endElem.textContent = Math.min(endIndex, totalMatching);
+        if (totalElem) totalElem.textContent = totalMatching;
+
+        const prevBtn = document.getElementById('prevTeamBalancesPageBtn');
+        const nextBtn = document.getElementById('nextTeamBalancesPageBtn');
+
+        if (prevBtn) prevBtn.disabled = (currentTeamBalancesPage <= 1);
+        if (nextBtn) nextBtn.disabled = (currentTeamBalancesPage >= totalPages || totalMatching === 0);
+
+        const pageButtonsContainer = document.getElementById('teamBalancesPageNumberButtons');
+        if (pageButtonsContainer) {
+            pageButtonsContainer.innerHTML = '';
+            let pageNumbers = [];
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+            } else {
+                if (currentTeamBalancesPage <= 4) pageNumbers = [1, 2, 3, 4, 5, '...', totalPages];
+                else if (currentTeamBalancesPage >= totalPages - 3) pageNumbers = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                else pageNumbers = [1, '...', currentTeamBalancesPage - 1, currentTeamBalancesPage, currentTeamBalancesPage + 1, '...', totalPages];
+            }
+
+            pageNumbers.forEach(p => {
+                if (p === '...') {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-1.5 py-1 text-slate-400 font-bold';
+                    dots.textContent = '...';
+                    pageButtonsContainer.appendChild(dots);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.onclick = () => changeTeamBalancesPage(p);
+                    btn.textContent = p;
+                    if (p === currentTeamBalancesPage) {
+                        btn.className = 'px-2.5 py-1 rounded-md text-xs font-bold bg-[#008080] text-white shadow-2xs cursor-default';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80 bg-white transition-colors cursor-pointer';
+                    }
+                    pageButtonsContainer.appendChild(btn);
+                }
+            });
+        }
+
+        if (window.lucide) lucide.createIcons();
     }
+
+    function changeTeamBalancesPage(page) {
+        currentTeamBalancesPage = page;
+        renderTeamBalancesPagination();
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        renderLeavesPagination();
+        renderWfhPagination();
+        renderTeamBalancesPagination();
+    });
 
     // Dynamic Quota Helper in Apply Leave Modal
     function updateSelectedLeaveQuota() {
@@ -2273,6 +2624,9 @@
         });
         document.querySelectorAll('.approval-subpane').forEach(p => p.classList.add('hidden'));
 
+        const leavesSearch = document.getElementById('pending-leaves-search');
+        const wfhSearch = document.getElementById('pending-wfh-search');
+
         const btn = document.getElementById('approval-subtab-btn-' + subTab);
         const pane = document.getElementById('approval-subpane-' + subTab);
         if (btn && pane) {
@@ -2280,8 +2634,12 @@
             btn.classList.add('bg-white', 'shadow-2xs');
             if (subTab === 'leaves') {
                 btn.classList.add('text-purple-900');
+                if (leavesSearch) leavesSearch.classList.remove('hidden');
+                if (wfhSearch) wfhSearch.classList.add('hidden');
             } else {
                 btn.classList.add('text-teal-900');
+                if (leavesSearch) leavesSearch.classList.add('hidden');
+                if (wfhSearch) wfhSearch.classList.remove('hidden');
             }
             pane.classList.remove('hidden');
         }

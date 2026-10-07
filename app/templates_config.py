@@ -37,7 +37,7 @@ from jinja2.runtime import Undefined
 def format_emp_code(emp_or_id, company_or_prefix=None) -> str:
     """
     Formats employee ID.
-    If company.employee_id_prefix is set (e.g. 'TURTU'), returns 'TURTU-0001'.
+    If company.employee_id_prefix is set (e.g. 'Company'), returns 'Company-0001'.
     If prefix is not set or empty, returns original format '#0001'.
     """
     if emp_or_id is None or isinstance(emp_or_id, Undefined):

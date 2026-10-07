@@ -11,11 +11,13 @@ from app.database import get_db
 from app.models.employee import Employee
 from app.models.department import Department
 from app.models.document import DocumentType, EmployeeDocument
+from app.models.company import Company
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.services.storage import get_storage_provider
 from app.utils.timezone import get_ist_now
 from app.utils.flash import flash_redirect
+from app.services.excel_exporter import export_kyc_compliance_excel
 
 from app.templates_config import templates
 
@@ -624,3 +626,51 @@ async def documents_compliance_dashboard(
             "total_rejected": total_rejected,
         },
     )
+
+
+@router.get("/documents/compliance/export-excel")
+async def export_kyc_compliance_spreadsheet(
+    department_id: Optional[str] = None,
+    status_filter: Optional[str] = "all",
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_manager_or_hr),
+):
+    """Exports workforce KYC and paperwork compliance matrix to Excel."""
+    dept_id = None
+    if department_id and str(department_id).strip().isdigit():
+        dept_id = int(str(department_id).strip())
+
+    query = db.query(Employee).filter(Employee.is_active.is_(True), Employee.role != "super_admin")
+    if current_user.role == "manager":
+        query = query.filter(Employee.department_id == current_user.department_id)
+    elif dept_id:
+        query = query.filter(Employee.department_id == dept_id)
+
+    employees = query.order_by(Employee.name.asc()).all()
+
+    compliance_rows = []
+    for emp in employees:
+        checklist_data = get_employee_document_checklist(emp, db)
+        is_compliant = checklist_data["compliance_percent"] == 100
+        pending_count = sum(1 for item in checklist_data["checklist"] if item["status"] == "pending")
+
+        if status_filter == "compliant" and not is_compliant:
+            continue
+        if status_filter == "pending" and pending_count == 0:
+            continue
+        if status_filter == "non_compliant" and is_compliant:
+            continue
+
+        missing_slots = [item["doc_type"].name for item in checklist_data["checklist"] if item["status"] == "missing" and item.get("is_mandatory")]
+
+        compliance_rows.append({
+            "employee": emp,
+            "compliance_percent": checklist_data["compliance_percent"],
+            "mandatory_total": checklist_data["mandatory_total"],
+            "mandatory_verified": checklist_data["mandatory_verified"],
+            "pending_review": pending_count,
+            "missing_slots": missing_slots,
+        })
+
+    company = db.query(Company).first()
+    return export_kyc_compliance_excel(compliance_rows, company)

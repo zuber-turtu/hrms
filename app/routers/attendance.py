@@ -9,10 +9,12 @@ import datetime
 from app.database import get_db
 from app.models.employee import Employee
 from app.models.attendance import Attendance
+from app.models.company import Company
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.config import settings
 from app.utils.geofence import validate_punch_geofence, get_active_wfh_request
+from app.services.excel_exporter import export_attendance_excel, export_attendance_monthly_matrix_excel
 
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
@@ -29,40 +31,41 @@ allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin", "manager
 @router.get("/", response_class=HTMLResponse)
 async def attendance_log(
     request: Request,
+    page: Optional[int] = 1,
+    page_size: Optional[int] = 25,
     q: Optional[str] = None,
+    date: Optional[str] = None,
     status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
     from collections import defaultdict
+    from app.utils.pagination import paginate_list
     
+    query = db.query(Attendance)
+
     if current_user.role in ["employee", "intern"]:
-        raw_logs = (
-            db.query(Attendance)
-            .filter(Attendance.employee_id == current_user.id)
-            .order_by(Attendance.date.desc(), Attendance.check_in.asc())
-            .all()
-        )
+        query = query.filter(Attendance.employee_id == current_user.id)
     elif current_user.role == "manager":
         # Scoped to own department subordinates
-        raw_logs = (
-            db.query(Attendance)
-            .join(Employee, Attendance.employee_id == Employee.id)
+        query = (
+            query.join(Employee, Attendance.employee_id == Employee.id)
             .filter(
                 Employee.department_id == current_user.department_id,
                 Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
             )
-            .order_by(Attendance.date.desc(), Attendance.check_in.asc())
-            .all()
         )
     else:
-        raw_logs = (
-            db.query(Attendance)
-            .join(Employee, Attendance.employee_id == Employee.id)
+        query = (
+            query.join(Employee, Attendance.employee_id == Employee.id)
             .filter(Employee.role != "super_admin")
-            .order_by(Attendance.date.desc(), Attendance.check_in.asc())
-            .all()
         )
+
+    # Filter by date at database level
+    if date and date.strip():
+        query = query.filter(Attendance.date == date.strip())
+
+    raw_logs = query.order_by(Attendance.date.desc(), Attendance.check_in.asc()).all()
 
     # Group raw logs by (date, employee_id)
     grouped = defaultdict(list)
@@ -72,7 +75,7 @@ async def attendance_log(
     logs_data = []
     today = get_ist_today()
     now_ist = get_ist_now()
-    for (date, emp_id), group_logs in grouped.items():
+    for (log_date, emp_id), group_logs in grouped.items():
         employee = group_logs[0].employee
         
         total_seconds = 0
@@ -117,7 +120,7 @@ async def attendance_log(
 
         item = {
             "id": group_logs[0].id,  # primary ID for override actions
-            "date": date,
+            "date": log_date,
             "employee": employee,
             "sessions": ", ".join(sessions),
             "total_active": f"{total_active_str} (Missed)" if is_missed else total_active_str,
@@ -136,7 +139,7 @@ async def attendance_log(
         if q and q.strip():
             query_lower = q.strip().lower()
             emp_name = (employee.name or "").lower() if employee else ""
-            date_str = str(date).lower()
+            date_str = str(log_date).lower()
             if query_lower not in emp_name and query_lower not in date_str:
                 continue
 
@@ -152,16 +155,30 @@ async def attendance_log(
 
         logs_data.append(item)
 
+    page_data = paginate_list(logs_data, page=page, page_size=page_size)
+
+    context_payload = {
+        "request": request,
+        "user": current_user,
+        "page_data": page_data,
+        "logs": page_data.items,
+        "total_count": len(logs_data),
+        "selected_date": date or "",
+        "selected_status": status or "all",
+        "q": q or ""
+    }
+
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(
             request=request,
             name="attendance/partials/_log_table.html",
-            context={"user": current_user, "logs": logs_data}
+            context=context_payload
         )
 
     return templates.TemplateResponse(
-        request=request, name="attendance/log.html", context={"user": current_user, "logs": logs_data}
+        request=request, name="attendance/log.html", context=context_payload
     )
+
 
 
 @router.post("/check-in")
@@ -375,3 +392,164 @@ async def override_attendance(
     db.commit()
 
     return RedirectResponse(url="/attendance", status_code=302)
+
+
+# =========================================================================
+# ATTENDANCE EXCEL EXPORT ENDPOINTS
+# =========================================================================
+
+@router.get("/export-excel")
+async def export_attendance_logs_excel(
+    q: Optional[str] = None,
+    date: Optional[str] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(require_auth),
+):
+    """Exports daily or filtered attendance punch records to Excel."""
+    from collections import defaultdict
+    query = db.query(Attendance)
+
+    if current_user.role in ["employee", "intern"]:
+        query = query.filter(Attendance.employee_id == current_user.id)
+    elif current_user.role == "manager":
+        query = (
+            query.join(Employee, Attendance.employee_id == Employee.id)
+            .filter(
+                Employee.department_id == current_user.department_id,
+                Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
+            )
+        )
+    else:
+        query = (
+            query.join(Employee, Attendance.employee_id == Employee.id)
+            .filter(Employee.role != "super_admin")
+        )
+
+    if date and date.strip():
+        query = query.filter(Attendance.date == date.strip())
+
+    raw_logs = query.order_by(Attendance.date.desc(), Attendance.check_in.asc()).all()
+
+    grouped = defaultdict(list)
+    for log in raw_logs:
+        grouped[(log.date, log.employee_id)].append(log)
+
+    logs_data = []
+    today = get_ist_today()
+    now_ist = get_ist_now()
+
+    for (log_date, emp_id), group_logs in grouped.items():
+        employee = group_logs[0].employee
+        total_seconds = 0
+        is_overridden = False
+        override_reason = ""
+
+        for log in group_logs:
+            if log.is_overridden:
+                is_overridden = True
+                override_reason = log.override_reason
+
+            start = log.check_in
+            if log.check_out:
+                end = log.check_out
+            else:
+                if log.date < today:
+                    end = log.check_in
+                else:
+                    end = now_ist
+
+            diff = (end - start).total_seconds()
+            total_seconds += max(0, diff)
+
+        hrs = int(total_seconds // 3600)
+        mins = int((total_seconds % 3600) // 60)
+        hours_str = f"{hrs}h {mins}m"
+
+        in_time_str = group_logs[0].check_in.strftime('%I:%M %p') if group_logs[0].check_in else "—"
+        out_time_str = group_logs[-1].check_out.strftime('%I:%M %p') if group_logs[-1].check_out else ("Active" if log_date == today else "Missed")
+
+        work_mode = group_logs[0].work_mode or ("wfh" if group_logs[0].wfh_request_id else "office")
+        if work_mode == "wfh":
+            status_label = "WFH"
+        elif hrs >= 8:
+            status_label = "Present"
+        elif hrs >= 4:
+            status_label = "Half Day"
+        else:
+            status_label = "Short Shift"
+
+        item = {
+            "date": log_date,
+            "employee": employee,
+            "in_time_str": in_time_str,
+            "out_time_str": out_time_str,
+            "hours_str": hours_str,
+            "status_label": status_label,
+            "is_overridden": is_overridden,
+            "override_reason": override_reason,
+        }
+
+        if q and q.strip():
+            query_lower = q.strip().lower()
+            emp_name = (employee.name or "").lower() if employee else ""
+            date_str = str(log_date).lower()
+            if query_lower not in emp_name and query_lower not in date_str:
+                continue
+
+        if status and status.strip() and status.lower() != "all":
+            if status.lower() not in status_label.lower():
+                continue
+
+        logs_data.append(item)
+
+    company = db.query(Company).first()
+    return export_attendance_excel(logs_data, company, date_filter=date)
+
+
+@router.get("/export-monthly-matrix")
+async def export_monthly_matrix_endpoint(
+    month: Optional[int] = None,
+    year: Optional[int] = None,
+    dept_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """Exports full 31-day attendance timesheet matrix for a given month and year."""
+    today = get_ist_today()
+    sel_month = month if (month and 1 <= month <= 12) else today.month
+    sel_year = year if (year and year > 2000) else today.year
+
+    emp_query = db.query(Employee).filter(Employee.is_active == True, Employee.role != "super_admin")
+    if current_user.role == "manager":
+        emp_query = emp_query.filter(Employee.department_id == current_user.department_id)
+    elif dept_id and dept_id > 0:
+        emp_query = emp_query.filter(Employee.department_id == dept_id)
+
+    employees = emp_query.order_by(Employee.name.asc()).all()
+
+    import calendar
+    _, days_in_month = calendar.monthrange(sel_year, sel_month)
+    start_date = datetime.date(sel_year, sel_month, 1)
+    end_date = datetime.date(sel_year, sel_month, days_in_month)
+
+    attendance_records = db.query(Attendance).filter(
+        Attendance.date >= start_date,
+        Attendance.date <= end_date
+    ).all()
+
+    from collections import defaultdict
+    grouped_matrix = defaultdict(lambda: {"days": {}})
+    for rec in attendance_records:
+        d_str = rec.date.strftime("%Y-%m-%d")
+        work_mode = rec.work_mode or ("wfh" if rec.wfh_request_id else "office")
+        if work_mode == "wfh":
+            grouped_matrix[rec.employee_id]["days"][d_str] = "W"
+        elif rec.check_in and rec.check_out:
+            hrs = (rec.check_out - rec.check_in).total_seconds() / 3600.0
+            grouped_matrix[rec.employee_id]["days"][d_str] = "P" if hrs >= 7.5 else ("HD" if hrs >= 3.5 else "P")
+        else:
+            grouped_matrix[rec.employee_id]["days"][d_str] = "P"
+
+    company = db.query(Company).first()
+    return export_attendance_monthly_matrix_excel(employees, grouped_matrix, sel_month, sel_year, company)

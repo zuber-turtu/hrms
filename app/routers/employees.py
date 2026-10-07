@@ -19,6 +19,7 @@ from app.models.employee import (
 from app.models.department import Department, Designation
 from app.models.attendance import Attendance
 from app.models.payroll import Payslip
+from app.models.company import Company
 from app.dependencies import require_auth, RoleChecker, get_password_hash, create_access_token
 from app.models.audit import AuditLog
 from app.config import settings
@@ -26,6 +27,7 @@ from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
 from app.services.storage import get_storage_provider
 from app.templates_config import templates
+from app.services.excel_exporter import export_employees_excel, export_employee_sample_template
 import secrets
 from app.services.email_service import (
     send_admin_password_reset_email,
@@ -97,6 +99,8 @@ def resolve_dept_and_desig(
 @router.get("/", response_class=HTMLResponse)
 async def list_employees(
     request: Request,
+    page: Optional[int] = 1,
+    page_size: Optional[int] = 25,
     q: Optional[str] = None,
     role: Optional[str] = None,
     sort: Optional[str] = "name_asc",
@@ -104,6 +108,8 @@ async def list_employees(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
+    from app.utils.pagination import paginate_query
+
     base_query = db.query(Employee)
 
     # Scoping for Managers: only employees in their department
@@ -193,11 +199,13 @@ async def list_employees(
     else:  # default: name_asc (A-Z)
         query = query.order_by(func.lower(Employee.name).asc())
 
-    employees = query.all()
+    page_data = paginate_query(query, page=page, page_size=page_size)
 
     context = {
+        "request": request,
         "user": current_user,
-        "employees": employees,
+        "page_data": page_data,
+        "employees": page_data.items,
         "total_employees_count": len(all_scoped_emps),
         "letter_counts": dict(letter_counts),
         "current_sort": sort_mode,
@@ -218,6 +226,7 @@ async def list_employees(
         name="employees/list.html",
         context=context
     )
+
 
 
 @router.get("/create", response_class=HTMLResponse)
@@ -401,6 +410,76 @@ async def create_employee(
 
     return RedirectResponse(url="/employees", status_code=302)
 
+
+
+
+@router.get("/export-excel")
+async def export_employees(
+    q: Optional[str] = None,
+    dept_id: Optional[int] = None,
+    role: Optional[str] = None,
+    status: Optional[str] = "all",
+    letter: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """Exports workforce roster to a styled Excel spreadsheet matching active filters."""
+    query = db.query(Employee)
+
+    if current_user.role != "super_admin":
+        query = query.filter(Employee.role != "super_admin")
+
+    if current_user.role == "manager":
+        query = query.filter(Employee.department_id == current_user.department_id)
+
+    if q and q.strip():
+        search_raw = q.strip()
+        search_term = f"%{search_raw}%"
+        id_conditions = []
+        digits_only = "".join(filter(str.isdigit, search_raw))
+        if digits_only:
+            try:
+                emp_id_num = int(digits_only)
+                id_conditions.append(Employee.id == emp_id_num)
+            except ValueError:
+                pass
+        id_conditions.append(cast(Employee.id, String).ilike(search_term))
+        query = query.outerjoin(Department, Employee.department_id == Department.id)\
+                     .outerjoin(Designation, Employee.designation_id == Designation.id)\
+                     .filter(
+                         (Employee.name.ilike(search_term)) |
+                         (Employee.email.ilike(search_term)) |
+                         (Department.name.ilike(search_term)) |
+                         (Designation.title.ilike(search_term)) |
+                         or_(*id_conditions)
+                     )
+
+    if dept_id and dept_id > 0:
+        query = query.filter(Employee.department_id == dept_id)
+
+    if role and role.strip() and role.lower() != "all":
+        query = query.filter(Employee.role == role.strip().lower())
+
+    if status and status.strip() and status.lower() != "all":
+        if status.lower() == "active":
+            query = query.filter(Employee.is_active == True)
+        elif status.lower() == "inactive":
+            query = query.filter(Employee.is_active == False)
+
+    if letter and letter.strip() and letter.upper() != "ALL":
+        query = query.filter(Employee.name.ilike(f"{letter.strip()}%"))
+
+    employees = query.order_by(Employee.name.asc()).all()
+    company = db.query(Company).first()
+    return export_employees_excel(employees, company)
+
+
+@router.get("/sample-template")
+async def download_sample_template(
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """Downloads sample employee import template spreadsheet."""
+    return export_employee_sample_template()
 
 
 @router.get("/{emp_id}", response_class=HTMLResponse)
@@ -1004,3 +1083,8 @@ async def admin_reset_password(
     else:
         redirect_url = safe_target
     return RedirectResponse(url=redirect_url, status_code=302)
+
+
+# =========================================================================
+# EXCEL EXPORT & TEMPLATE ENDPOINTS
+

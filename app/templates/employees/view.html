@@ -1,16 +1,17 @@
 {% extends "base.html" %}
 
-{% block header_title %}Employee Profile — {{ employee.name }}{% endblock %}
+{% block title %}{{ employee.name }} — Profile{% endblock %}
+{% block header_title %}Employee Profile{% endblock %}
 
 {% block content %}
-<!-- Flash Notification -->
+<!-- Flash Notification Banners -->
 {% if request.query_params.get('reset_success') %}
-<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-xs flex items-start space-x-3 mb-6">
-    <div class="p-1 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
-        <i data-lucide="check-check" class="w-4 h-4"></i>
-    </div>
-    <div class="flex-1 text-xs sm:text-sm text-emerald-800 font-medium">
-        Employee credentials have been updated and emailed successfully.
+<div class="bg-emerald-50 border border-emerald-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between mb-6">
+    <div class="flex items-center space-x-3 text-emerald-800 text-xs sm:text-sm font-medium">
+        <div class="p-1 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
+            <i data-lucide="check-check" class="w-4 h-4"></i>
+        </div>
+        <span>Employee credentials have been updated and emailed successfully.</span>
     </div>
     <a href="/employees/{{ employee.id }}/view" class="text-emerald-500 hover:text-emerald-700 p-1 rounded-lg">
         <i data-lucide="x" class="w-4 h-4"></i>
@@ -19,12 +20,12 @@
 {% endif %}
 
 {% if request.query_params.get('reset_email_sent') %}
-<div class="bg-teal-50 border border-teal-200 rounded-xl p-4 shadow-xs flex items-start space-x-3 mb-6">
-    <div class="p-1 rounded-lg bg-teal-100 text-teal-700 shrink-0">
-        <i data-lucide="mail-check" class="w-4 h-4"></i>
-    </div>
-    <div class="flex-1 text-xs sm:text-sm text-teal-800 font-medium">
-        A secure 30-minute password reset verification link has been dispatched to {{ employee.email }}.
+<div class="bg-teal-50 border border-teal-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between mb-6">
+    <div class="flex items-center space-x-3 text-teal-800 text-xs sm:text-sm font-medium">
+        <div class="p-1 rounded-lg bg-teal-100 text-teal-700 shrink-0">
+            <i data-lucide="mail-check" class="w-4 h-4"></i>
+        </div>
+        <span>A secure 30-minute password reset verification link has been dispatched to {{ employee.email }}.</span>
     </div>
     <a href="/employees/{{ employee.id }}/view" class="text-teal-500 hover:text-teal-700 p-1 rounded-lg">
         <i data-lucide="x" class="w-4 h-4"></i>
@@ -33,107 +34,142 @@
 {% endif %}
 
 <div class="space-y-6">
-    
-    <!-- Executive Profile Hero Banner -->
-    <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-card flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5">
-        <div class="flex items-center space-x-3 sm:space-x-5 min-w-0">
-            <div class="w-14 h-14 sm:w-18 sm:h-18 rounded-xl bg-teal-700 text-white flex items-center justify-center font-heading font-bold text-xl sm:text-2xl shrink-0 relative overflow-hidden ring-1 ring-slate-200/50 shadow-2xs group cursor-pointer" onclick="openPhotoLightbox()" title="Click to view full photo">
-                <span>{{ employee.name[0]|upper if employee and employee.name else 'E' }}</span>
-                {% if employee.avatar_url or (employee.profile and employee.profile.avatar_url) %}
-                <img src="{{ employee.avatar_url or employee.profile.avatar_url }}" alt="{{ employee.name }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" onerror="this.remove()">
-                <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                    <i data-lucide="zoom-in" class="w-4 h-4"></i>
+
+    <!-- ================= 1. CLEAN HERO PROFILE HEADER ================= -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div class="p-5 sm:p-7 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <!-- Left: Avatar + Identity -->
+            <div class="flex items-start sm:items-center space-x-4 sm:space-x-5 min-w-0">
+                <!-- Avatar -->
+                <div class="relative shrink-0">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-teal-700 text-white flex items-center justify-center font-heading font-bold text-2xl sm:text-3xl shadow-sm overflow-hidden ring-4 ring-slate-50 cursor-pointer group"
+                         onclick="openPhotoLightbox()" title="Click to view full photo">
+                        <span>{{ employee.name[0]|upper if employee and employee.name else 'E' }}</span>
+                        {% if employee.avatar_url or (employee.profile and employee.profile.avatar_url) %}
+                        <img src="{{ employee.avatar_url or employee.profile.avatar_url }}" alt="{{ employee.name }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" onerror="this.remove()">
+                        <div class="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                            <i data-lucide="zoom-in" class="w-5 h-5"></i>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
-                {% endif %}
+
+                <!-- Info Column -->
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-800 border border-teal-200/70 capitalize">
+                            {{ employee.role.replace('_', ' ') }}
+                        </span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/70">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Active
+                        </span>
+                        {% if employee.is_geofence_exempt %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/70" title="Remote/Field exemption">
+                            <i data-lucide="map-pin-off" class="w-3 h-3 mr-1 text-indigo-500"></i> Remote Exempt
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/70">
+                            <i data-lucide="map-pin" class="w-3 h-3 mr-1 text-teal-600"></i> Geofenced
+                        </span>
+                        {% endif %}
+                        <span class="text-xs text-slate-400 font-mono">ID: {{ format_emp_code(employee) }}</span>
+                    </div>
+
+                    <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight truncate">
+                        {{ employee.name }}
+                    </h1>
+
+                    <p class="text-xs sm:text-sm text-slate-500 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span class="font-medium text-slate-700">{{ employee.designation or 'Team Member' }}</span>
+                        <span class="text-slate-300">•</span>
+                        <span>{{ employee.department or 'General' }}</span>
+                        <span class="text-slate-300">•</span>
+                        <span class="font-mono text-slate-400">Joined {{ employee.joining_date }}</span>
+                    </p>
+                </div>
             </div>
-            
-            <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold bg-teal-50 text-teal-800 border border-teal-200 capitalize">
-                        {{ employee.role.replace('_', ' ') }}
-                    </span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Active
-                    </span>
-                    {% if employee.is_geofence_exempt %}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold bg-indigo-50 text-indigo-800 border border-indigo-200" title="Exempt from office geofence radius checks">
-                        <i data-lucide="map-pin-off" class="w-3 h-3 mr-1 text-indigo-600"></i> Remote / Geofence Exempt
-                    </span>
-                    {% else %}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200" title="Required to punch within office perimeter">
-                        <i data-lucide="map-pin" class="w-3 h-3 mr-1 text-teal-600"></i> Office Geofenced
-                    </span>
-                    {% endif %}
-                    <span class="text-[11px] sm:text-xs text-slate-400 font-mono">ID: {{ format_emp_code(employee) }}</span>
-                </div>
-                <h2 class="text-lg sm:text-2xl font-bold font-heading text-slate-900 tracking-tight mt-1 truncate">
-                    {{ employee.name }}
-                </h2>
-                <p class="text-xs sm:text-sm text-slate-500 mt-0.5 truncate">
-                    {{ employee.designation or 'Team Member' }} <span class="text-slate-300">•</span> {{ employee.department or 'General' }}
-                </p>
+
+            <!-- Right: Actions Toolbar -->
+            <div class="flex flex-wrap items-center gap-2 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+                <a href="/employees" class="inline-flex items-center justify-center px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-2xs">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i> Directory
+                </a>
+                {% if employee.role != 'super_admin' %}
+                <button onclick="openGeneratePayslipModal()" class="inline-flex items-center justify-center px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-2xs">
+                    <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Run Payslip
+                </button>
+                {% endif %}
+                <button onclick="openPasswordResetModal({{ employee.id }}, '{{ employee.name }}')" class="inline-flex items-center justify-center px-3.5 py-2 border border-amber-200 rounded-xl text-xs font-semibold text-amber-800 bg-amber-50/70 hover:bg-amber-100/80 transition-colors shadow-2xs">
+                    <i data-lucide="key" class="w-3.5 h-3.5 mr-1.5 text-amber-700"></i> Reset Key
+                </button>
+                {% endif %}
+                <a href="/employees/{{ employee.id }}/edit" class="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1.5"></i> Edit Profile
+                </a>
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-            <a href="/employees" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs">
-                <i data-lucide="users" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Directory
-            </a>
-            {% if employee.role != 'super_admin' %}
-            <button onclick="openGeneratePayslipModal()" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs">
-                <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Payslip
-            </button>
-            {% endif %}
-            <button onclick="openPasswordResetModal({{ employee.id }}, '{{ employee.name }}')" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3 py-2 border border-amber-300 rounded-lg text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 transition-colors shadow-xs">
-                <i data-lucide="key" class="w-3.5 h-3.5 mr-1.5"></i> Reset Key
-            </button>
-            {% endif %}
-            <a href="/employees/{{ employee.id }}/edit" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3.5 py-2 border border-transparent rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
-                <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1.5"></i> Edit Profile
-            </a>
+        <!-- Quick Summary Ribbon -->
+        <div class="bg-slate-50/80 border-t border-slate-100 px-5 sm:px-7 py-3 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div class="min-w-0">
+                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Email Address</span>
+                <span class="font-medium text-slate-800 truncate block mt-0.5">{{ employee.email }}</span>
+            </div>
+            <div class="min-w-0">
+                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Phone Number</span>
+                <span class="font-medium font-mono text-slate-800 truncate block mt-0.5">{{ employee.phone_number or '—' }}</span>
+            </div>
+            <div class="min-w-0">
+                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Shift Policy</span>
+                <span class="font-medium font-mono text-slate-800 truncate block mt-0.5">{{ (company or get_company()).standard_hours_per_day or 8.0 }}h / Day</span>
+            </div>
+            <div class="min-w-0">
+                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Location</span>
+                <span class="font-medium text-slate-800 truncate block mt-0.5">{{ employee.city or employee.state or (company or get_company()).city or 'Main Office' }}</span>
+            </div>
         </div>
     </div>
 
-    <!-- Navigation Tabs Bar -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-card p-1.5">
-        <nav class="flex space-x-1 overflow-x-auto touch-scroll no-scrollbar" aria-label="Tabs" id="employeeTabsNav">
-            <button onclick="switchTab('profile')" id="tab-btn-profile" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-bold transition-all border text-teal-700 bg-teal-50 border-teal-200/80 shadow-2xs whitespace-nowrap">
-                <i data-lucide="user" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i>
-                <span>Profile & Personal</span>
+    <!-- ================= 2. REFINED SEGMENTED NAVIGATION ================= -->
+    <div class="border-b border-slate-200">
+        <nav class="flex space-x-2 sm:space-x-4 overflow-x-auto touch-scroll no-scrollbar -mb-px" aria-label="Tabs" id="employeeTabsNav">
+            <button onclick="switchTab('profile')" id="tab-btn-profile" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-3 border-b-2 font-semibold text-xs transition-all whitespace-nowrap text-teal-700 border-teal-700">
+                <i data-lucide="user" class="w-4 h-4 mr-2 text-teal-700"></i>
+                <span>Personal & Profile</span>
             </button>
             {% if employee.role != 'admin' %}
-            <button onclick="switchTab('attendance')" id="tab-btn-attendance" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold transition-all border border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap">
-                <i data-lucide="calendar-clock" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i>
+            <button onclick="switchTab('attendance')" id="tab-btn-attendance" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-3 border-b-2 font-semibold text-xs transition-all whitespace-nowrap text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300">
+                <i data-lucide="calendar-clock" class="w-4 h-4 mr-2 text-slate-400"></i>
                 <span>Attendance Logs</span>
-                <span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 tab-badge font-mono">
+                <span class="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 font-mono">
                     {{ attendance_logs|length }}
                 </span>
             </button>
             {% endif %}
-            <button onclick="switchTab('payroll')" id="tab-btn-payroll" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold transition-all border border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap">
-                <i data-lucide="wallet-cards" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i>
-                <span>Payroll & Payslips</span>
-                <span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 tab-badge font-mono">
+            <button onclick="switchTab('payroll')" id="tab-btn-payroll" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-3 border-b-2 font-semibold text-xs transition-all whitespace-nowrap text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300">
+                <i data-lucide="wallet-cards" class="w-4 h-4 mr-2 text-slate-400"></i>
+                <span>Payroll & Slips</span>
+                <span class="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 font-mono">
                     {{ payslips|length }}
                 </span>
             </button>
-            <button onclick="switchTab('leaves')" id="tab-btn-leaves" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold transition-all border border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap">
-                <i data-lucide="calendar-check-2" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i>
+            <button onclick="switchTab('leaves')" id="tab-btn-leaves" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-3 border-b-2 font-semibold text-xs transition-all whitespace-nowrap text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300">
+                <i data-lucide="calendar-check-2" class="w-4 h-4 mr-2 text-slate-400"></i>
                 <span>Leaves & Quotas</span>
-                <span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 tab-badge font-mono">
+                <span class="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 font-mono">
                     {{ leave_balances|length }}
                 </span>
             </button>
-            <button onclick="switchTab('documents')" id="tab-btn-documents" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold transition-all border border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap">
-                <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i>
+            <button onclick="switchTab('documents')" id="tab-btn-documents" class="tab-btn shrink-0 inline-flex items-center px-3.5 py-3 border-b-2 font-semibold text-xs transition-all whitespace-nowrap text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300">
+                <i data-lucide="shield-check" class="w-4 h-4 mr-2 text-slate-400"></i>
                 <span>Documents & KYC</span>
                 {% if doc_summary and doc_summary.compliance_percent == 100 %}
-                    <span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 tab-badge font-mono">
+                    <span class="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
                         100%
                     </span>
                 {% elif doc_summary %}
-                    <span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 tab-badge font-mono">
+                    <span class="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-mono">
                         {{ doc_summary.mandatory_verified }}/{{ doc_summary.mandatory_total }}
                     </span>
                 {% endif %}
@@ -143,302 +179,278 @@
 
     <!-- ================= TAB 1: PROFILE & PERSONAL DETAILS ================= -->
     <div id="tab-content-profile" class="tab-content space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            <!-- Card 1: Contact & Personal -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-card p-5">
-                <div class="flex items-center space-x-2.5 pb-3 border-b border-slate-100 mb-3.5">
-                    <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60">
-                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+            <!-- Section 1: Employment & Organizational Role -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
+                <div class="flex items-center space-x-2.5 pb-4 border-b border-slate-100 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/50">
+                        <i data-lucide="briefcase" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Contact & Personal Info</h3>
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Employment & Role</h3>
+                        <p class="text-[11px] text-slate-400">Corporate hierarchy and department assignment</p>
+                    </div>
                 </div>
-                <dl class="space-y-3 text-xs">
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Email Address</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.email }}</dd>
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3.5 text-xs">
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Department</dt>
+                        <dd class="font-semibold text-slate-800 mt-0.5">{{ employee.department or '—' }}</dd>
                     </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Phone Number</dt>
-                        <dd class="font-semibold font-mono text-slate-900">{{ employee.phone_number or '—' }}</dd>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Designation / Title</dt>
+                        <dd class="font-semibold text-slate-800 mt-0.5">{{ employee.designation or '—' }}</dd>
                     </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Gender</dt>
-                        <dd class="font-semibold text-slate-900 capitalize">{{ employee.gender or '—' }}</dd>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Corporate System Role</dt>
+                        <dd class="font-semibold text-slate-800 capitalize mt-0.5">{{ employee.role.replace('_', ' ') }}</dd>
                     </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Joining Date</dt>
-                        <dd class="font-semibold font-mono text-slate-900">{{ employee.joining_date }}</dd>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Official Joining Date</dt>
+                        <dd class="font-semibold font-mono text-slate-800 mt-0.5">{{ employee.joining_date }}</dd>
                     </div>
-                </dl>
-            </div>
-
-            <!-- Card 2: Address & Location -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-card p-5">
-                <div class="flex items-center space-x-2.5 pb-3 border-b border-slate-100 mb-3.5">
-                    <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60">
-                        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                    </div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Address & Location</h3>
-                </div>
-                <dl class="space-y-3 text-xs">
-                    <div class="flex justify-between items-start py-0.5">
-                        <dt class="font-medium text-slate-500">Home Address</dt>
-                        <dd class="font-semibold text-slate-900 text-right max-w-xs">{{ employee.home_address or '—' }}</dd>
-                    </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">City</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.city or '—' }}</dd>
-                    </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">State</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.state or '—' }}</dd>
-                    </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Country</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.country or '—' }}</dd>
-                    </div>
-                </dl>
-            </div>
-
-            <!-- Card 3: Qualifications & Background -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-card p-5">
-                <div class="flex items-center space-x-2.5 pb-3 border-b border-slate-100 mb-3.5">
-                    <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60">
-                        <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
-                    </div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Role & Credentials</h3>
-                </div>
-                <dl class="space-y-3 text-xs">
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Highest Qualification</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.qualification or '—' }}</dd>
-                    </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Prior Experience</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.experience or '—' }}</dd>
-                    </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Department</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.department or '—' }}</dd>
-                    </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Designation</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.designation or '—' }}</dd>
-                    </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Work Shift & Lunch</dt>
-                        <dd class="font-semibold text-slate-800 text-[11px] font-mono">
-                            {{ (company or get_company()).standard_hours_per_day or 8.0 }}h Shift | Lunch {{ (company or get_company()).lunch_start_time or '13:00' }}-{{ (company or get_company()).lunch_end_time or '14:00' }} ({{ (company or get_company()).lunch_break_hours or 1.0 }}h)
-                        </dd>
-                    </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Geofence Policy</dt>
-                        <dd class="font-semibold text-slate-900">
-                            {% if employee.is_geofence_exempt %}
-                            <span class="text-purple-700 bg-purple-50 px-2 py-0.5 rounded text-[11px] font-medium border border-purple-200">Exempt (Remote/Field)</span>
-                            {% else %}
-                            <span class="text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium border border-slate-200">Office Radius Enforced</span>
-                            {% endif %}
+                    <div class="sm:col-span-2 pt-2 border-t border-slate-50">
+                        <dt class="text-[11px] font-medium text-slate-400">Work Shift & Lunch Window</dt>
+                        <dd class="font-medium text-slate-700 text-xs mt-0.5">
+                            {{ (company or get_company()).standard_hours_per_day or 8.0 }}h Workday • Lunch Break {{ (company or get_company()).lunch_start_time or '13:00' }} to {{ (company or get_company()).lunch_end_time or '14:00' }} ({{ (company or get_company()).lunch_break_hours or 1.0 }}h)
                         </dd>
                     </div>
                 </dl>
             </div>
 
-            <!-- Card 4: Government Identification & KYC -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-card p-5">
-                <div class="flex items-center space-x-2.5 pb-3 border-b border-slate-100 mb-3.5">
-                    <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60">
-                        <i data-lucide="id-card" class="w-3.5 h-3.5"></i>
+            <!-- Section 2: Contact & Personal Info -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
+                <div class="flex items-center space-x-2.5 pb-4 border-b border-slate-100 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/50">
+                        <i data-lucide="user-check" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Statutory Numbers</h3>
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Personal & Contact</h3>
+                        <p class="text-[11px] text-slate-400">Direct contact details and personal identity</p>
+                    </div>
                 </div>
-                <dl class="space-y-3 text-xs">
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Aadhaar Number</dt>
-                        <dd class="font-semibold font-mono text-slate-900">{{ employee.aadhar_number or '—' }}</dd>
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3.5 text-xs">
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Email Address</dt>
+                        <dd class="font-semibold text-slate-800 truncate mt-0.5">{{ employee.email }}</dd>
                     </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">PAN Number</dt>
-                        <dd class="font-semibold font-mono uppercase text-slate-900">{{ employee.pan_number or '—' }}</dd>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Phone Number</dt>
+                        <dd class="font-semibold font-mono text-slate-800 mt-0.5">{{ employee.phone_number or '—' }}</dd>
                     </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">PF / UAN Number</dt>
-                        <dd class="font-semibold font-mono text-slate-900">{{ employee.uan_number or '—' }}</dd>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Gender</dt>
+                        <dd class="font-semibold text-slate-800 capitalize mt-0.5">{{ employee.gender or '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Highest Qualification</dt>
+                        <dd class="font-semibold text-slate-800 mt-0.5">{{ employee.qualification or '—' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-[11px] font-medium text-slate-400">Prior Experience</dt>
+                        <dd class="font-medium text-slate-700 mt-0.5">{{ employee.experience or 'None listed' }}</dd>
                     </div>
                 </dl>
             </div>
 
-            <!-- Card 5: Emergency Contacts -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-card p-5">
-                <div class="flex items-center space-x-2.5 pb-3 border-b border-slate-100 mb-3.5">
-                    <div class="w-7 h-7 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-200/60">
-                        <i data-lucide="phone-call" class="w-3.5 h-3.5"></i>
+            <!-- Section 3: Statutory & Banking Details -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
+                <div class="flex items-center space-x-2.5 pb-4 border-b border-slate-100 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/50">
+                        <i data-lucide="landmark" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Emergency Contact</h3>
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Statutory & Bank Remittance</h3>
+                        <p class="text-[11px] text-slate-400">Government compliance numbers and salary payout details</p>
+                    </div>
                 </div>
-                <dl class="space-y-3 text-xs">
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Contact Person</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.emergency_contact_name or '—' }}</dd>
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3.5 text-xs">
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Aadhaar Identification</dt>
+                        <dd class="font-semibold font-mono text-slate-800 mt-0.5">{{ employee.aadhar_number or '—' }}</dd>
                     </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Relationship</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.emergency_contact_relation or '—' }}</dd>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Permanent Account Number (PAN)</dt>
+                        <dd class="font-semibold font-mono uppercase text-slate-800 mt-0.5">{{ employee.pan_number or '—' }}</dd>
                     </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Emergency Phone</dt>
-                        <dd class="font-semibold font-mono text-slate-900">{{ employee.emergency_contact or '—' }}</dd>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Provident Fund (UAN)</dt>
+                        <dd class="font-semibold font-mono text-slate-800 mt-0.5">{{ employee.uan_number or '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Bank Name</dt>
+                        <dd class="font-semibold text-slate-800 mt-0.5">{{ employee.bank_name or '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Account Number</dt>
+                        <dd class="font-semibold font-mono text-slate-800 mt-0.5">{{ employee.account_number or '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">IFSC Code</dt>
+                        <dd class="font-semibold font-mono uppercase text-slate-800 mt-0.5">{{ employee.ifsc_code or '—' }}</dd>
                     </div>
                 </dl>
             </div>
 
-            <!-- Card 6: Bank & Remittance Details -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-card p-5">
-                <div class="flex items-center space-x-2.5 pb-3 border-b border-slate-100 mb-3.5">
-                    <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60">
-                        <i data-lucide="landmark" class="w-3.5 h-3.5"></i>
+            <!-- Section 4: Residential Address & Emergency Contact -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
+                <div class="flex items-center space-x-2.5 pb-4 border-b border-slate-100 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-200/50">
+                        <i data-lucide="home" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Bank Account</h3>
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Address & Emergency Reach</h3>
+                        <p class="text-[11px] text-slate-400">Permanent residence and emergency contact person</p>
+                    </div>
                 </div>
-                <dl class="space-y-3 text-xs">
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Bank Name</dt>
-                        <dd class="font-semibold text-slate-900">{{ employee.bank_name or '—' }}</dd>
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3.5 text-xs">
+                    <div class="sm:col-span-2">
+                        <dt class="text-[11px] font-medium text-slate-400">Residential Address</dt>
+                        <dd class="font-medium text-slate-800 mt-0.5">{{ employee.home_address or '—' }}</dd>
                     </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">Account Number</dt>
-                        <dd class="font-semibold font-mono text-slate-900">{{ employee.account_number or '—' }}</dd>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">City / State</dt>
+                        <dd class="font-semibold text-slate-800 mt-0.5">{{ employee.city or '—' }}{% if employee.state %}, {{ employee.state }}{% endif %}</dd>
                     </div>
-                    <div class="flex justify-between items-center py-0.5">
-                        <dt class="font-medium text-slate-500">IFSC Code</dt>
-                        <dd class="font-semibold font-mono uppercase text-slate-900">{{ employee.ifsc_code or '—' }}</dd>
+                    <div>
+                        <dt class="text-[11px] font-medium text-slate-400">Country</dt>
+                        <dd class="font-semibold text-slate-800 mt-0.5">{{ employee.country or 'India' }}</dd>
+                    </div>
+                    <div class="pt-2 border-t border-slate-50">
+                        <dt class="text-[11px] font-medium text-slate-400">Emergency Contact Name</dt>
+                        <dd class="font-semibold text-slate-800 mt-0.5">{{ employee.emergency_contact_name or '—' }}</dd>
+                    </div>
+                    <div class="pt-2 border-t border-slate-50">
+                        <dt class="text-[11px] font-medium text-slate-400">Relation & Phone</dt>
+                        <dd class="font-semibold text-slate-800 mt-0.5">
+                            {{ employee.emergency_contact_relation or 'Contact' }}: <span class="font-mono">{{ employee.emergency_contact or '—' }}</span>
+                        </dd>
                     </div>
                 </dl>
             </div>
+
         </div>
     </div>
 
     <!-- ================= TAB 2: ATTENDANCE & TIME LOGS ================= -->
     {% if employee.role != 'admin' %}
-    <div id="tab-content-attendance" class="tab-content hidden space-y-5">
+    <div id="tab-content-attendance" class="tab-content hidden space-y-6">
         
-        <!-- Attendance Stats Header -->
+        <!-- Attendance Stats Ribbon -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card flex items-center justify-between">
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Recorded Days</p>
-                    <h4 class="text-xl font-bold font-mono text-slate-900 mt-1">{{ attendance_logs|length }}</h4>
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Logged Workdays</p>
+                    <h4 class="text-2xl font-bold font-mono text-slate-900 mt-1">{{ attendance_logs|length }}</h4>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60">
+                <div class="w-11 h-11 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center border border-slate-200/70">
                     <i data-lucide="calendar-days" class="w-5 h-5"></i>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card flex items-center justify-between">
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Normal Punches</p>
-                    <h4 class="text-xl font-bold font-mono text-emerald-600 mt-1">
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Verified Punches</p>
+                    <h4 class="text-2xl font-bold font-mono text-emerald-600 mt-1">
                         {{ attendance_logs | selectattr("is_missed", "equalto", False) | selectattr("is_overridden", "equalto", False) | list | length }}
                     </h4>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60">
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/70">
                     <i data-lucide="check-circle" class="w-5 h-5"></i>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-card flex items-center justify-between">
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Adjustments</p>
-                    <h4 class="text-xl font-bold font-mono text-amber-600 mt-1">
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Exceptions / Overrides</p>
+                    <h4 class="text-2xl font-bold font-mono text-amber-600 mt-1">
                         {{ attendance_logs | selectattr("is_missed", "equalto", True) | list | length + attendance_logs | selectattr("is_overridden", "equalto", True) | list | length }}
                     </h4>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200/60">
+                <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200/70">
                     <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Attendance Table Card -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
-            <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+        <!-- Attendance Ledger Card -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Daily Attendance Ledger</h3>
-                    <p class="text-xs text-slate-500">Punch timestamps, active durations & exception regularisations</p>
+                    <h3 class="text-sm font-bold font-heading text-slate-900">Attendance Log History</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Punch timestamps, active durations & perimeter check results</p>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-50 text-slate-600 border border-slate-200/70 font-mono">
                     {{ attendance_logs|length }} Records
                 </span>
             </div>
 
             {% if attendance_logs and attendance_logs|length > 0 %}
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-xs">
-                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                <table class="min-w-full divide-y divide-slate-100 text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
                         <tr>
-                            <th class="px-5 py-3 text-left">Date</th>
-                            <th class="px-5 py-3 text-left">Punch Timestamps</th>
-                            <th class="px-5 py-3 text-left">Active Time</th>
-                            <th class="px-5 py-3 text-left">Status</th>
+                            <th class="px-6 py-3.5 text-left">Date</th>
+                            <th class="px-6 py-3.5 text-left">Punch Timestamps</th>
+                            <th class="px-6 py-3.5 text-left">Active Duration</th>
+                            <th class="px-6 py-3.5 text-left">Status & Perimeter</th>
                             {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                            <th class="px-5 py-3 text-right">Actions</th>
+                            <th class="px-6 py-3.5 text-right">Actions</th>
                             {% endif %}
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         {% for log in attendance_logs %}
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="px-5 py-3.5 whitespace-nowrap font-semibold text-slate-900">
-                                <div class="flex items-center space-x-1.5 font-mono">
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-slate-900">
+                                <div class="flex items-center space-x-2 font-mono">
                                     <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
                                     <span>{{ log.date }}</span>
                                 </div>
                             </td>
-                            <td class="px-5 py-3.5 text-slate-900 font-mono">
-                                <span class="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-800">{{ log.sessions }}</span>
+                            <td class="px-6 py-4 text-slate-800 font-mono">
+                                <span class="bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded text-[11px]">{{ log.sessions }}</span>
                             </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap font-mono font-bold text-slate-900">
+                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold text-slate-900">
                                 {{ log.total_active }}
                             </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap">
-                                <div class="flex flex-col items-start gap-1">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center space-x-2">
                                     {% if log.is_missed %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
-                                        <i data-lucide="alert-circle" class="w-3 h-3 mr-1 text-rose-600"></i> Missed Punch
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">
+                                        <i data-lucide="alert-circle" class="w-3 h-3 mr-1 text-rose-500"></i> Missed Punch
                                     </span>
                                     {% elif log.is_overridden %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200" title="{{ log.override_reason }}">
-                                        <i data-lucide="edit-2" class="w-3 h-3 mr-1 text-amber-600"></i> Overridden
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80" title="{{ log.override_reason }}">
+                                        <i data-lucide="edit-2" class="w-3 h-3 mr-1 text-amber-500"></i> Overridden
                                     </span>
                                     {% else %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
                                         <i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-600"></i> Verified
                                     </span>
                                     {% endif %}
 
-                                    <!-- Geofence Perimeter Location Badge -->
                                     {% if log.is_exempt %}
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200/80" title="Exempt remote/field staff">
-                                        <i data-lucide="map-pin-off" class="w-2.5 h-2.5 mr-1 text-purple-600"></i> Remote Exempt
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200/60" title="Exempt remote/field staff">
+                                        Remote Exempt
                                     </span>
                                     {% elif log.distance_m is not none %}
                                         {% if log.in_range %}
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80" title="Punched within office perimeter ({{ log.distance_m|round|int }}m)">
-                                            <i data-lucide="map-pin" class="w-2.5 h-2.5 mr-1 text-emerald-600"></i> Office ({{ log.distance_m|round|int }}m)
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60" title="Punched within office perimeter ({{ log.distance_m|round|int }}m)">
+                                            Office ({{ log.distance_m|round|int }}m)
                                         </span>
                                         {% else %}
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200/80" title="Outside office perimeter ({{ log.distance_m|round|int }}m)">
-                                            <i data-lucide="map-pin" class="w-2.5 h-2.5 mr-1 text-amber-600"></i> Outside ({{ log.distance_m|round|int }}m)
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200/60" title="Outside office perimeter ({{ log.distance_m|round|int }}m)">
+                                            Outside ({{ log.distance_m|round|int }}m)
                                         </span>
                                         {% endif %}
                                     {% endif %}
                                 </div>
                             </td>
                             {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                            <td class="px-5 py-3.5 whitespace-nowrap text-right">
-                                <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors">
-                                    <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> Override
+                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                <button onclick="openOverrideModal({{ log.id }}, '{{ log.check_in.strftime('%H:%M') if log.check_in else '' }}', '{{ log.check_out.strftime('%H:%M') if log.check_out else '' }}')" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 transition-colors shadow-2xs">
+                                    <i data-lucide="edit-3" class="w-3 h-3 mr-1 text-slate-400"></i> Override
                                 </button>
                             </td>
                             {% endif %}
@@ -448,10 +460,10 @@
                 </table>
             </div>
             {% else %}
-            <div class="py-12 text-center text-slate-500 bg-slate-50/50">
+            <div class="py-12 text-center text-slate-400">
                 <i data-lucide="clock" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
-                <p class="text-xs sm:text-sm font-semibold text-slate-800">No attendance records logged yet</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">Sessions will populate as daily check-ins are registered.</p>
+                <p class="text-xs sm:text-sm font-semibold text-slate-700">No attendance records logged yet</p>
+                <p class="text-xs text-slate-400 mt-0.5">Records will populate automatically when check-ins are registered.</p>
             </div>
             {% endif %}
         </div>
@@ -459,58 +471,58 @@
     {% endif %}
 
     <!-- ================= TAB 3: PAYROLL & COMPENSATION ================= -->
-    <div id="tab-content-payroll" class="tab-content hidden space-y-5">
+    <div id="tab-content-payroll" class="tab-content hidden space-y-6">
         
-        <!-- Card: Salary Structure -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-card p-5">
-            <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
+        <!-- Salary Structure Slab Card -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
                 <div class="flex items-center space-x-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60">
-                        <i data-lucide="wallet-cards" class="w-3.5 h-3.5"></i>
+                    <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/50">
+                        <i data-lucide="wallet-cards" class="w-4 h-4"></i>
                     </div>
                     <div>
                         <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Salary Structure Slab</h3>
-                        <p class="text-[11px] text-slate-500">Monthly compensation components and statutory deductions</p>
+                        <p class="text-[11px] text-slate-400">Monthly compensation components and statutory deductions</p>
                     </div>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-50 text-slate-600 border border-slate-200/70">
                     Monthly Breakdown
                 </span>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
-                    <p class="text-[11px] font-semibold text-slate-500">Basic Salary</p>
-                    <p class="text-base font-bold font-mono text-slate-900 mt-0.5">{{ (company or get_company()).currency_symbol }} {{ employee.base_salary }}</p>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Basic Salary</p>
+                    <p class="text-lg font-bold font-mono text-slate-900 mt-1">{{ (company or get_company()).currency_symbol }} {{ employee.base_salary }}</p>
                 </div>
-                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
-                    <p class="text-[11px] font-semibold text-slate-500">HRA</p>
-                    <p class="text-base font-bold font-mono text-slate-900 mt-0.5">{{ (company or get_company()).currency_symbol }} {{ employee.hra }}</p>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">HRA Allowance</p>
+                    <p class="text-lg font-bold font-mono text-slate-900 mt-1">{{ (company or get_company()).currency_symbol }} {{ employee.hra }}</p>
                 </div>
-                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
-                    <p class="text-[11px] font-semibold text-slate-500">Allowances</p>
-                    <p class="text-base font-bold font-mono text-slate-900 mt-0.5">{{ (company or get_company()).currency_symbol }} {{ employee.custom_allowances }}</p>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Other Allowances</p>
+                    <p class="text-lg font-bold font-mono text-slate-900 mt-1">{{ (company or get_company()).currency_symbol }} {{ employee.custom_allowances }}</p>
                 </div>
-                <div class="p-3.5 rounded-lg bg-rose-50/50 border border-rose-200/60">
-                    <p class="text-[11px] font-semibold text-rose-700">PF Deduction</p>
-                    <p class="text-base font-bold font-mono text-rose-800 mt-0.5">-{{ (company or get_company()).currency_symbol }} {{ employee.pf_deduction }}</p>
+                <div class="p-4 rounded-xl bg-rose-50/40 border border-rose-200/60">
+                    <p class="text-[11px] font-semibold text-rose-600 uppercase tracking-wider">PF Deduction</p>
+                    <p class="text-lg font-bold font-mono text-rose-700 mt-1">-{{ (company or get_company()).currency_symbol }} {{ employee.pf_deduction }}</p>
                 </div>
-                <div class="p-3.5 rounded-lg bg-rose-50/50 border border-rose-200/60">
-                    <p class="text-[11px] font-semibold text-rose-700">Tax Deduction</p>
-                    <p class="text-base font-bold font-mono text-rose-800 mt-0.5">-{{ (company or get_company()).currency_symbol }} {{ employee.tax_deduction }}</p>
+                <div class="p-4 rounded-xl bg-rose-50/40 border border-rose-200/60">
+                    <p class="text-[11px] font-semibold text-rose-600 uppercase tracking-wider">Tax Deduction</p>
+                    <p class="text-lg font-bold font-mono text-rose-700 mt-1">-{{ (company or get_company()).currency_symbol }} {{ employee.tax_deduction }}</p>
                 </div>
             </div>
         </div>
 
-        <!-- Card: Payslip History -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
-            <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+        <!-- Payslip Ledger Card -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Payslip Ledger</h3>
-                    <p class="text-xs text-slate-500">Disbursement records, calculated pro-rata days & net take-home salary</p>
+                    <h3 class="text-sm font-bold font-heading text-slate-900">Payslip Disbursement Ledger</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Historical pay periods, payable days, and take-home compensation</p>
                 </div>
                 {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] and employee.role != 'super_admin' %}
-                <button onclick="openGeneratePayslipModal()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
+                <button onclick="openGeneratePayslipModal()" class="inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
                     <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1.5"></i> Generate Payslip
                 </button>
                 {% endif %}
@@ -518,54 +530,54 @@
 
             {% if payslips and payslips|length > 0 %}
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-xs">
-                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                <table class="min-w-full divide-y divide-slate-100 text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
                         <tr>
-                            <th class="px-5 py-3 text-left">Period</th>
-                            <th class="px-5 py-3 text-left">Generated Date</th>
-                            <th class="px-5 py-3 text-left">Working Days</th>
-                            <th class="px-5 py-3 text-left">Net Salary</th>
-                            <th class="px-5 py-3 text-left">Status</th>
-                            <th class="px-5 py-3 text-right">Actions</th>
+                            <th class="px-6 py-3.5 text-left">Period</th>
+                            <th class="px-6 py-3.5 text-left">Disbursed Date</th>
+                            <th class="px-6 py-3.5 text-left">Payable Days</th>
+                            <th class="px-6 py-3.5 text-left">Net Take-Home</th>
+                            <th class="px-6 py-3.5 text-left">Status</th>
+                            <th class="px-6 py-3.5 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         {% for p in payslips %}
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="px-5 py-3.5 whitespace-nowrap font-mono font-bold text-slate-900">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800 font-mono">
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold text-slate-900">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200/80 text-slate-800 font-mono">
                                     <i data-lucide="calendar" class="w-3 h-3 mr-1 text-slate-400"></i>
                                     {{ "%02d" % p.month }}/{{ p.year }}
                                 </span>
                             </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap text-slate-600 font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-slate-600 font-medium">
                                 {{ p.generated_on.strftime('%b %d, %Y') if p.generated_on else '—' }}
                             </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap font-mono text-slate-700">
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-slate-700">
                                 {{ p.days_worked }} / {{ p.payable_days }}
                             </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap font-mono font-bold text-emerald-700 text-xs sm:text-sm">
+                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold text-emerald-700 text-sm">
                                 {{ (company or get_company()).currency_symbol }} {{ "%.2f"|format(p.net_salary) }}
                             </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border
-                                    {% if p.status == 'draft' %} bg-amber-50 text-amber-800 border-amber-200
-                                    {% elif p.status == 'finalized' %} bg-teal-50 text-teal-800 border-teal-200
-                                    {% elif p.status == 'paid' %} bg-emerald-50 text-emerald-800 border-emerald-200
-                                    {% else %} bg-slate-100 text-slate-700 border-slate-200 {% endif %}">
+                                    {% if p.status == 'draft' %} bg-amber-50 text-amber-800 border-amber-200/80
+                                    {% elif p.status == 'finalized' %} bg-teal-50 text-teal-800 border-teal-200/80
+                                    {% elif p.status == 'paid' %} bg-emerald-50 text-emerald-800 border-emerald-200/80
+                                    {% else %} bg-slate-100 text-slate-700 border-slate-200/80 {% endif %}">
                                     {{ p.status | title }}
                                 </span>
                             </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap text-right space-x-1 font-medium">
-                                <a href="/payroll/{{ p.id }}/view" class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-2xs" title="View Payslip">
+                            <td class="px-6 py-4 whitespace-nowrap text-right space-x-1.5 font-medium">
+                                <a href="/payroll/{{ p.id }}/view" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-2xs" title="View Payslip">
                                     <i data-lucide="eye" class="w-3 h-3 mr-1 text-slate-400"></i> View
                                 </a>
                                 {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                                <a href="/payroll/{{ p.id }}/edit" class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors" title="Edit Line Items">
-                                    <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> Edit
+                                <a href="/payroll/{{ p.id }}/edit" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-2xs" title="Edit Line Items">
+                                    <i data-lucide="edit-3" class="w-3 h-3 mr-1 text-slate-400"></i> Edit
                                 </a>
                                 {% endif %}
-                                <a href="/payroll/{{ p.id }}/pdf" target="_blank" class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors" title="Download PDF">
+                                <a href="/payroll/{{ p.id }}/pdf" target="_blank" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200/80 transition-colors" title="Download PDF">
                                     <i data-lucide="download" class="w-3 h-3 mr-1"></i> PDF
                                 </a>
                             </td>
@@ -575,12 +587,12 @@
                 </table>
             </div>
             {% else %}
-            <div class="py-12 text-center text-slate-500 bg-slate-50/50">
+            <div class="py-12 text-center text-slate-400">
                 <i data-lucide="receipt" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
-                <p class="text-xs sm:text-sm font-semibold text-slate-800">No payslips generated for this employee yet</p>
+                <p class="text-xs sm:text-sm font-semibold text-slate-700">No payslips generated for this employee yet</p>
                 {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] and employee.role != 'super_admin' %}
-                <p class="text-[11px] text-slate-500 mt-0.5">Click "Generate Payslip" to create this employee's salary slip.</p>
-                <button onclick="openGeneratePayslipModal()" class="mt-3 inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
+                <p class="text-xs text-slate-400 mt-0.5">Click "Generate Payslip" to create the initial salary statement.</p>
+                <button onclick="openGeneratePayslipModal()" class="mt-3.5 inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
                     <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1.5"></i> Generate Payslip
                 </button>
                 {% endif %}
@@ -589,31 +601,29 @@
         </div>
     </div>
 
-    <!-- ================= TAB 4: DOCUMENTS & KYC VERIFICATION ================= -->
-    <div id="tab-content-documents" class="tab-content space-y-5 hidden">
+    <!-- ================= TAB 4: DOCUMENTS & KYC VAULT ================= -->
+    <div id="tab-content-documents" class="tab-content space-y-6 hidden">
         
         <!-- Compliance Header Banner -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div class="flex items-center space-x-3.5">
-                    <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60 shrink-0">
+                    <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60 shrink-0">
                         <i data-lucide="shield-check" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-sm text-slate-900">Employee KYC & Compliance Vault</h3>
-                        <p class="text-xs text-slate-500">
-                            Verification: <span class="font-bold text-teal-700 font-mono">{{ doc_summary.mandatory_verified }} / {{ doc_summary.mandatory_total }} Verified</span> ({{ doc_summary.compliance_percent }}% Complete)
+                        <h3 class="font-bold font-heading text-sm text-slate-900">Employee KYC & Compliance Vault</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Status: <span class="font-bold text-teal-700 font-mono">{{ doc_summary.mandatory_verified }} / {{ doc_summary.mandatory_total }} Verified</span> ({{ doc_summary.compliance_percent }}% Complete)
                         </p>
                     </div>
                 </div>
 
-                <div class="flex items-center space-x-2">
-                    {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                    <button onclick="openHRUploadDocModal()" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
-                        <i data-lucide="upload-cloud" class="w-3.5 h-3.5 mr-1.5"></i> Upload Document for Employee
-                    </button>
-                    {% endif %}
-                </div>
+                {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+                <button onclick="openHRUploadDocModal()" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs self-start sm:self-auto">
+                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5 mr-1.5"></i> Upload Document
+                </button>
+                {% endif %}
             </div>
 
             <!-- Progress Bar -->
@@ -624,16 +634,16 @@
             </div>
         </div>
 
-        <!-- Dynamic Checklist Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Document Checklist Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
             {% for item in doc_checklist %}
             {% set dt = item.type %}
             {% set doc = item.document %}
-            <div class="bg-white rounded-xl border border-slate-200 shadow-card p-4 flex flex-col justify-between space-y-3.5 hover:border-slate-300 transition-colors">
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 transition-colors">
                 <div>
                     <div class="flex items-start justify-between gap-3">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-lg {{ 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' if doc and doc.is_verified else ('bg-amber-50 text-amber-700 border border-amber-200/60' if doc and doc.is_pending else ('bg-rose-50 text-rose-700 border border-rose-200/60' if doc and doc.is_rejected else 'bg-slate-100 text-slate-500 border border-slate-200')) }} flex items-center justify-center shrink-0">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-9 h-9 rounded-lg {{ 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' if doc and doc.is_verified else ('bg-amber-50 text-amber-700 border border-amber-200/70' if doc and doc.is_pending else ('bg-rose-50 text-rose-700 border border-rose-200/70' if doc and doc.is_rejected else 'bg-slate-50 text-slate-400 border border-slate-200/70')) }} flex items-center justify-center shrink-0">
                                 {% if dt.category == 'KYC' %}
                                     <i data-lucide="shield" class="w-4 h-4"></i>
                                 {% elif dt.category == 'Education' %}
@@ -653,30 +663,30 @@
                                         <span class="text-[10px] font-bold text-rose-600 uppercase">* Required</span>
                                     {% endif %}
                                 </div>
-                                <span class="text-[11px] text-slate-500 block">{{ dt.category }} • {{ dt.allowed_extensions.upper().replace(',', ', ') }}</span>
+                                <span class="text-[11px] text-slate-400 block mt-0.5">{{ dt.category }} • {{ dt.allowed_extensions.upper().replace(',', ', ') }}</span>
                             </div>
                         </div>
 
                         <!-- Status Badge -->
                         <div>
                             {% if not doc %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                                    <i data-lucide="clock" class="w-3 h-3 mr-1 text-amber-500"></i> Needs to Upload
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/70">
+                                    <i data-lucide="clock" class="w-3 h-3 mr-1 text-amber-500"></i> Needed
                                 </span>
                             {% elif not item.is_file_available %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
-                                    <i data-lucide="alert-triangle" class="w-3 h-3 mr-1 text-rose-600"></i> Needs Re-upload
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200/70">
+                                    <i data-lucide="alert-triangle" class="w-3 h-3 mr-1 text-rose-600"></i> Re-upload
                                 </span>
                             {% elif doc.is_verified %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/70">
                                     <i data-lucide="check-circle-2" class="w-3 h-3 mr-1 text-emerald-600"></i> Verified
                                 </span>
                             {% elif doc.is_pending %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span> Pending Review
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/70">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span> Pending
                                 </span>
                             {% elif doc.is_rejected %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200/70">
                                     <i data-lucide="alert-circle" class="w-3 h-3 mr-1 text-rose-600"></i> Rejected
                                 </span>
                             {% endif %}
@@ -684,43 +694,43 @@
                     </div>
 
                     {% if doc and not item.is_file_available %}
-                    <div class="mt-2.5 p-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start space-x-2">
-                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5"></i>
+                    <div class="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200/70 text-xs text-amber-800 flex items-start space-x-2">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
                         <span>Stored file object is currently unavailable. Please re-upload this document.</span>
                     </div>
                     {% endif %}
 
                     {% if doc and doc.is_rejected and doc.rejection_reason %}
-                    <div class="mt-2.5 p-2 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                    <div class="mt-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200/70 text-xs text-rose-800">
                         <span class="font-bold">Rejection Note:</span> "{{ doc.rejection_reason }}"
                     </div>
                     {% endif %}
 
                     {% if doc %}
-                    <div class="mt-2.5 flex items-center justify-between text-xs text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                        <div class="flex items-center space-x-1.5 truncate">
+                    <div class="mt-3 flex items-center justify-between text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <div class="flex items-center space-x-2 truncate">
                             <i data-lucide="file" class="w-3.5 h-3.5 text-teal-700 shrink-0"></i>
                             <span class="font-medium text-slate-900 truncate">{{ doc.file_name }}</span>
                         </div>
-                        <span class="shrink-0 font-mono text-[11px] text-slate-500">{{ doc.file_size_formatted }}</span>
+                        <span class="shrink-0 font-mono text-[11px] text-slate-400">{{ doc.file_size_formatted }}</span>
                     </div>
                     {% endif %}
                 </div>
 
                 <!-- Footer Actions -->
-                <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
                     {% if doc %}
-                        <div class="flex items-center space-x-1.5">
+                        <div class="flex items-center space-x-2">
                             {% if item.is_file_available %}
-                            <button onclick="previewDocument({{ doc.id }}, '{{ doc.title }}', '{{ doc.mime_type }}')" class="inline-flex items-center px-2.5 py-1 border border-slate-300 rounded-md text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
-                                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-500"></i> Preview
+                            <button onclick="previewDocument({{ doc.id }}, '{{ doc.title }}', '{{ doc.mime_type }}')" class="inline-flex items-center px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> Preview
                             </button>
-                            <a href="/documents/{{ doc.id }}/download" class="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md" title="Download">
+                            <a href="/documents/{{ doc.id }}/download" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Download">
                                 <i data-lucide="download" class="w-3.5 h-3.5"></i>
                             </a>
                             {% else %}
-                            <button disabled class="inline-flex items-center px-2.5 py-1 border border-slate-200 rounded-md text-xs font-medium text-slate-400 bg-slate-100 cursor-not-allowed" title="Storage object missing">
-                                <i data-lucide="eye-off" class="w-3.5 h-3.5 mr-1"></i> Opening Disabled
+                            <button disabled class="inline-flex items-center px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-400 bg-slate-50 cursor-not-allowed">
+                                <i data-lucide="eye-off" class="w-3.5 h-3.5 mr-1"></i> Unavailable
                             </button>
                             {% endif %}
                         </div>
@@ -729,20 +739,20 @@
                         {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
                         <div class="flex items-center space-x-1.5">
                             {% if not item.is_file_available %}
-                            <button onclick="openUploadSpecificModal({{ dt.id }}, '{{ dt.title }}')" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-2xs transition-colors">
+                            <button onclick="openUploadSpecificModal({{ dt.id }}, '{{ dt.title }}')" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-2xs transition-colors">
                                 <i data-lucide="upload-cloud" class="w-3 h-3 mr-1"></i> Re-upload
                             </button>
                             {% else %}
                                 {% if doc.is_pending or doc.is_rejected %}
                                 <form action="/documents/{{ doc.id }}/verify" method="POST" class="inline">
                                     <input type="hidden" name="status_choice" value="verified">
-                                    <button type="submit" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-colors">
-                                        <i data-lucide="check" class="w-3 h-3 mr-1"></i> Approve
+                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-colors">
+                                        <i data-lucide="check" class="w-3 h-3 mr-1"></i> Verify
                                     </button>
                                 </form>
                                 {% endif %}
                                 {% if doc.is_pending or doc.is_verified %}
-                                <button onclick="openRejectModal({{ doc.id }}, '{{ doc.title }}')" class="inline-flex items-center px-2.5 py-1 border border-rose-200 rounded-md text-xs font-semibold text-rose-700 hover:bg-rose-50 transition-colors">
+                                <button onclick="openRejectModal({{ doc.id }}, '{{ doc.title }}')" class="inline-flex items-center px-2.5 py-1.5 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 hover:bg-rose-50 transition-colors">
                                     <i data-lucide="x" class="w-3 h-3 mr-1"></i> Reject
                                 </button>
                                 {% endif %}
@@ -751,10 +761,10 @@
                         {% endif %}
                     {% else %}
                         <span class="text-xs text-amber-700 font-medium flex items-center">
-                            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-amber-500"></i> Needs to Upload
+                            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-amber-500"></i> Awaiting Upload
                         </span>
                         {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                        <button onclick="openUploadSpecificModal({{ dt.id }}, '{{ dt.title }}')" class="inline-flex items-center px-2.5 py-1 border border-slate-300 rounded-md text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
+                        <button onclick="openUploadSpecificModal({{ dt.id }}, '{{ dt.title }}')" class="inline-flex items-center px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
                             <i data-lucide="upload" class="w-3 h-3 mr-1 text-teal-700"></i> Upload
                         </button>
                         {% endif %}
@@ -773,23 +783,26 @@
         {% set total_used_sum = leave_balances|sum(attribute='used_days') %}
         {% set total_pending_sum = leave_balances|sum(attribute='pending_days') %}
         {% set total_remaining_sum = leave_balances|sum(attribute='remaining_days') %}
+        {% set overall_used_pct = ((total_used_sum / total_allocated_sum * 100) if total_allocated_sum > 0 else 0)|round|int %}
+        {% set overall_pending_pct = ((total_pending_sum / total_allocated_sum * 100) if total_allocated_sum > 0 else 0)|round|int %}
+        {% set overall_rem_pct = [100 - overall_used_pct - overall_pending_pct, 0]|max %}
 
-        <div class="bg-white rounded-xl border border-slate-200 shadow-card p-5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6">
+            <!-- Header Title & Config Bar -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
                 <div class="flex items-center space-x-3.5">
-                    <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60 shrink-0">
+                    <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/70 shadow-2xs shrink-0">
                         <i data-lucide="calendar-check-2" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <div class="flex items-center space-x-2">
-                            <h3 class="font-bold text-sm text-slate-900">Leave Entitlements & Policy Quotas</h3>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 font-mono">
-                                {{ current_year }} Policy Year
+                        <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                            <h3 class="font-bold font-heading text-sm sm:text-base text-slate-900">Leave Entitlements & Policy Quotas</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 font-mono">
+                                <i data-lucide="calendar" class="w-3 h-3 mr-1 text-teal-600"></i> {{ current_year }} Policy Year
                             </span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-0.5">
-                            Applicable Gender Policy: 
-                            <span class="font-semibold text-slate-800 capitalize">{{ employee.gender or 'All' }}</span> 
+                        <p class="text-xs text-slate-500 mt-1 flex items-center space-x-2 flex-wrap gap-y-1">
+                            <span>Gender Policy: <strong class="font-semibold text-slate-800 capitalize">{{ employee.gender or 'All' }}</strong></span>
                             <span class="text-slate-300">•</span>
                             <span class="text-teal-700 font-medium">{{ leave_balances|length }} Active Entitlement Categories</span>
                         </p>
@@ -797,8 +810,8 @@
                 </div>
 
                 {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                <div class="flex items-center space-x-2">
-                    <a href="/leaves/types" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors shadow-2xs">
+                <div class="flex items-center space-x-2 shrink-0">
+                    <a href="/leaves/types" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all shadow-2xs">
                         <i data-lucide="calendar-cog" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Configure Policies
                     </a>
                 </div>
@@ -806,295 +819,405 @@
             </div>
 
             <!-- Aggregate KPI Metric Ribbon -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-4">
-                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Annual Quota</p>
-                    <div class="flex items-baseline space-x-1 mt-1">
-                        <span class="text-xl font-bold font-mono text-slate-900">{{ total_allocated_sum|int if total_allocated_sum.is_integer() else total_allocated_sum }}</span>
-                        <span class="text-xs text-slate-500">days</span>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-5">
+                <!-- Annual Quota -->
+                <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200/60 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Annual Quota</span>
+                        <div class="w-7 h-7 rounded-lg bg-slate-200/50 text-slate-600 flex items-center justify-center">
+                            <i data-lucide="calendar-range" class="w-3.5 h-3.5"></i>
+                        </div>
                     </div>
+                    <div class="mt-2 flex items-baseline space-x-1.5">
+                        <span class="text-2xl font-bold font-mono text-slate-900">{{ total_allocated_sum|int if total_allocated_sum.is_integer() else total_allocated_sum }}</span>
+                        <span class="text-xs text-slate-500 font-medium">days</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-1">Total policy entitlement</span>
                 </div>
 
-                <div class="p-3 bg-emerald-50/60 rounded-lg border border-emerald-100">
-                    <p class="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Availed / Used</p>
-                    <div class="flex items-baseline space-x-1 mt-1">
-                        <span class="text-xl font-bold font-mono text-emerald-800">{{ total_used_sum|int if total_used_sum.is_integer() else total_used_sum }}</span>
-                        <span class="text-xs text-emerald-600">days</span>
+                <!-- Availed / Used -->
+                <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Availed / Used</span>
+                        <div class="w-7 h-7 rounded-lg bg-emerald-100/70 text-emerald-700 flex items-center justify-center">
+                            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                        </div>
                     </div>
+                    <div class="mt-2 flex items-baseline space-x-1.5">
+                        <span class="text-2xl font-bold font-mono text-emerald-800">{{ total_used_sum|int if total_used_sum.is_integer() else total_used_sum }}</span>
+                        <span class="text-xs text-emerald-600 font-medium">days</span>
+                    </div>
+                    <span class="text-[10px] text-emerald-600/80 mt-1 font-mono font-medium">{{ overall_used_pct }}% of quota consumed</span>
                 </div>
 
-                <div class="p-3 bg-amber-50/60 rounded-lg border border-amber-100">
-                    <p class="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">Pending Review</p>
-                    <div class="flex items-baseline space-x-1 mt-1">
-                        <span class="text-xl font-bold font-mono text-amber-800">{{ total_pending_sum|int if total_pending_sum.is_integer() else total_pending_sum }}</span>
-                        <span class="text-xs text-amber-600">days</span>
+                <!-- Pending Review -->
+                <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100/80 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">Pending Review</span>
+                        <div class="w-7 h-7 rounded-lg bg-amber-100/70 text-amber-700 flex items-center justify-center">
+                            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                        </div>
                     </div>
+                    <div class="mt-2 flex items-baseline space-x-1.5">
+                        <span class="text-2xl font-bold font-mono text-amber-800">{{ total_pending_sum|int if total_pending_sum.is_integer() else total_pending_sum }}</span>
+                        <span class="text-xs text-amber-600 font-medium">days</span>
+                    </div>
+                    <span class="text-[10px] text-amber-600/80 mt-1">Awaiting approval</span>
                 </div>
 
-                <div class="p-3 bg-teal-50/60 rounded-lg border border-teal-100">
-                    <p class="text-[11px] font-semibold text-teal-700 uppercase tracking-wider">Available Balance</p>
-                    <div class="flex items-baseline space-x-1 mt-1">
-                        <span class="text-xl font-bold font-mono text-teal-900">{{ total_remaining_sum|int if total_remaining_sum.is_integer() else total_remaining_sum }}</span>
-                        <span class="text-xs text-teal-700">days</span>
+                <!-- Available Balance -->
+                <div class="p-4 bg-teal-50/60 rounded-xl border border-teal-200/80 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-semibold text-teal-800 uppercase tracking-wider">Available Balance</span>
+                        <div class="w-7 h-7 rounded-lg bg-teal-100/80 text-teal-800 flex items-center justify-center">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-baseline space-x-1.5">
+                        <span class="text-2xl font-extrabold font-mono text-teal-900">{{ total_remaining_sum|int if total_remaining_sum.is_integer() else total_remaining_sum }}</span>
+                        <span class="text-xs text-teal-700 font-medium">days</span>
+                    </div>
+                    <span class="text-[10px] text-teal-700 mt-1 font-mono font-medium">{{ overall_rem_pct }}% quota remaining</span>
+                </div>
+            </div>
+
+            <!-- Composite Quota Utilization Track -->
+            {% if total_allocated_sum > 0 %}
+            <div class="mt-5 pt-4 border-t border-slate-100">
+                <div class="flex items-center justify-between text-xs mb-1.5">
+                    <span class="font-semibold text-slate-700">Aggregate Quota Utilization</span>
+                    <span class="font-mono text-[11px] text-slate-500 font-medium">
+                        {{ total_used_sum|int if total_used_sum.is_integer() else total_used_sum }} used / {{ total_allocated_sum|int if total_allocated_sum.is_integer() else total_allocated_sum }} total days
+                    </span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
+                    <div style="width: {{ overall_used_pct }}%" class="bg-emerald-600 h-full transition-all duration-300" title="Availed: {{ total_used_sum }} days"></div>
+                    <div style="width: {{ overall_pending_pct }}%" class="bg-amber-500 h-full transition-all duration-300" title="Pending: {{ total_pending_sum }} days"></div>
+                    <div style="width: {{ overall_rem_pct }}%" class="bg-teal-500/30 h-full transition-all duration-300" title="Available: {{ total_remaining_sum }} days"></div>
+                </div>
+                <div class="flex items-center space-x-4 mt-2 text-[10px] text-slate-500">
+                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-600 mr-1.5 inline-block"></span> Availed ({{ overall_used_pct }}%)</span>
+                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-amber-500 mr-1.5 inline-block"></span> Pending Review ({{ overall_pending_pct }}%)</span>
+                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-teal-500/40 mr-1.5 inline-block border border-teal-500/60"></span> Available ({{ overall_rem_pct }}%)</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Category Quota Cards (Single Row) -->
+        <div>
+            <div class="flex items-center justify-between mb-3 px-1">
+                <div class="flex items-center space-x-2">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Leave Category Balances</h4>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                        {{ leave_balances|length }} Categories
+                    </span>
+                </div>
+                
+            </div>
+
+            <!-- Single Row Horizontal Carousel / Flex Track -->
+            <div class="flex flex-nowrap overflow-x-auto gap-3.5 pb-2.5 -mx-1 px-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                {% for bal in leave_balances %}
+                {% set lt = bal.leave_type %}
+                {% set pct = ((bal.used_days / bal.total_allocated * 100) if bal.total_allocated > 0 else 0)|round|int %}
+                {% set card_color = lt.color_code or '#008080' %}
+                <div class="min-w-[240px] sm:min-w-[260px] lg:min-w-[280px] flex-1 shrink-0 bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-sm hover:border-slate-300 transition-all p-4 flex flex-col justify-between space-y-3.5">
+                    <div>
+                        <!-- Category Header -->
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center space-x-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border"
+                                     style="background-color: {{ card_color }}15; border-color: {{ card_color }}35; color: {{ card_color }};">
+                                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-xs sm:text-sm text-slate-900 truncate" title="{{ lt.name }}">{{ lt.name }}</h4>
+                                    <span class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider">{{ lt.code }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-1 shrink-0">
+                                {% if lt.is_paid %}
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/80">Paid</span>
+                                {% else %}
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200/80">Unpaid</span>
+                                {% endif %}
+                                {% if lt.applicable_gender and lt.applicable_gender != 'all' %}
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200/80 capitalize">
+                                    {{ lt.applicable_gender }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Central Balance Spotlight -->
+                        <div class="mt-3.5 p-2.5 rounded-xl bg-slate-50/80 border border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider block">Remaining Available</span>
+                                <div class="flex items-baseline space-x-1 mt-0.5">
+                                    <span class="text-lg sm:text-xl font-black font-mono text-slate-900">{{ bal.remaining_days|int if bal.remaining_days.is_integer() else bal.remaining_days }}</span>
+                                    <span class="text-[11px] text-slate-400 font-medium">/ {{ bal.total_allocated|int if bal.total_allocated.is_integer() else bal.total_allocated }} days</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold {% if pct >= 90 %}bg-rose-50 text-rose-700 border border-rose-200{% elif pct >= 50 %}bg-amber-50 text-amber-700 border border-amber-200{% else %}bg-teal-50 text-teal-700 border border-teal-200{% endif %}">
+                                    {{ pct }}% Used
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Quota Metric Micro-Pillars -->
+                        <div class="grid grid-cols-4 gap-1.5 mt-2.5 text-center font-mono">
+                            <div class="bg-white rounded-lg p-1.5 border border-slate-200/60 shadow-2xs">
+                                <span class="text-[9px] text-slate-400 block font-sans font-medium">Quota</span>
+                                <span class="text-xs font-bold text-slate-800">{{ bal.total_allocated|int if bal.total_allocated.is_integer() else bal.total_allocated }}</span>
+                            </div>
+                            <div class="bg-white rounded-lg p-1.5 border border-slate-200/60 shadow-2xs">
+                                <span class="text-[9px] text-slate-400 block font-sans font-medium">Used</span>
+                                <span class="text-xs font-bold text-emerald-700">{{ bal.used_days|int if bal.used_days.is_integer() else bal.used_days }}</span>
+                            </div>
+                            <div class="bg-white rounded-lg p-1.5 border border-slate-200/60 shadow-2xs">
+                                <span class="text-[9px] text-slate-400 block font-sans font-medium">Pending</span>
+                                <span class="text-xs font-bold text-amber-700">{{ bal.pending_days|int if bal.pending_days.is_integer() else bal.pending_days }}</span>
+                            </div>
+                            <div class="bg-teal-50/50 rounded-lg p-1.5 border border-teal-200/60 shadow-2xs">
+                                <span class="text-[9px] text-teal-700 block font-sans font-semibold">Available</span>
+                                <span class="text-xs font-extrabold text-teal-900">{{ bal.remaining_days|int if bal.remaining_days.is_integer() else bal.remaining_days }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Track -->
+                        <div class="mt-3">
+                            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-300 {% if pct >= 90 %}bg-rose-500{% elif pct >= 60 %}bg-amber-500{% else %}bg-teal-600{% endif %}" style="width: {{ pct if pct <= 100 else 100 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer & Actions -->
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>
+                            {% if lt.is_carry_forward %}
+                            <span class="inline-flex items-center text-teal-700 font-medium" title="Carry forward up to {{ lt.max_carry_forward_days }} days">
+                                <i data-lucide="refresh-cw" class="w-2.5 h-2.5 mr-1"></i> CF: {{ lt.max_carry_forward_days }}d max
+                            </span>
+                            {% else %}
+                            <span class="text-slate-400">Annual Reset</span>
+                            {% endif %}
+                        </span>
+
+                        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+                        <button type="button" onclick="openAdjustLeaveQuotaModal({{ bal.id }}, '{{ lt.name }}', {{ bal.total_allocated }})" class="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold text-teal-700 hover:text-teal-900 hover:bg-teal-50 rounded-lg border border-teal-200/70 transition-colors">
+                            <i data-lucide="sliders" class="w-3 h-3 mr-1 text-teal-600"></i> Adjust
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
+                {% else %}
+                <div class="w-full py-8 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-slate-200">
+                    <i data-lucide="calendar-x" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                    <p class="text-xs sm:text-sm font-semibold text-slate-700">No applicable leave entitlements found</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Please check leave policy definitions or employee gender configuration.</p>
+                </div>
+                {% endfor %}
             </div>
         </div>
 
-        <!-- Category Quota Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for bal in leave_balances %}
-            {% set lt = bal.leave_type %}
-            {% set pct = ((bal.used_days / bal.total_allocated * 100) if bal.total_allocated > 0 else 0)|round|int %}
-            <div class="bg-white rounded-xl border border-slate-200 shadow-card p-4 flex flex-col justify-between space-y-3 hover:border-teal-300 transition-colors">
-                <div>
-                    <!-- Header -->
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="flex items-center space-x-2.5">
-                            <span class="w-3 h-3 rounded-full shrink-0" style="background-color: {{ lt.color_code or '#008080' }}"></span>
-                            <div>
-                                <h4 class="font-bold text-xs text-slate-900">{{ lt.name }}</h4>
-                                <span class="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-wider">{{ lt.code }}</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-1">
-                            {% if lt.is_paid %}
-                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">Paid</span>
-                            {% else %}
-                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Unpaid</span>
-                            {% endif %}
-                            {% if lt.applicable_gender and lt.applicable_gender != 'all' %}
-                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-800 border border-purple-200 capitalize">
-                                {{ lt.applicable_gender }}
-                            </span>
-                            {% endif %}
-                        </div>
-                    </div>
+        <!-- Applications & Requests Ledger with Sub-Tabs -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <!-- Header with Segmented Sub-Tab Switcher -->
+            <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/40">
+                <div class="flex items-center space-x-1.5 p-1 bg-slate-100/90 rounded-xl border border-slate-200/60 self-start sm:self-auto">
+                    <!-- Tab 1: Leave Applications -->
+                    <button type="button" id="subtab-btn-leaves" onclick="switchLeaveLedgerTab('leaves')" class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-teal-800 shadow-2xs border border-slate-200/60">
+                        <i data-lucide="calendar-check-2" class="w-3.5 h-3.5 mr-1.5 text-teal-600"></i>
+                        <span>Leave Applications</span>
+                        <span id="subtab-badge-leaves" class="ml-2 px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-teal-50 text-teal-800 border border-teal-200/60">{{ employee_leaves|length }}</span>
+                    </button>
 
-                    <!-- Description -->
-                    {% if lt.description %}
-                    <p class="text-[11px] text-slate-500 mt-2 line-clamp-2">{{ lt.description }}</p>
-                    {% endif %}
-
-                    <!-- Quota Metric Pillars -->
-                    <div class="grid grid-cols-4 gap-1.5 mt-3 pt-3 border-t border-slate-100 text-center font-mono">
-                        <div class="bg-slate-50 rounded p-1.5 border border-slate-100">
-                            <span class="text-[10px] text-slate-400 block font-sans">Quota</span>
-                            <span class="text-xs font-bold text-slate-800">{{ bal.total_allocated|int if bal.total_allocated.is_integer() else bal.total_allocated }}</span>
-                        </div>
-                        <div class="bg-slate-50 rounded p-1.5 border border-slate-100">
-                            <span class="text-[10px] text-slate-400 block font-sans">Used</span>
-                            <span class="text-xs font-bold text-emerald-700">{{ bal.used_days|int if bal.used_days.is_integer() else bal.used_days }}</span>
-                        </div>
-                        <div class="bg-slate-50 rounded p-1.5 border border-slate-100">
-                            <span class="text-[10px] text-slate-400 block font-sans">Pending</span>
-                            <span class="text-xs font-bold text-amber-700">{{ bal.pending_days|int if bal.pending_days.is_integer() else bal.pending_days }}</span>
-                        </div>
-                        <div class="bg-teal-50/70 rounded p-1.5 border border-teal-100">
-                            <span class="text-[10px] text-teal-700 block font-sans font-semibold">Available</span>
-                            <span class="text-xs font-extrabold text-teal-900">{{ bal.remaining_days|int if bal.remaining_days.is_integer() else bal.remaining_days }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Progress Bar -->
-                    <div class="mt-3">
-                        <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                            <span>Utilized</span>
-                            <span class="font-mono font-bold text-slate-700">{{ pct }}%</span>
-                        </div>
-                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div class="h-full rounded-full transition-all duration-300 {% if pct >= 90 %}bg-rose-500{% elif pct >= 60 %}bg-amber-500{% else %}bg-teal-600{% endif %}" style="width: {{ pct if pct <= 100 else 100 }}%"></div>
-                        </div>
-                    </div>
+                    <!-- Tab 2: Work From Home -->
+                    <button type="button" id="subtab-btn-wfh" onclick="switchLeaveLedgerTab('wfh')" class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
+                        <i data-lucide="laptop" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i>
+                        <span>Work From Home</span>
+                        <span id="subtab-badge-wfh" class="ml-2 px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-slate-200/70 text-slate-700">{{ employee_wfh|length }}</span>
+                    </button>
                 </div>
 
-                {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                <!-- Admin Adjust Action -->
-                <div class="pt-2 border-t border-slate-100 flex justify-end">
-                    <button type="button" onclick="openAdjustLeaveQuotaModal({{ bal.id }}, '{{ lt.name }}', {{ bal.total_allocated }})" class="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-teal-700 hover:text-teal-900 hover:bg-teal-50 rounded-md border border-teal-200/70 transition-colors">
-                        <i data-lucide="sliders" class="w-3 h-3 mr-1"></i> Adjust Quota
-                    </button>
+                
+            </div>
+
+            <!-- Tab Content 1: Leave Applications -->
+            <div id="subtab-content-leaves" class="subtab-content">
+                {% if employee_leaves and employee_leaves|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-100 text-xs">
+                        <thead class="bg-slate-50/80 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="px-5 py-3.5 text-left w-2/12">Leave Category</th>
+                                <th class="px-5 py-3.5 text-left w-2/12 whitespace-nowrap">Period & Duration</th>
+                                <th class="px-5 py-3.5 text-left w-4/12">Reason & Attachments</th>
+                                <th class="px-5 py-3.5 text-left w-2/12 whitespace-nowrap">Status</th>
+                                <th class="px-5 py-3.5 text-left w-2/12">Reviewer Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            {% for app in employee_leaves %}
+                            <tr class="hover:bg-slate-50/70 transition-colors">
+                                <td class="px-5 py-3.5 whitespace-nowrap">
+                                    <div class="flex items-center space-x-2.5">
+                                        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ app.leave_type.color_code if app.leave_type else '#008080' }}"></span>
+                                        <div>
+                                            <span class="font-bold text-slate-900 block">{{ app.leave_type.name if app.leave_type else 'Leave' }}</span>
+                                            <span class="text-[10px] font-mono text-slate-400 uppercase">{{ app.leave_type.code if app.leave_type else '—' }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3.5 whitespace-nowrap font-mono text-slate-900">
+                                    <div class="flex items-center space-x-1.5 font-semibold">
+                                        <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                                        <span>{{ app.start_date.strftime('%b %d, %Y') }}</span>
+                                        {% if app.start_date != app.end_date %}
+                                        <span class="text-slate-400">→</span>
+                                        <span>{{ app.end_date.strftime('%b %d, %Y') }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5 font-sans flex items-center space-x-1.5">
+                                        <span class="font-medium font-mono text-slate-700">{{ app.total_days|int if app.total_days.is_integer() else app.total_days }} day(s)</span>
+                                        {% if app.is_half_day %}
+                                        <span class="text-purple-700 bg-purple-50 border border-purple-200/60 px-1.5 py-0.2 rounded text-[10px] font-medium">({{ (app.half_day_session or 'Half Day')|replace('_', ' ')|title }})</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3.5 max-w-[260px]">
+                                    <p class="text-slate-800 line-clamp-2 break-words leading-relaxed" title="{{ app.reason }}">{{ app.reason }}</p>
+                                    {% if app.document_url %}
+                                    <a href="{{ app.document_url }}" target="_blank" class="inline-flex items-center text-[11px] font-semibold text-teal-700 hover:text-teal-900 mt-1 group">
+                                        <i data-lucide="paperclip" class="w-3 h-3 mr-1 text-teal-600 group-hover:rotate-45 transition-transform"></i> View Attachment
+                                    </a>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-3.5 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold border
+                                        {% if app.status == 'approved' %} bg-emerald-50 text-emerald-800 border-emerald-200/80
+                                        {% elif app.status == 'pending' %} bg-amber-50 text-amber-800 border-amber-200/80
+                                        {% elif app.status == 'rejected' %} bg-rose-50 text-rose-800 border-rose-200/80
+                                        {% elif app.status == 'lapsed' %} bg-slate-100 text-slate-600 border-slate-300
+                                        {% else %} bg-slate-100 text-slate-700 border-slate-200 {% endif %}">
+                                        {% if app.status == 'approved' %}<i data-lucide="check-circle-2" class="w-3 h-3 mr-1 text-emerald-600"></i>
+                                        {% elif app.status == 'pending' %}<i data-lucide="clock" class="w-3 h-3 mr-1 text-amber-500"></i>
+                                        {% elif app.status == 'rejected' %}<i data-lucide="x-circle" class="w-3 h-3 mr-1 text-rose-500"></i>
+                                        {% elif app.status == 'lapsed' %}<i data-lucide="calendar-x" class="w-3 h-3 mr-1 text-slate-500" title="Auto-lapsed due to past date"></i>
+                                        {% endif %}
+                                        {{ app.status | title }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3.5 text-xs text-slate-600 max-w-[220px]">
+                                    {% if app.reviewed_by %}
+                                    <div class="flex items-center space-x-1 font-medium text-slate-800 truncate" title="Reviewed by {{ app.reviewed_by.name }}">
+                                        <i data-lucide="user-check" class="w-3.5 h-3.5 text-teal-700 shrink-0"></i>
+                                        <span class="truncate">By {{ app.reviewed_by.name }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if app.rejection_reason %}
+                                    <span class="text-[11px] text-rose-700 italic block mt-0.5 line-clamp-2 break-words" title="{{ app.rejection_reason }}">"{{ app.rejection_reason }}"</span>
+                                    {% elif not app.reviewed_by and app.status == 'pending' %}
+                                    <span class="text-[11px] text-slate-400 flex items-center"><i data-lucide="hourglass" class="w-3 h-3 mr-1 text-slate-300 shrink-0"></i> Awaiting review</span>
+                                    {% elif app.status == 'lapsed' and not app.reviewed_by %}
+                                    <span class="text-[11px] text-slate-400 italic">Expired without review</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="py-12 text-center text-slate-400">
+                    <i data-lucide="calendar" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                    <p class="text-xs sm:text-sm font-semibold text-slate-700">No leave applications recorded for this employee</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Approved and pending leave requests will appear here chronologically.</p>
                 </div>
                 {% endif %}
             </div>
-            {% else %}
-            <div class="col-span-full py-8 text-center text-slate-500 bg-slate-50/50 rounded-xl border border-slate-200">
-                <i data-lucide="calendar-x" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
-                <p class="text-xs sm:text-sm font-semibold text-slate-800">No applicable leave entitlements found</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">Please check leave policy definitions or employee gender configuration.</p>
-            </div>
-            {% endfor %}
-        </div>
 
-        <!-- Leave Applications Ledger Card -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
-            <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
-                <div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Leave Applications History</h3>
-                    <p class="text-xs text-slate-500">Historical time-off requests, reasons, medical certificates & approval trail</p>
-                </div>
-                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 font-mono">
-                    {{ employee_leaves|length }} Records
-                </span>
-            </div>
-
-            {% if employee_leaves and employee_leaves|length > 0 %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-xs">
-                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
-                        <tr>
-                            <th class="px-5 py-3 text-left">Leave Type</th>
-                            <th class="px-5 py-3 text-left">Period & Duration</th>
-                            <th class="px-5 py-3 text-left">Reason & Document</th>
-                            <th class="px-5 py-3 text-left">Status</th>
-                            <th class="px-5 py-3 text-left">Reviewer Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 bg-white">
-                        {% for app in employee_leaves %}
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="px-5 py-3.5 whitespace-nowrap">
-                                <div class="flex items-center space-x-2">
-                                    <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ app.leave_type.color_code if app.leave_type else '#008080' }}"></span>
-                                    <div>
-                                        <span class="font-bold text-slate-900 block">{{ app.leave_type.name if app.leave_type else 'Leave' }}</span>
-                                        <span class="text-[10px] font-mono text-slate-500">{{ app.leave_type.code if app.leave_type else '—' }}</span>
+            <!-- Tab Content 2: Work From Home (WFH) -->
+            <div id="subtab-content-wfh" class="subtab-content hidden">
+                {% if employee_wfh and employee_wfh|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-100 text-xs">
+                        <thead class="bg-slate-50/80 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="px-5 py-3.5 text-left w-3/12 whitespace-nowrap">Period & Duration</th>
+                                <th class="px-5 py-3.5 text-left w-5/12">Reason & Objectives</th>
+                                <th class="px-5 py-3.5 text-left w-2/12 whitespace-nowrap">Status</th>
+                                <th class="px-5 py-3.5 text-left w-2/12">Reviewer Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            {% for w in employee_wfh %}
+                            <tr class="hover:bg-slate-50/70 transition-colors">
+                                <td class="px-5 py-3.5 whitespace-nowrap font-mono text-slate-900">
+                                    <div class="flex items-center space-x-1.5 font-semibold">
+                                        <i data-lucide="home" class="w-3.5 h-3.5 text-teal-600"></i>
+                                        <span>{{ w.start_date.strftime('%b %d, %Y') }}</span>
+                                        {% if w.start_date != w.end_date %}
+                                        <span class="text-slate-400">→</span>
+                                        <span>{{ w.end_date.strftime('%b %d, %Y') }}</span>
+                                        {% endif %}
                                     </div>
-                                </div>
-                            </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap font-mono text-slate-900">
-                                <div class="flex items-center space-x-1.5 font-semibold">
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
-                                    <span>{{ app.start_date.strftime('%b %d, %Y') }}</span>
-                                    {% if app.start_date != app.end_date %}
-                                    <span class="text-slate-400">→</span>
-                                    <span>{{ app.end_date.strftime('%b %d, %Y') }}</span>
+                                    <div class="text-[11px] text-slate-500 mt-0.5 font-sans flex items-center space-x-1.5">
+                                        <span class="font-medium font-mono text-slate-700">{{ w.total_days|int if w.total_days.is_integer() else w.total_days }} day(s)</span>
+                                        {% if w.is_half_day %}
+                                        <span class="text-purple-700 bg-purple-50 border border-purple-200/60 px-1.5 py-0.2 rounded text-[10px] font-medium">({{ (w.half_day_session or 'Half Day')|replace('_', ' ')|title }})</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3.5 max-w-[320px]">
+                                    <p class="text-slate-800 line-clamp-2 break-words leading-relaxed" title="{{ w.reason }}">{{ w.reason }}</p>
+                                </td>
+                                <td class="px-5 py-3.5 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold border
+                                        {% if w.status == 'approved' %} bg-emerald-50 text-emerald-800 border-emerald-200/80
+                                        {% elif w.status == 'pending' %} bg-amber-50 text-amber-800 border-amber-200/80
+                                        {% elif w.status == 'rejected' %} bg-rose-50 text-rose-800 border-rose-200/80
+                                        {% elif w.status == 'lapsed' %} bg-slate-100 text-slate-600 border-slate-300
+                                        {% else %} bg-slate-100 text-slate-700 border-slate-200 {% endif %}">
+                                        {% if w.status == 'approved' %}<i data-lucide="check-circle-2" class="w-3 h-3 mr-1 text-emerald-600"></i>
+                                        {% elif w.status == 'pending' %}<i data-lucide="clock" class="w-3 h-3 mr-1 text-amber-500"></i>
+                                        {% elif w.status == 'rejected' %}<i data-lucide="x-circle" class="w-3 h-3 mr-1 text-rose-500"></i>
+                                        {% elif w.status == 'lapsed' %}<i data-lucide="calendar-x" class="w-3 h-3 mr-1 text-slate-500" title="Auto-lapsed due to past date"></i>
+                                        {% endif %}
+                                        {{ w.status | title }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3.5 text-xs text-slate-600 max-w-[220px]">
+                                    {% if w.reviewed_by %}
+                                    <div class="flex items-center space-x-1 font-medium text-slate-800 truncate" title="Reviewed by {{ w.reviewed_by.name }}">
+                                        <i data-lucide="user-check" class="w-3.5 h-3.5 text-teal-700 shrink-0"></i>
+                                        <span class="truncate">By {{ w.reviewed_by.name }}</span>
+                                    </div>
                                     {% endif %}
-                                </div>
-                                <div class="text-[11px] text-slate-500 mt-0.5">
-                                    {{ app.total_days|int if app.total_days.is_integer() else app.total_days }} day(s)
-                                    {% if app.is_half_day %}
-                                    <span class="text-purple-700 bg-purple-50 px-1 py-0.2 rounded text-[10px] font-sans">({{ (app.half_day_session or 'Half Day')|replace('_', ' ')|title }})</span>
+                                    {% if w.rejection_reason %}
+                                    <span class="text-[11px] text-rose-700 italic block mt-0.5 line-clamp-2 break-words" title="{{ w.rejection_reason }}">"{{ w.rejection_reason }}"</span>
+                                    {% elif not w.reviewed_by and w.status == 'pending' %}
+                                    <span class="text-[11px] text-slate-400 flex items-center"><i data-lucide="hourglass" class="w-3 h-3 mr-1 text-slate-300 shrink-0"></i> Awaiting review</span>
+                                    {% elif w.status == 'lapsed' and not w.reviewed_by %}
+                                    <span class="text-[11px] text-slate-400 italic">Expired without review</span>
                                     {% endif %}
-                                </div>
-                            </td>
-                            <td class="px-5 py-3.5 max-w-xs">
-                                <p class="text-slate-800 line-clamp-2">{{ app.reason }}</p>
-                                {% if app.document_url %}
-                                <a href="{{ app.document_url }}" target="_blank" class="inline-flex items-center text-[11px] font-semibold text-teal-700 hover:text-teal-900 mt-1">
-                                    <i data-lucide="paperclip" class="w-3 h-3 mr-1"></i> View Attachment
-                                </a>
-                                {% endif %}
-                            </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border
-                                    {% if app.status == 'approved' %} bg-emerald-50 text-emerald-800 border-emerald-200
-                                    {% elif app.status == 'pending' %} bg-amber-50 text-amber-800 border-amber-200
-                                    {% elif app.status == 'rejected' %} bg-rose-50 text-rose-800 border-rose-200
-                                    {% elif app.status == 'lapsed' %} bg-slate-100 text-slate-600 border-slate-300
-                                    {% else %} bg-slate-100 text-slate-700 border-slate-200 {% endif %}">
-                                    {{ app.status | title }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-3.5 text-xs text-slate-600 max-w-xs">
-                                {% if app.reviewed_by %}
-                                <span class="font-medium text-slate-800 block">By {{ app.reviewed_by.name }}</span>
-                                {% endif %}
-                                {% if app.rejection_reason %}
-                                <span class="text-[11px] text-rose-700 italic">"{{ app.rejection_reason }}"</span>
-                                {% elif not app.reviewed_by %}
-                                <span class="text-[11px] text-slate-400">Awaiting review</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="py-10 text-center text-slate-500 bg-slate-50/50">
-                <i data-lucide="calendar" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
-                <p class="text-xs sm:text-sm font-semibold text-slate-800">No leave applications recorded for this employee</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Work From Home (WFH) History Ledger Card -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
-            <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
-                <div>
-                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Work From Home (WFH) Requests</h3>
-                    <p class="text-xs text-slate-500">Remote work logs, dates, reasons and approval status</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 font-mono">
-                    {{ employee_wfh|length }} Records
-                </span>
+                {% else %}
+                <div class="py-12 text-center text-slate-400">
+                    <i data-lucide="home" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                    <p class="text-xs sm:text-sm font-semibold text-slate-700">No WFH requests recorded for this employee</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Approved and pending remote work applications will appear here.</p>
+                </div>
+                {% endif %}
             </div>
-
-            {% if employee_wfh and employee_wfh|length > 0 %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-xs">
-                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
-                        <tr>
-                            <th class="px-5 py-3 text-left">Period & Duration</th>
-                            <th class="px-5 py-3 text-left">Reason</th>
-                            <th class="px-5 py-3 text-left">Status</th>
-                            <th class="px-5 py-3 text-left">Reviewer Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 bg-white">
-                        {% for w in employee_wfh %}
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="px-5 py-3.5 whitespace-nowrap font-mono text-slate-900">
-                                <div class="flex items-center space-x-1.5 font-semibold">
-                                    <i data-lucide="home" class="w-3.5 h-3.5 text-teal-600"></i>
-                                    <span>{{ w.start_date.strftime('%b %d, %Y') }}</span>
-                                    {% if w.start_date != w.end_date %}
-                                    <span class="text-slate-400">→</span>
-                                    <span>{{ w.end_date.strftime('%b %d, %Y') }}</span>
-                                    {% endif %}
-                                </div>
-                                <div class="text-[11px] text-slate-500 mt-0.5">
-                                    {{ w.total_days|int if w.total_days.is_integer() else w.total_days }} day(s)
-                                    {% if w.is_half_day %}
-                                    <span class="text-purple-700 bg-purple-50 px-1 py-0.2 rounded text-[10px] font-sans">({{ (w.half_day_session or 'Half Day')|replace('_', ' ')|title }})</span>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td class="px-5 py-3.5 max-w-xs text-slate-800">
-                                {{ w.reason }}
-                            </td>
-                            <td class="px-5 py-3.5 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border
-                                    {% if w.status == 'approved' %} bg-emerald-50 text-emerald-800 border-emerald-200
-                                    {% elif w.status == 'pending' %} bg-amber-50 text-amber-800 border-amber-200
-                                    {% elif w.status == 'rejected' %} bg-rose-50 text-rose-800 border-rose-200
-                                    {% elif w.status == 'lapsed' %} bg-slate-100 text-slate-600 border-slate-300
-                                    {% else %} bg-slate-100 text-slate-700 border-slate-200 {% endif %}">
-                                    {{ w.status | title }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-3.5 text-xs text-slate-600 max-w-xs">
-                                {% if w.reviewed_by %}
-                                <span class="font-medium text-slate-800 block">By {{ w.reviewed_by.name }}</span>
-                                {% endif %}
-                                {% if w.rejection_reason %}
-                                <span class="text-[11px] text-rose-700 italic">"{{ w.rejection_reason }}"</span>
-                                {% elif not w.reviewed_by %}
-                                <span class="text-[11px] text-slate-400">Awaiting review</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="py-10 text-center text-slate-500 bg-slate-50/50">
-                <i data-lucide="home" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
-                <p class="text-xs sm:text-sm font-semibold text-slate-800">No WFH requests recorded for this employee</p>
-            </div>
-            {% endif %}
         </div>
 
     </div>
@@ -1106,58 +1229,58 @@
 {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] and employee.role != 'super_admin' %}
 <!-- Modal: Generate Payslip -->
 <div id="generatePayslipModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-start justify-center min-h-screen pt-12 sm:pt-16 pb-24 px-4 text-center">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closeGeneratePayslipModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="relative inline-block w-full max-w-md bg-white rounded-2xl text-left shadow-2xl transform transition-all my-auto border border-slate-200 z-10 overflow-hidden">
-            <div class="p-5 sm:p-6">
-                <div class="flex justify-between items-start pb-3.5 border-b border-slate-100">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200/80">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200/80">
+                        <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200/80">
                             <i data-lucide="calculator" class="w-5 h-5"></i>
                         </div>
                         <div>
                             <h3 class="text-base font-bold font-heading text-slate-900">Generate Draft Payslip</h3>
-                            <p class="text-xs text-slate-500">For {{ employee.name }}</p>
+                            <p class="text-xs text-slate-500">{{ employee.name }}</p>
                         </div>
                     </div>
-                    <button onclick="closeGeneratePayslipModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                    <button onclick="closeGeneratePayslipModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
                 
-                <form action="/payroll/generate-draft" method="POST" class="mt-4 space-y-4">
+                <form action="/payroll/generate-draft" method="POST" class="mt-5 space-y-4">
                     <input type="hidden" name="employee_id" value="{{ employee.id }}">
                     
-                    <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs">
-                        <span class="font-bold text-slate-900">Target Employee:</span> {{ employee.name }} ({{ employee.email }})
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/70 text-xs">
+                        <span class="font-semibold text-slate-500">Employee:</span> <span class="font-bold text-slate-900">{{ employee.name }}</span> ({{ employee.email }})
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-3.5">
                         <div>
-                            <label for="modal_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Month</label>
-                            <select name="month" id="modal_month" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <label for="modal_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Month</label>
+                            <select name="month" id="modal_month" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
                                 {% for i in range(1, 13) %}
                                 <option value="{{ i }}" {% if i == (current_month or 9) %}selected{% endif %}>{{ "%02d" % i }} - {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div>
-                            <label for="modal_year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Year</label>
-                            <select name="year" id="modal_year" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <label for="modal_year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Year</label>
+                            <select name="year" id="modal_year" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
                                 {% for yr in (available_years or range(app_year - 2, app_year + 3)) %}
                                 <option value="{{ yr }}" {% if yr == (current_year or app_year) %}selected{% endif %}>{{ yr }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
-
                     
-                    <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closeGeneratePayslipModal()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-2.5 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="closeGeneratePayslipModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
                             Generate Draft
                         </button>
                     </div>
@@ -1174,11 +1297,11 @@
         <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closeOverrideModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
-            <div class="p-5 sm:p-6">
-                <div class="flex justify-between items-start pb-3.5 border-b border-slate-100">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200/80">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200/80">
+                        <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200/80">
                             <i data-lucide="clock-4" class="w-5 h-5"></i>
                         </div>
                         <div>
@@ -1186,34 +1309,34 @@
                             <p class="text-xs text-slate-500">Adjust in/out timestamps</p>
                         </div>
                     </div>
-                    <button onclick="closeOverrideModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                    <button onclick="closeOverrideModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
                 
-                <form id="overrideForm" method="POST" class="mt-4 space-y-4">
-                    <div class="grid grid-cols-2 gap-3">
+                <form id="overrideForm" method="POST" class="mt-5 space-y-4">
+                    <div class="grid grid-cols-2 gap-3.5">
                         <div>
-                            <label for="modal_check_in" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Check In Time</label>
-                            <input type="time" name="check_in_time" id="modal_check_in" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <label for="modal_check_in" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Check In Time</label>
+                            <input type="time" name="check_in_time" id="modal_check_in" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
                         </div>
                         
                         <div>
-                            <label for="modal_check_out" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Check Out Time</label>
-                            <input type="time" name="check_out_time" id="modal_check_out" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <label for="modal_check_out" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Check Out Time</label>
+                            <input type="time" name="check_out_time" id="modal_check_out" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
                         </div>
                     </div>
                     
                     <div>
-                        <label for="modal_reason" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Reason for Override <span class="text-rose-500">*</span></label>
-                        <input type="text" name="reason" id="modal_reason" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600" placeholder="e.g. Punch failure / approved regularization">
+                        <label for="modal_reason" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Reason for Override <span class="text-rose-500">*</span></label>
+                        <input type="text" name="reason" id="modal_reason" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600" placeholder="e.g. Punch failure / approved regularization">
                     </div>
                     
-                    <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closeOverrideModal()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-2.5 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="closeOverrideModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
                             Save Override
                         </button>
                     </div>
@@ -1230,36 +1353,36 @@
         <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closePasswordResetModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
-            <div class="p-5 sm:p-6">
-                <div class="flex justify-between items-start pb-3.5 border-b border-slate-100">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200/80">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200">
+                        <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200">
                             <i data-lucide="key-round" class="w-5 h-5"></i>
                         </div>
                         <div>
                             <h3 class="text-base font-bold font-heading text-slate-900">Manage Password</h3>
-                            <p class="text-xs text-slate-500">Administrative authority options</p>
+                            <p class="text-xs text-slate-500">Security & Credential Options</p>
                         </div>
                     </div>
-                    <button onclick="closePasswordResetModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                    <button onclick="closePasswordResetModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
                 
                 <p class="text-xs sm:text-sm text-slate-600 mt-3">
-                    Choose how to reset password for <span id="resetModalEmployeeName" class="font-bold text-slate-900"></span>:
+                    Choose how to reset credentials for <span id="resetModalEmployeeName" class="font-bold text-slate-900"></span>:
                 </p>
 
                 <form id="resetPasswordForm" method="POST" class="mt-4 space-y-4">
                     <input type="hidden" name="reset_mode" id="modal_reset_mode_view" value="direct">
 
                     <!-- Mode Selector Tabs -->
-                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
-                        <button type="button" id="tabSetDirectView" onclick="setResetTabView('direct')" class="py-2 px-3 rounded-md transition-colors bg-white text-slate-900 shadow-xs">
-                            Set New Password
+                    <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl text-xs font-semibold">
+                        <button type="button" id="tabSetDirectView" onclick="setResetTabView('direct')" class="py-2 px-3 rounded-lg transition-colors bg-white text-slate-900 shadow-2xs">
+                            Set Directly
                         </button>
-                        <button type="button" id="tabSendLinkView" onclick="setResetTabView('email_link')" class="py-2 px-3 rounded-md transition-colors text-slate-600 hover:text-slate-900">
+                        <button type="button" id="tabSendLinkView" onclick="setResetTabView('email_link')" class="py-2 px-3 rounded-lg transition-colors text-slate-600 hover:text-slate-900">
                             Send Email Link
                         </button>
                     </div>
@@ -1267,21 +1390,21 @@
                     <!-- Direct Password Input Section -->
                     <div id="sectionDirectPassView" class="space-y-2">
                         <label for="new_password_view" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">New Password</label>
-                        <input type="password" name="new_password" id="new_password_view" minlength="6" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600" placeholder="Minimum 6 characters">
-                        <p class="text-[11px] text-slate-500">The employee will receive an automated email with their updated credentials.</p>
+                        <input type="password" name="new_password" id="new_password_view" minlength="6" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600" placeholder="Minimum 6 characters">
+                        <p class="text-[11px] text-slate-400">The employee will receive an automated email with their updated credentials.</p>
                     </div>
 
                     <!-- Email Link Notice Section -->
-                    <div id="sectionEmailLinkView" class="hidden p-3.5 bg-teal-50 border border-teal-200 rounded-lg text-xs text-teal-800 space-y-1">
-                        <p class="font-bold flex items-center"><i data-lucide="mail-check" class="w-4 h-4 mr-1.5 text-teal-600"></i> Email Verification Link</p>
-                        <p class="text-[11px] text-teal-700">A secure 30-minute password reset link will be sent to the employee's work email address so they can choose their own new password.</p>
+                    <div id="sectionEmailLinkView" class="hidden p-3.5 bg-teal-50 border border-teal-200/80 rounded-xl text-xs text-teal-800 space-y-1">
+                        <p class="font-bold flex items-center"><i data-lucide="mail-check" class="w-4 h-4 mr-1.5 text-teal-600"></i> Secure Email Link</p>
+                        <p class="text-[11px] text-teal-700">A secure 30-minute password reset link will be sent to the employee's email so they can choose their own new password.</p>
                     </div>
                     
-                    <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closePasswordResetModal()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-2.5 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="closePasswordResetModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" id="resetModalSubmitBtnView" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors shadow-xs">
+                        <button type="submit" id="resetModalSubmitBtnView" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
                             Update & Email
                         </button>
                     </div>
@@ -1294,12 +1417,12 @@
 
 <!-- Modal: Document Reject -->
 <div id="rejectModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs hidden">
-    <div class="relative max-w-md w-full bg-white rounded-xl shadow-2xl border border-rose-200 p-5 sm:p-6 space-y-4" onclick="event.stopPropagation()">
+    <div class="relative max-w-md w-full bg-white rounded-2xl shadow-2xl border border-rose-200 p-6 space-y-4" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 class="text-sm font-bold text-rose-700 flex items-center font-heading">
                 <i data-lucide="alert-triangle" class="w-4 h-4 mr-1.5 text-rose-600"></i> Reject & Request Re-upload
             </h3>
-            <button onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+            <button onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
@@ -1308,16 +1431,16 @@
             <input type="hidden" name="status_choice" value="rejected">
             <div>
                 <p id="rejectDocTitle" class="text-xs font-semibold text-slate-900 mb-2"></p>
-                <label for="rejection_reason" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Reason for Rejection <span class="text-rose-500">*</span></label>
+                <label for="rejection_reason" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Reason for Rejection <span class="text-rose-500">*</span></label>
                 <textarea name="rejection_reason" required rows="3" placeholder="e.g. Scanned copy is blurry. Please upload a clear color original."
-                    class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-rose-500"></textarea>
+                    class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 focus:bg-white focus:outline-none focus:border-rose-500"></textarea>
             </div>
 
             <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
-                <button type="button" onclick="closeRejectModal()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                <button type="button" onclick="closeRejectModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                     Cancel
                 </button>
-                <button type="submit" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-xs">
+                <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-xs">
                     Confirm Rejection
                 </button>
             </div>
@@ -1327,10 +1450,10 @@
 
 <!-- Modal: HR Upload Document -->
 <div id="hrUploadModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs hidden">
-    <div class="relative max-w-lg w-full bg-white rounded-xl shadow-2xl border border-slate-200 p-5 sm:p-6 space-y-4" onclick="event.stopPropagation()">
+    <div class="relative max-w-lg w-full bg-white rounded-2xl shadow-2xl border border-slate-200/80 p-6 space-y-4" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 class="text-sm font-bold font-heading text-slate-900">Upload Document for {{ employee.name }}</h3>
-            <button onclick="closeHRUploadModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+            <button onclick="closeHRUploadModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
@@ -1339,8 +1462,8 @@
             <input type="hidden" name="redirect_target" value="/employees/{{ employee.id }}#documents">
 
             <div>
-                <label for="hr_doc_type" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Document Type</label>
-                <select name="document_type_id" id="hr_doc_type" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
+                <label for="hr_doc_type" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Document Type</label>
+                <select name="document_type_id" id="hr_doc_type" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
                     {% for item in doc_checklist %}
                         <option value="{{ item.type.id }}">{{ item.type.title }} ({{ item.type.category }})</option>
                     {% endfor %}
@@ -1349,15 +1472,15 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Select File (PDF / Image)</label>
-                <input type="file" name="file" required class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Select File (PDF / Image)</label>
+                <input type="file" name="file" required class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2 text-slate-900">
             </div>
 
             <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
-                <button type="button" onclick="closeHRUploadModal()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                <button type="button" onclick="closeHRUploadModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                     Cancel
                 </button>
-                <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-xs">
+                <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-xs">
                     Upload & Save
                 </button>
             </div>
@@ -1432,11 +1555,11 @@
         <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closeAdjustLeaveQuotaModal()"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
-            <div class="p-5 sm:p-6">
-                <div class="flex justify-between items-start pb-3.5 border-b border-slate-100">
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200/80">
+            <div class="p-6">
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200/80">
+                        <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200/80">
                             <i data-lucide="sliders" class="w-5 h-5"></i>
                         </div>
                         <div>
@@ -1444,25 +1567,25 @@
                             <p class="text-xs text-slate-500" id="adjustModalSubtitle">For {{ employee.name }}</p>
                         </div>
                     </div>
-                    <button onclick="closeAdjustLeaveQuotaModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                    <button onclick="closeAdjustLeaveQuotaModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
 
-                <form id="adjustLeaveQuotaForm" method="POST" class="mt-4 space-y-4">
+                <form id="adjustLeaveQuotaForm" method="POST" class="mt-5 space-y-4">
                     <input type="hidden" name="redirect_target" value="/employees/{{ employee.id }}/view#leaves">
 
                     <div>
-                        <label for="modal_total_allocated" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Total Annual Quota (Days)</label>
-                        <input type="number" step="0.5" min="0" max="365" name="total_allocated" id="modal_total_allocated" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 font-mono font-bold">
-                        <p class="text-[11px] text-slate-500 mt-1">Set the exact total entitled quota days for this policy year.</p>
+                        <label for="modal_total_allocated" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Total Annual Quota (Days)</label>
+                        <input type="number" step="0.5" min="0" max="365" name="total_allocated" id="modal_total_allocated" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 font-mono font-bold">
+                        <p class="text-[11px] text-slate-400 mt-1">Set the exact total entitled quota days for this policy year.</p>
                     </div>
 
-                    <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="closeAdjustLeaveQuotaModal()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-end space-x-2.5 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="closeAdjustLeaveQuotaModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
+                        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-xs">
                             Save Quota
                         </button>
                     </div>
@@ -1485,29 +1608,29 @@
             if (t === tabId) {
                 if (content) content.classList.remove('hidden');
                 if (btn) {
-                    btn.classList.add('text-teal-700', 'bg-teal-50', 'border-teal-200/80', 'font-bold', 'shadow-2xs');
-                    btn.classList.remove('text-slate-600', 'hover:bg-slate-100', 'border-transparent');
+                    btn.classList.add('text-teal-700', 'border-teal-700');
+                    btn.classList.remove('text-slate-500', 'border-transparent', 'hover:text-slate-800', 'hover:border-slate-300');
                     const icon = btn.querySelector('svg, i');
                     if (icon) {
                         icon.classList.add('text-teal-700');
-                        icon.classList.remove('text-slate-500');
+                        icon.classList.remove('text-slate-400');
                     }
                 }
             } else {
                 if (content) content.classList.add('hidden');
                 if (btn) {
-                    btn.classList.remove('text-teal-700', 'bg-teal-50', 'border-teal-200/80', 'font-bold', 'shadow-2xs');
-                    btn.classList.add('text-slate-600', 'hover:bg-slate-100', 'border-transparent');
+                    btn.classList.remove('text-teal-700', 'border-teal-700');
+                    btn.classList.add('text-slate-500', 'border-transparent', 'hover:text-slate-800', 'hover:border-slate-300');
                     const icon = btn.querySelector('svg, i');
                     if (icon) {
                         icon.classList.remove('text-teal-700');
-                        icon.classList.add('text-slate-500');
+                        icon.classList.add('text-slate-400');
                     }
                 }
             }
         });
         
-        // Update URL hash without jumping
+        // Update URL hash smoothly
         if (history.replaceState) {
             history.replaceState(null, null, '#' + tabId);
         }
@@ -1520,6 +1643,52 @@
             switchTab(hash);
         }
     });
+
+    // Sub-Tab Switching for Leaves & WFH Ledger
+    function switchLeaveLedgerTab(tab) {
+        const leavesContent = document.getElementById('subtab-content-leaves');
+        const wfhContent = document.getElementById('subtab-content-wfh');
+        const leavesBtn = document.getElementById('subtab-btn-leaves');
+        const wfhBtn = document.getElementById('subtab-btn-wfh');
+        const leavesBadge = document.getElementById('subtab-badge-leaves');
+        const wfhBadge = document.getElementById('subtab-badge-wfh');
+        const desc = document.getElementById('subtab-ledger-desc');
+
+        if (tab === 'leaves') {
+            if (leavesContent) leavesContent.classList.remove('hidden');
+            if (wfhContent) wfhContent.classList.add('hidden');
+            if (leavesBtn) {
+                leavesBtn.className = "inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-teal-800 shadow-2xs border border-slate-200/60";
+                const icon = leavesBtn.querySelector('i, svg');
+                if (icon) icon.className = "w-3.5 h-3.5 mr-1.5 text-teal-600";
+            }
+            if (wfhBtn) {
+                wfhBtn.className = "inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
+                const icon = wfhBtn.querySelector('i, svg');
+                if (icon) icon.className = "w-3.5 h-3.5 mr-1.5 text-slate-400";
+            }
+            if (leavesBadge) leavesBadge.className = "ml-2 px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-teal-50 text-teal-800 border border-teal-200/60";
+            if (wfhBadge) wfhBadge.className = "ml-2 px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-slate-200/70 text-slate-700";
+            if (desc) desc.textContent = "Historical time-off requests, reasons, and reviewer trail";
+        } else {
+            if (leavesContent) leavesContent.classList.add('hidden');
+            if (wfhContent) wfhContent.classList.remove('hidden');
+            if (wfhBtn) {
+                wfhBtn.className = "inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-teal-800 shadow-2xs border border-slate-200/60";
+                const icon = wfhBtn.querySelector('i, svg');
+                if (icon) icon.className = "w-3.5 h-3.5 mr-1.5 text-teal-600";
+            }
+            if (leavesBtn) {
+                leavesBtn.className = "inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
+                const icon = leavesBtn.querySelector('i, svg');
+                if (icon) icon.className = "w-3.5 h-3.5 mr-1.5 text-slate-400";
+            }
+            if (wfhBadge) wfhBadge.className = "ml-2 px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-teal-50 text-teal-800 border border-teal-200/60";
+            if (leavesBadge) leavesBadge.className = "ml-2 px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-slate-200/70 text-slate-700";
+            if (desc) desc.textContent = "";
+        }
+        if (window.lucide) { lucide.createIcons(); }
+    }
 
     function openAdjustLeaveQuotaModal(balId, leaveTypeName, currentQuota) {
         const modal = document.getElementById('adjustLeaveQuotaModal');
@@ -1628,16 +1797,16 @@
 
         if (mode === 'email_link') {
             modalResetMode.value = 'email_link';
-            tabSendLink.className = "py-2 px-3 rounded-md transition-colors bg-white text-slate-900 shadow-xs";
-            tabSetDirect.className = "py-2 px-3 rounded-md transition-colors text-slate-600 hover:text-slate-900";
+            tabSendLink.className = "py-2 px-3 rounded-lg transition-colors bg-white text-slate-900 shadow-2xs";
+            tabSetDirect.className = "py-2 px-3 rounded-lg transition-colors text-slate-600 hover:text-slate-900";
             sectionDirectPass.classList.add('hidden');
             sectionEmailLink.classList.remove('hidden');
             newPasswordInput.removeAttribute('required');
             submitBtn.textContent = 'Send Verification Email';
         } else {
             modalResetMode.value = 'direct';
-            tabSetDirect.className = "py-2 px-3 rounded-md transition-colors bg-white text-slate-900 shadow-xs";
-            tabSendLink.className = "py-2 px-3 rounded-md transition-colors text-slate-600 hover:text-slate-900";
+            tabSetDirect.className = "py-2 px-3 rounded-lg transition-colors bg-white text-slate-900 shadow-2xs";
+            tabSendLink.className = "py-2 px-3 rounded-lg transition-colors text-slate-600 hover:text-slate-900";
             sectionDirectPass.classList.remove('hidden');
             sectionEmailLink.classList.add('hidden');
             newPasswordInput.setAttribute('required', 'required');

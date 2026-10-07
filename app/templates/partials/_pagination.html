@@ -1,0 +1,82 @@
+{# Reusable Server-Side Pagination Bar #}
+{# Expected variables: page_data (PageResult), target_id (str), url_path (str), include_inputs (str optional), entity_label (str optional) #}
+{% set entity = entity_label or 'records' %}
+{% if page_data %}
+<div class="px-4 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 select-none">
+    <!-- Record Counter -->
+    <div class="flex items-center space-x-1.5">
+        <span class="text-slate-500">Showing</span>
+        <span class="font-bold font-mono text-slate-900">{{ page_data.start_record }}</span>
+        <span class="text-slate-400">–</span>
+        <span class="font-bold font-mono text-slate-900">{{ page_data.end_record }}</span>
+        <span class="text-slate-500">of</span>
+        <span class="font-bold font-mono text-slate-900">{{ page_data.total_records }}</span>
+        <span class="text-slate-500">{{ entity }}</span>
+        <span class="text-slate-300 mx-1">•</span>
+        <span class="text-[11px] text-teal-800 font-semibold bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded">
+            {{ page_data.page_size }} / page
+        </span>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="flex items-center space-x-1.5">
+        <!-- Previous Page Button -->
+        {% if page_data.has_prev %}
+        <a href="javascript:void(0)"
+           hx-get="{{ url_path }}?page={{ page_data.prev_page }}"
+           hx-target="{{ target_id }}"
+           hx-push-url="true"
+           {% if include_inputs %}hx-include="{{ include_inputs }}"{% endif %}
+           class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-semibold text-slate-700 transition-colors shadow-2xs cursor-pointer">
+            <i data-lucide="chevron-left" class="w-3.5 h-3.5 mr-1 text-slate-500"></i>
+            <span>Previous</span>
+        </a>
+        {% else %}
+        <span class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200/60 bg-slate-100/60 font-semibold text-slate-400 opacity-50 cursor-not-allowed shadow-none">
+            <i data-lucide="chevron-left" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+            <span>Previous</span>
+        </span>
+        {% endif %}
+
+        <!-- Page Number Pills -->
+        <div class="flex items-center space-x-1">
+            {% for p in page_data.page_numbers %}
+                {% if p == '...' %}
+                <span class="px-2 py-1 text-slate-400 font-mono text-xs">…</span>
+                {% elif p == page_data.current_page %}
+                <span class="px-3 py-1 rounded-lg bg-teal-700 text-white font-bold font-mono text-xs shadow-xs">
+                    {{ p }}
+                </span>
+                {% else %}
+                <a href="javascript:void(0)"
+                   hx-get="{{ url_path }}?page={{ p }}"
+                   hx-target="{{ target_id }}"
+                   hx-push-url="true"
+                   {% if include_inputs %}hx-include="{{ include_inputs }}"{% endif %}
+                   class="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-medium font-mono text-xs transition-colors shadow-2xs cursor-pointer">
+                    {{ p }}
+                </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Next Page Button -->
+        {% if page_data.has_next %}
+        <a href="javascript:void(0)"
+           hx-get="{{ url_path }}?page={{ page_data.next_page }}"
+           hx-target="{{ target_id }}"
+           hx-push-url="true"
+           {% if include_inputs %}hx-include="{{ include_inputs }}"{% endif %}
+           class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-semibold text-slate-700 transition-colors shadow-2xs cursor-pointer">
+            <span>Next</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-500"></i>
+        </a>
+        {% else %}
+        <span class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-200/60 bg-slate-100/60 font-semibold text-slate-400 opacity-50 cursor-not-allowed shadow-none">
+            <span>Next</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+        </span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

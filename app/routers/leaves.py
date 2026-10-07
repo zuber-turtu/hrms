@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.employee import Employee
 from app.models.department import Department
 from app.models.leave import LeaveType, LeaveBalance, LeaveApplication, WfhRequest
+from app.models.company import Company
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.utils.timezone import get_ist_today, get_ist_now
@@ -17,6 +18,7 @@ from app.utils.security import get_safe_redirect, append_query_param
 from app.services.email_service import send_leave_status_email, send_wfh_status_email
 from app.templates_config import templates
 from app.utils.flash import flash_redirect
+from app.services.excel_exporter import export_leaves_excel, export_leave_balances_excel
 
 router = APIRouter(prefix="/leaves")
 
@@ -1972,3 +1974,96 @@ async def toggle_leave_type_status(
         message=f"Leave type '{leave_type.name}' {status_str} successfully.",
         category="success",
     )
+
+
+# =========================================================================
+# LEAVES & BALANCES EXCEL EXPORTS
+# =========================================================================
+
+@router.get("/export-excel")
+async def export_leaves_ledger(
+    year: Optional[int] = None,
+    status: Optional[str] = "all",
+    type_id: Optional[int] = None,
+    subtab: Optional[str] = "leaves",
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(require_auth),
+):
+    """Exports leave applications or WFH requests ledger to Excel matching active filters."""
+    today = get_ist_today()
+    sel_year = year or today.year
+
+    if subtab == "wfh":
+        query = db.query(WfhRequest).join(Employee, WfhRequest.employee_id == Employee.id)
+        if current_user.role in ["employee", "intern"]:
+            query = query.filter(WfhRequest.employee_id == current_user.id)
+        elif current_user.role == "manager":
+            query = query.filter(
+                or_(
+                    WfhRequest.employee_id == current_user.id,
+                    and_(
+                        Employee.department_id == current_user.department_id,
+                        Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
+                    )
+                )
+            )
+
+        if sel_year:
+            query = query.filter(extract("year", WfhRequest.start_date) == sel_year)
+        if status and status.strip() and status.lower() != "all":
+            query = query.filter(WfhRequest.status == status.strip().lower())
+
+        records = query.order_by(WfhRequest.start_date.desc()).all()
+    else:
+        query = db.query(LeaveApplication).join(Employee, LeaveApplication.employee_id == Employee.id)
+        if current_user.role in ["employee", "intern"]:
+            query = query.filter(LeaveApplication.employee_id == current_user.id)
+        elif current_user.role == "manager":
+            query = query.filter(
+                or_(
+                    LeaveApplication.employee_id == current_user.id,
+                    and_(
+                        Employee.department_id == current_user.department_id,
+                        Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
+                    )
+                )
+            )
+
+        if sel_year:
+            query = query.filter(extract("year", LeaveApplication.start_date) == sel_year)
+        if status and status.strip() and status.lower() != "all":
+            query = query.filter(LeaveApplication.status == status.strip().lower())
+        if type_id and type_id > 0:
+            query = query.filter(LeaveApplication.leave_type_id == type_id)
+
+        records = query.order_by(LeaveApplication.start_date.desc()).all()
+
+    company = db.query(Company).first()
+    return export_leaves_excel(records, company, year=sel_year, status_filter=status)
+
+
+@router.get("/balances/export-excel")
+async def export_leave_balances_spreadsheet(
+    year: Optional[int] = None,
+    dept_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """Exports staff annual leave quotas and balances."""
+    today = get_ist_today()
+    sel_year = year or today.year
+
+    query = db.query(LeaveBalance).join(Employee, LeaveBalance.employee_id == Employee.id).filter(
+        LeaveBalance.year == sel_year,
+        Employee.is_active == True,
+        Employee.role != "super_admin"
+    )
+
+    if current_user.role == "manager":
+        query = query.filter(Employee.department_id == current_user.department_id)
+    elif dept_id and dept_id > 0:
+        query = query.filter(Employee.department_id == dept_id)
+
+    balances = query.order_by(Employee.name.asc()).all()
+    company = db.query(Company).first()
+    return export_leave_balances_excel(balances, company, year=sel_year)

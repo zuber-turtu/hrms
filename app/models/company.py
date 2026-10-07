@@ -40,5 +40,5 @@ class Company(Base):
     # Dynamic Access Control & Role Permissions Matrix (JSON string)
     role_permissions = Column(String, nullable=True)
 
-    # Employee ID Prefix (e.g. 'TURTU', 'EMP' -> TURTU-0001; if null/empty -> #0001)
+    # Employee ID Prefix (e.g. 'Company', 'EMP' -> Company-0001; if null/empty -> #0001)
     employee_id_prefix = Column(String, nullable=True)

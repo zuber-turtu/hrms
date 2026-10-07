@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Date, Float, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, Date, Float, ForeignKey, DateTime, Index
 from sqlalchemy.orm import relationship as orm_relationship
 from app.database import Base
 from app.utils.timezone import get_ist_today
@@ -11,15 +11,15 @@ class Employee(Base):
     hashed_password = Column(String, nullable=False)
     
     # Roles: admin, hr_admin, manager, employee, intern
-    role = Column(String, default="employee")
-    is_active = Column(Boolean, default=True)
+    role = Column(String, default="employee", index=True)
+    is_active = Column(Boolean, default=True, index=True)
     
-    name = Column(String, nullable=False)
-    joining_date = Column(Date, default=get_ist_today)
+    name = Column(String, nullable=False, index=True)
+    joining_date = Column(Date, default=get_ist_today, index=True)
     
     # Foreign Keys to Department & Designation (3NF Normalization)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
-    designation_id = Column(Integer, ForeignKey("designations.id"), nullable=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
+    designation_id = Column(Integer, ForeignKey("designations.id"), nullable=True, index=True)
     
     # Auth & Security details
     reset_token = Column(String, nullable=True)
@@ -35,6 +35,11 @@ class Employee(Base):
     
     attendances = orm_relationship("Attendance", back_populates="employee", cascade="all, delete-orphan")
     payslips = orm_relationship("Payslip", back_populates="employee", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("idx_emp_dept_role", "department_id", "role"),
+    )
+
 
     # Backward compatibility properties for templates and helper access
     @property

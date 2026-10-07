@@ -53,14 +53,16 @@
             <div class="flex items-center space-x-2.5">
                 <h2 class="text-lg sm:text-xl font-bold font-heading text-slate-900 tracking-tight">Payroll & Payslips</h2>
                 <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200" id="payslip-count-badge">
-                    {{ payslips|length }}
+                    {{ page_data.total_records }}
                 </span>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">Generate, audit, finalize, and disburse monthly compensation statements</p>
         </div>
         
         {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
         <div class="flex flex-wrap items-center gap-2.5">
+            <button type="button" onclick="exportFilteredPayroll()" class="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-2xs transition-colors cursor-pointer" title="Export current payroll view as Excel spreadsheet">
+                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 mr-1.5 text-emerald-600"></i> Export Excel
+            </button>
             <button onclick="openGenerateModal()" class="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-2xs transition-colors">
                 <i data-lucide="user-plus" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Single Draft
             </button>
@@ -80,10 +82,15 @@
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i data-lucide="search" class="w-4 h-4"></i>
                 </div>
-                <input type="text" id="payslipSearch" onkeyup="filterPayslips()" 
+                <input type="text" id="payrollSearch" name="q" value="{{ q }}"
+                    hx-get="/payroll"
+                    hx-trigger="keyup changed delay:300ms, search"
+                    hx-target="#payrollTableContainer"
+                    hx-include="#payrollStatusFilter, #payrollYearFilter"
+                    hx-push-url="true"
                     placeholder="Search by employee name, ID (#0001), or period (MM/YYYY)..." 
                     class="w-full pl-9 pr-9 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                <button type="button" id="clearPayslipSearchBtn" onclick="clearSearchInput()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                <button type="button" id="clearPayslipSearchBtn" onclick="clearSearchInput()" class="{% if not q %}hidden{% endif %} absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -91,28 +98,38 @@
             <!-- Status Filter -->
             <div class="flex items-center space-x-2">
                 <label for="payrollStatusFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Status:</label>
-                <select id="payrollStatusFilter" onchange="filterPayslips()" 
+                <select id="payrollStatusFilter" name="status"
+                    hx-get="/payroll"
+                    hx-trigger="change"
+                    hx-target="#payrollTableContainer"
+                    hx-include="#payrollSearch, #payrollYearFilter"
+                    hx-push-url="true"
                     class="w-full sm:w-auto py-2 px-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
-                    <option value="all">All Statuses</option>
-                    <option value="draft">Draft (In Review)</option>
-                    <option value="finalized">Finalized (Approved)</option>
-                    <option value="paid">Paid (Disbursed)</option>
+                    <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Statuses</option>
+                    <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Draft</option>
+                    <option value="finalized" {% if selected_status == 'finalized' %}selected{% endif %}>Finalized</option>
+                    <option value="paid" {% if selected_status == 'paid' %}selected{% endif %}>Paid</option>
                 </select>
             </div>
         </div>
 
-        <!-- Month & Year Jump Ribbon (matching Employee Directory A-Z Ribbon) -->
+        <!-- Month & Year Jump Ribbon -->
         <div class="bg-white rounded-xl p-2 sm:p-2.5 border border-slate-200 shadow-card flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 select-none">
             <!-- Left Side: Year Selector Dropdown -->
             <div class="flex items-center space-x-2 shrink-0 px-1">
                 <label for="payrollYearFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center shrink-0">
                     <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-teal-700"></i> Year:
                 </label>
-                <select id="payrollYearFilter" onchange="onPayrollYearChange()" 
+                <select id="payrollYearFilter" name="year"
+                    hx-get="/payroll"
+                    hx-trigger="change"
+                    hx-target="#payrollTableContainer"
+                    hx-include="#payrollSearch, #payrollStatusFilter"
+                    hx-push-url="true"
                     class="py-1 px-2.5 text-xs font-bold bg-slate-100 hover:bg-slate-200/70 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 cursor-pointer transition-colors">
-                    <option value="ALL" selected>All Years</option>
-                    {% for yr in (available_years or range(app_year + 2, app_year - 3, -1)) %}
-                    <option value="{{ yr }}">{{ yr }}</option>
+                    <option value="0">All Years</option>
+                    {% for yr in (available_years or range(current_year + 2, current_year - 3, -1)) %}
+                    <option value="{{ yr }}" {% if current_year == yr %}selected{% endif %}>{{ yr }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -121,174 +138,42 @@
 
             <!-- Right Side: Month Buttons (ALL + 12 Months) -->
             <div class="flex items-center gap-1 sm:gap-1.5 flex-1 overflow-x-auto touch-scroll no-scrollbar py-0.5 px-0.5 justify-start md:justify-end" id="payrollMonthButtonsContainer">
-                <button type="button" onclick="selectPayrollMonth('ALL')" id="month-btn-ALL" 
-                    class="payroll-month-btn px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all bg-teal-700 text-white shadow-xs shrink-0 flex items-center space-x-1">
+                <a href="javascript:void(0)"
+                    hx-get="/payroll?month=0"
+                    hx-target="#payrollTableContainer"
+                    hx-include="#payrollSearch, #payrollStatusFilter, #payrollYearFilter"
+                    hx-push-url="true"
+                    onclick="selectPayrollMonthBtn(this)"
+                    id="month-btn-ALL" 
+                    class="payroll-month-btn px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all {% if not current_month or current_month == 0 %}bg-teal-700 text-white shadow-xs{% else %}bg-slate-100 text-slate-700 hover:bg-teal-50 hover:text-teal-800{% endif %} shrink-0 flex items-center space-x-1 cursor-pointer">
                     <span>ALL</span>
-                    <span class="text-[10px] opacity-80" id="month-count-ALL">({{ payslips|length }})</span>
-                </button>
+                    <span class="text-[10px] opacity-80" id="month-count-ALL">({{ page_data.total_records }})</span>
+                </a>
 
                 <div class="h-4 w-px bg-slate-200 mx-0.5 shrink-0"></div>
 
                 {% set month_abbrs = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"] %}
                 {% for m_num in range(1, 13) %}
                 {% set m_abbr = month_abbrs[m_num - 1] %}
-                <button type="button" onclick="selectPayrollMonth('{{ m_num }}')" id="month-btn-{{ m_num }}"
-                    data-month="{{ m_num }}"
-                    class="payroll-month-btn flex-1 min-w-[34px] sm:min-w-[40px] max-w-[54px] h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all relative bg-slate-100 text-slate-700 hover:bg-teal-50 hover:text-teal-800 shrink-0"
+                <a href="javascript:void(0)"
+                    hx-get="/payroll?month={{ m_num }}"
+                    hx-target="#payrollTableContainer"
+                    hx-include="#payrollSearch, #payrollStatusFilter, #payrollYearFilter"
+                    hx-push-url="true"
+                    onclick="selectPayrollMonthBtn(this)"
+                    id="month-btn-{{ m_num }}"
+                    class="payroll-month-btn flex-1 min-w-[34px] sm:min-w-[40px] max-w-[54px] h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all relative {% if current_month == m_num %}bg-teal-700 text-white shadow-xs font-bold{% else %}bg-slate-100 text-slate-700 hover:bg-teal-50 hover:text-teal-800{% endif %} shrink-0 cursor-pointer"
                     title="{{ m_abbr }}">
                     {{ m_abbr }}
-                    <span id="month-dot-{{ m_num }}" class="hidden absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-teal-600"></span>
-                </button>
+                </a>
                 {% endfor %}
             </div>
-        </div>
-
-        <!-- Dynamic Filter Banner Indicator -->
-        <div id="activePayrollFilterBanner" class="hidden bg-teal-50/80 border border-teal-200 rounded-lg px-3.5 py-1.5 flex items-center justify-between text-xs text-teal-800">
-            <div class="flex items-center space-x-2">
-                <i data-lucide="filter" class="w-3.5 h-3.5 text-teal-700"></i>
-                <span id="activePayrollFilterText" class="font-medium">Active filters</span>
-            </div>
-            <button type="button" onclick="clearAllPayrollFilters()" class="text-teal-700 font-bold hover:underline inline-flex items-center cursor-pointer">
-                <i data-lucide="rotate-ccw" class="w-3 h-3 mr-1"></i> Clear Filters
-            </button>
         </div>
     </div>
 
     <!-- Payslips Table Card -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
-        <div class="overflow-x-auto touch-scroll">
-            <table class="w-full border-collapse" id="payslipsTable">
-                <thead class="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                        <th scope="col" class="w-12 px-4 py-3.5 text-center">
-                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="w-4 h-4 rounded text-teal-700 focus:ring-teal-600 border-slate-300 cursor-pointer">
-                        </th>
-                        {% endif %}
-                        <th scope="col" class="min-w-[240px] px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Employee</th>
-                        <th scope="col" class="w-36 px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Payroll Period</th>
-                        <th scope="col" class="w-36 px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Days Worked</th>
-                        <th scope="col" class="w-36 px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Net Payable</th>
-                        <th scope="col" class="w-32 px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                        <th scope="col" class="w-48 px-5 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
-                    {% for payslip in payslips %}
-                    <tr class="hover:bg-slate-50/80 transition-colors payslip-row"
-                        data-id="{{ payslip.id }}"
-                        data-emp-id="{{ payslip.employee.id if payslip.employee else (payslip.employee_id or '') }}"
-                        data-emp-id-fmt="{{ '%04d' % (payslip.employee.id if payslip.employee else (payslip.employee_id or 0)) }}"
-                        data-slip-no="pay-{{ payslip.year }}{{ '%02d' % payslip.month }}-{{ '%04d' % payslip.id }}"
-                        data-emp="{{ payslip.employee.name|lower if payslip.employee else '' }}"
-                        data-email="{{ payslip.employee.email|lower if payslip.employee and payslip.employee.email else '' }}"
-                        data-dept="{{ (payslip.employee.department.name if payslip.employee and payslip.employee.department and payslip.employee.department.name else (payslip.employee.department if payslip.employee and payslip.employee.department else ''))|lower }}"
-                        data-month="{{ payslip.month }}"
-                        data-year="{{ payslip.year }}"
-                        data-period="{{ '%02d' % payslip.month }}/{{ payslip.year }}"
-                        data-status="{{ payslip.status|lower }}">
-                        
-                        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                        <!-- Selection Checkbox -->
-                        <td class="w-12 px-4 py-3.5 text-center whitespace-nowrap">
-                            <input type="checkbox" value="{{ payslip.id }}" data-status="{{ payslip.status }}" onchange="updateBatchToolbar()" class="payslip-row-checkbox w-4 h-4 rounded text-teal-700 focus:ring-teal-600 border-slate-300 cursor-pointer">
-                        </td>
-                        {% endif %}
-
-                        <!-- Employee -->
-                        <td class="min-w-[240px] px-5 py-3.5">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-xs shrink-0 relative overflow-hidden font-heading">
-                                    <span>{{ payslip.employee.name[0]|upper if payslip.employee and payslip.employee.name else 'E' }}</span>
-                                    {% if payslip.employee and (payslip.employee.avatar_url or (payslip.employee.profile and payslip.employee.profile.avatar_url)) %}
-                                    <img src="{{ payslip.employee.avatar_url or payslip.employee.profile.avatar_url }}" alt="{{ payslip.employee.name }}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
-                                    {% endif %}
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <a href="/employees/{{ payslip.employee.id }}/view#payroll" class="text-xs sm:text-sm font-bold text-slate-900 hover:text-teal-700 transition-colors block truncate" title="{{ payslip.employee.name if payslip.employee else 'Unknown' }}">
-                                        {{ payslip.employee.name if payslip.employee else 'Unknown Employee' }}
-                                    </a>
-                                    <span class="text-[11px] text-slate-500 font-medium block truncate">
-                                        <span class="font-mono text-slate-400 font-semibold mr-1">{{ format_emp_code(payslip.employee or payslip.employee_id, company) }}</span>• {{ payslip.employee.department.name if payslip.employee and payslip.employee.department and payslip.employee.department.name else (payslip.employee.department if payslip.employee and payslip.employee.department else 'General') }}
-                                    </span>
-                                </div>
-                            </div>
-                        </td>
-
-                        <!-- Period -->
-                        <td class="w-36 px-5 py-3.5 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold font-mono">
-                                <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i>
-                                {{ "%02d" % payslip.month }}/{{ payslip.year }}
-                            </span>
-                        </td>
-
-                        <!-- Days Worked -->
-                        <td class="w-36 px-5 py-3.5 whitespace-nowrap">
-                            <span class="text-xs text-slate-700 font-medium">
-                                <strong class="text-slate-900 font-bold">{{ payslip.days_worked or 0 }}</strong> / {{ payslip.payable_days or (company or get_company()).working_days_per_month }} days
-                            </span>
-                        </td>
-
-                        <!-- Net Salary -->
-                        <td class="w-36 px-5 py-3.5 whitespace-nowrap">
-                            <span class="text-xs sm:text-sm font-bold font-mono text-emerald-700">{{ (company or get_company()).currency_symbol }} {{ "%.2f"|format(payslip.net_salary) }}</span>
-                        </td>
-
-                        <!-- Status -->
-                        <td class="w-32 px-5 py-3.5 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border
-                                {% if payslip.status == 'draft' %} bg-amber-50 text-amber-800 border-amber-200
-                                {% elif payslip.status == 'finalized' %} bg-teal-50 text-teal-800 border-teal-200
-                                {% elif payslip.status == 'paid' %} bg-emerald-50 text-emerald-800 border-emerald-200
-                                {% else %} bg-slate-100 text-slate-700 border-slate-200 {% endif %}">
-                                {% if payslip.status == 'draft' %}🟡 Draft
-                                {% elif payslip.status == 'finalized' %}🔵 Finalized
-                                {% elif payslip.status == 'paid' %}🟢 Paid
-                                {% else %}{{ payslip.status | title }}{% endif %}
-                            </span>
-                        </td>
-
-                        <!-- Actions -->
-                        <td class="w-48 px-5 py-3.5 whitespace-nowrap text-right text-xs font-medium space-x-1.5">
-                            <a href="/payroll/{{ payslip.id }}/view" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-2xs" title="View Payslip">
-                                <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> View
-                            </a>
-                            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                            <a href="/payroll/{{ payslip.id }}/edit" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors" title="Edit Line Items">
-                                <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1"></i> Edit
-                            </a>
-                            {% endif %}
-                            <a href="/payroll/{{ payslip.id }}/pdf" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors" target="_blank" title="Download PDF">
-                                <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> PDF
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr id="server-empty-row">
-                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
-                            <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5">
-                                <i data-lucide="receipt" class="w-5 h-5"></i>
-                            </div>
-                            <p class="text-xs sm:text-sm font-semibold text-slate-800">No payslips found</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Use "⚡ Run Bulk Payroll" to generate draft payslips for your team in one click.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-
-                    <tr id="noResultsRow" class="hidden">
-                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
-                            <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5">
-                                <i data-lucide="search-x" class="w-5 h-5"></i>
-                            </div>
-                            <p class="text-xs sm:text-sm font-semibold text-slate-800">No matching payslips found</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Try adjusting your search query or status filter.</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden" id="payrollTableCard">
+        {% include "payroll/partials/_table.html" %}
     </div>
 
 {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
@@ -311,6 +196,9 @@
         </button>
         <button id="btnBatchMarkPaid" type="button" onclick="submitBatchStatus('paid')" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-xs transition-colors">
             <i data-lucide="banknote" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchMarkPaid">Mark Paid</span>
+        </button>
+        <button id="btnBatchExcel" type="button" onclick="submitBatchExportExcel()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-800/60 transition-colors">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchExcel">Export Excel</span>
         </button>
         <button id="btnBatchZip" type="button" onclick="submitBatchExportZip()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
             <i data-lucide="download-cloud" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchZip">Download ZIP</span>
@@ -532,256 +420,91 @@
 </div>
 
 <script>
-    let currentSelectedPayrollYear = 'ALL';
-    let currentSelectedPayrollMonth = 'ALL';
-    const monthNamesAbbr = ["", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-
-    function updateMonthIndicators() {
-        const rows = document.querySelectorAll('.payslip-row');
-        const monthCounts = {};
-        for (let i = 1; i <= 12; i++) monthCounts[i] = 0;
-        let yearTotal = 0;
-
-        rows.forEach(row => {
-            const rowYear = row.getAttribute('data-year');
-            const rowMonth = parseInt(row.getAttribute('data-month'), 10);
-            if (currentSelectedPayrollYear === 'ALL' || rowYear === currentSelectedPayrollYear) {
-                yearTotal++;
-                if (rowMonth >= 1 && rowMonth <= 12) {
-                    monthCounts[rowMonth] = (monthCounts[rowMonth] || 0) + 1;
-                }
-            }
+    function selectPayrollMonthBtn(btn) {
+        document.querySelectorAll('.payroll-month-btn').forEach(b => {
+            b.classList.remove('bg-teal-700', 'text-white', 'shadow-xs', 'font-bold');
+            b.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-teal-50', 'hover:text-teal-800');
         });
-
-        const allCountBadge = document.getElementById('month-count-ALL');
-        if (allCountBadge) allCountBadge.textContent = `(${yearTotal})`;
-
-        for (let m = 1; m <= 12; m++) {
-            const dot = document.getElementById(`month-dot-${m}`);
-            const btn = document.getElementById(`month-btn-${m}`);
-            const cnt = monthCounts[m] || 0;
-            
-            if (dot) {
-                if (cnt > 0 && currentSelectedPayrollMonth !== String(m)) {
-                    dot.classList.remove('hidden');
-                } else {
-                    dot.classList.add('hidden');
-                }
-            }
-            if (btn && currentSelectedPayrollMonth !== String(m)) {
-                if (cnt > 0) {
-                    btn.className = "payroll-month-btn flex-1 min-w-[34px] sm:min-w-[40px] max-w-[54px] h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all relative bg-slate-100 text-slate-900 hover:bg-teal-50 hover:text-teal-800 hover:scale-105 active:scale-95 cursor-pointer shrink-0";
-                    btn.title = `${monthNamesAbbr[m]}: ${cnt} payslip${cnt > 1 ? 's' : ''}`;
-                } else {
-                    btn.className = "payroll-month-btn flex-1 min-w-[34px] sm:min-w-[40px] max-w-[54px] h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all relative bg-transparent text-slate-300 hover:text-slate-500 cursor-pointer shrink-0";
-                    btn.title = `${monthNamesAbbr[m]}: 0 payslips`;
-                }
-            }
-        }
-    }
-
-    function selectPayrollMonth(monthNumOrAll) {
-        currentSelectedPayrollMonth = String(monthNumOrAll);
-        
-        // Update active styles on month buttons
-        const allBtn = document.getElementById('month-btn-ALL');
-        if (allBtn) {
-            if (currentSelectedPayrollMonth === 'ALL') {
-                allBtn.className = "payroll-month-btn px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all bg-teal-700 text-white shadow-xs shrink-0 flex items-center space-x-1";
-            } else {
-                allBtn.className = "payroll-month-btn px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-teal-50 hover:text-teal-800 shrink-0 flex items-center space-x-1";
-            }
-        }
-
-        for (let m = 1; m <= 12; m++) {
-            const btn = document.getElementById(`month-btn-${m}`);
-            const dot = document.getElementById(`month-dot-${m}`);
-            if (btn) {
-                if (currentSelectedPayrollMonth === String(m)) {
-                    btn.className = "payroll-month-btn flex-1 min-w-[34px] sm:min-w-[40px] max-w-[54px] h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs transition-all relative bg-teal-700 text-white shadow-xs font-bold shrink-0";
-                    if (dot) dot.classList.add('hidden');
-                }
-            }
-        }
-
-        updateMonthIndicators();
-        filterPayslips();
-    }
-
-    function onPayrollYearChange() {
-        const yearSelect = document.getElementById('payrollYearFilter');
-        currentSelectedPayrollYear = yearSelect ? yearSelect.value : 'ALL';
-        updateMonthIndicators();
-        filterPayslips();
+        btn.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-teal-50', 'hover:text-teal-800');
+        btn.classList.add('bg-teal-700', 'text-white', 'shadow-xs', 'font-bold');
     }
 
     function clearSearchInput() {
-        const searchInput = document.getElementById('payslipSearch');
+        const searchInput = document.getElementById('payrollSearch');
         if (searchInput) {
             searchInput.value = '';
-            filterPayslips();
+            document.getElementById('clearPayslipSearchBtn')?.classList.add('hidden');
+            htmx.trigger(searchInput, 'search');
             searchInput.focus();
         }
     }
 
-    function clearAllPayrollFilters() {
-        const searchInput = document.getElementById('payslipSearch');
-        if (searchInput) searchInput.value = '';
+    // Cross-page persistent selection state (id -> { id, status })
+    const selectedPayslipsState = new Map();
 
-        const statusSelect = document.getElementById('payrollStatusFilter');
-        if (statusSelect) statusSelect.value = 'all';
-
-        const yearSelect = document.getElementById('payrollYearFilter');
-        if (yearSelect) yearSelect.value = 'ALL';
-        currentSelectedPayrollYear = 'ALL';
-
-        selectPayrollMonth('ALL');
+    function onPayslipRowCheckboxChange(cb) {
+        const id = cb.value;
+        const status = (cb.getAttribute('data-status') || '').toLowerCase().trim();
+        if (cb.checked) {
+            selectedPayslipsState.set(id, { id: id, status: status });
+        } else {
+            selectedPayslipsState.delete(id);
+        }
+        syncSelectAllCheckbox();
+        updateBatchToolbar();
     }
-
-    function filterPayslips() {
-        const searchInput = document.getElementById('payslipSearch');
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const statusSelect = document.getElementById('payrollStatusFilter');
-        const statusFilter = statusSelect ? statusSelect.value.toLowerCase() : 'all';
-        const rows = document.querySelectorAll('.payslip-row');
-        let visibleCount = 0;
-
-        const clearBtn = document.getElementById('clearPayslipSearchBtn');
-        if (clearBtn) {
-            if (query.length > 0) clearBtn.classList.remove('hidden');
-            else clearBtn.classList.add('hidden');
-        }
-
-        const cleanDigits = query.replace(/\D/g, '');
-        const cleanNoPrefix = query.replace(/^emp[-_#\s]*/i, '').replace(/^pay[-_#\s]*/i, '').replace(/[#\s]/g, '');
-        const isExplicitId = query.startsWith('#') || query.startsWith('emp') || query.startsWith('pay') || (cleanDigits.length > 1 && cleanDigits.startsWith('0'));
-
-        rows.forEach(row => {
-            const emp = row.getAttribute('data-emp') || '';
-            const email = row.getAttribute('data-email') || '';
-            const dept = row.getAttribute('data-dept') || '';
-            const period = row.getAttribute('data-period') || '';
-            const rowMonth = row.getAttribute('data-month') || '';
-            const rowYear = row.getAttribute('data-year') || '';
-            const status = row.getAttribute('data-status') || '';
-            const empId = row.getAttribute('data-emp-id') || '';
-            const empIdFmt = row.getAttribute('data-emp-id-fmt') || '';
-            const slipNo = (row.getAttribute('data-slip-no') || '').toLowerCase();
-            const payslipId = row.getAttribute('data-id') || '';
-
-            let matchesId = false;
-            if (query) {
-                if (isExplicitId) {
-                    if (empId === cleanNoPrefix || (cleanDigits && empId === String(parseInt(cleanDigits, 10)))) {
-                        matchesId = true;
-                    } else if (empIdFmt === cleanNoPrefix || (`#${empIdFmt}`) === query || (`emp${empIdFmt}`) === query.replace(/[-_#\s]/g, '')) {
-                        matchesId = true;
-                    } else if (slipNo === query || slipNo.includes(query) || payslipId === cleanNoPrefix) {
-                        matchesId = true;
-                    }
-                } else {
-                    if (empId === query || empId === cleanNoPrefix || (cleanDigits && empId === cleanDigits)) {
-                        matchesId = true;
-                    } else if (empIdFmt.includes(query) || (cleanNoPrefix && empIdFmt.includes(cleanNoPrefix)) || (`#${empIdFmt}`).includes(query)) {
-                        matchesId = true;
-                    } else if (`emp${empId}`.includes(query.replace(/[-_#\s]/g, '')) || `emp${empIdFmt}`.includes(query.replace(/[-_#\s]/g, ''))) {
-                        matchesId = true;
-                    } else if (slipNo.includes(query) || payslipId === query || (cleanDigits && payslipId === cleanDigits)) {
-                        matchesId = true;
-                    }
-                }
-            }
-
-            const matchesQuery = !query || 
-                                 emp.includes(query) || 
-                                 email.includes(query) || 
-                                 dept.includes(query) || 
-                                 period.includes(query) || 
-                                 matchesId;
-            const matchesStatus = (statusFilter === 'all') || (status === statusFilter);
-            const matchesYear = (currentSelectedPayrollYear === 'ALL') || (rowYear === currentSelectedPayrollYear);
-            const matchesMonth = (currentSelectedPayrollMonth === 'ALL') || (rowMonth === currentSelectedPayrollMonth);
-
-            if (matchesQuery && matchesStatus && matchesYear && matchesMonth) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-
-        const noResults = document.getElementById('noResultsRow');
-        const serverEmpty = document.getElementById('server-empty-row');
-        if (noResults) {
-            if (visibleCount === 0 && rows.length > 0) {
-                noResults.classList.remove('hidden');
-                if (serverEmpty) serverEmpty.classList.add('hidden');
-            } else {
-                noResults.classList.add('hidden');
-            }
-        }
-
-        const badge = document.getElementById('payslip-count-badge');
-        if (badge) {
-            badge.textContent = visibleCount;
-        }
-
-        // Dynamic Filter Banner
-        const banner = document.getElementById('activePayrollFilterBanner');
-        const bannerText = document.getElementById('activePayrollFilterText');
-        const isFiltered = query || statusFilter !== 'all' || currentSelectedPayrollYear !== 'ALL' || currentSelectedPayrollMonth !== 'ALL';
-
-        if (banner && bannerText) {
-            if (isFiltered) {
-                const parts = [];
-                if (currentSelectedPayrollYear !== 'ALL') parts.push(`Year <strong>"${currentSelectedPayrollYear}"</strong>`);
-                if (currentSelectedPayrollMonth !== 'ALL') {
-                    const mIdx = parseInt(currentSelectedPayrollMonth, 10);
-                    parts.push(`Month <strong>"${monthNamesAbbr[mIdx] || currentSelectedPayrollMonth}"</strong>`);
-                }
-                if (statusFilter !== 'all') parts.push(`Status <strong>"${statusFilter.toUpperCase()}"</strong>`);
-                if (query) parts.push(`Search <strong>"${query}"</strong>`);
-                
-                bannerText.innerHTML = `Showing <strong>${visibleCount}</strong> payslip record${visibleCount !== 1 ? 's' : ''} matching ` + parts.join(' • ');
-                banner.classList.remove('hidden');
-            } else {
-                banner.classList.add('hidden');
-            }
-        }
-
-        if (typeof updateBatchToolbar === 'function') {
-            updateBatchToolbar();
-        }
-    }
-
-    // Initialize month counts and indicators on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        updateMonthIndicators();
-    });
-    // Also run immediately
-    updateMonthIndicators();
 
     function toggleSelectAll(masterCheckbox) {
         const checkboxes = document.querySelectorAll('.payslip-row-checkbox');
         checkboxes.forEach(cb => {
-            const row = cb.closest('.payslip-row');
-            if (row && row.style.display !== 'none') {
-                cb.checked = masterCheckbox.checked;
+            cb.checked = masterCheckbox.checked;
+            const id = cb.value;
+            const status = (cb.getAttribute('data-status') || '').toLowerCase().trim();
+            if (masterCheckbox.checked) {
+                selectedPayslipsState.set(id, { id: id, status: status });
+            } else {
+                selectedPayslipsState.delete(id);
             }
         });
-        if (typeof updateBatchToolbar === 'function') {
-            updateBatchToolbar();
-        }
+        updateBatchToolbar();
     }
 
+    function syncSelectAllCheckbox() {
+        const master = document.getElementById('selectAllCheckbox');
+        const checkboxes = document.querySelectorAll('.payslip-row-checkbox');
+        if (!master || checkboxes.length === 0) return;
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        master.checked = allChecked;
+    }
+
+    function restoreCheckedStateOnPage() {
+        const checkboxes = document.querySelectorAll('.payslip-row-checkbox');
+        checkboxes.forEach(cb => {
+            if (selectedPayslipsState.has(cb.value)) {
+                cb.checked = true;
+            } else {
+                cb.checked = false;
+            }
+        });
+        syncSelectAllCheckbox();
+        updateBatchToolbar();
+    }
+
+    // Refresh icons and selection state on HTMX partial swaps
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+        restoreCheckedStateOnPage();
+    });
+
     function updateBatchToolbar() {
-        const checkedBoxes = Array.from(document.querySelectorAll('.payslip-row-checkbox:checked'));
-        const count = checkedBoxes.length;
+        const totalCount = selectedPayslipsState.size;
         const bar = document.getElementById('batchActionBar');
         
         if (!bar) return;
 
-        if (count === 0) {
+        if (totalCount === 0) {
             bar.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
             bar.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
             const master = document.getElementById('selectAllCheckbox');
@@ -796,8 +519,8 @@
         let finalizedCount = 0;
         let paidCount = 0;
 
-        checkedBoxes.forEach(cb => {
-            const st = (cb.getAttribute('data-status') || '').toLowerCase().trim();
+        selectedPayslipsState.forEach(item => {
+            const st = (item.status || '').toLowerCase().trim();
             if (st === 'draft') draftCount++;
             else if (st === 'finalized') finalizedCount++;
             else if (st === 'paid') paidCount++;
@@ -808,8 +531,8 @@
         const text = document.getElementById('selectedCountText');
         const subtext = document.getElementById('selectedCountSubtext');
 
-        if (badge) badge.textContent = count;
-        if (text) text.textContent = `${count} Selected`;
+        if (badge) badge.textContent = totalCount;
+        if (text) text.textContent = `${totalCount} Selected`;
 
         if (subtext) {
             const parts = [];
@@ -860,26 +583,27 @@
         const btnZip = document.getElementById('btnBatchZip');
         const lblZip = document.getElementById('lblBatchZip');
         if (btnZip && lblZip) {
-            lblZip.textContent = `Download ZIP (${count})`;
+            lblZip.textContent = `Download ZIP (${totalCount})`;
         }
     }
 
     function clearBatchSelection() {
+        selectedPayslipsState.clear();
         const checkboxes = document.querySelectorAll('.payslip-row-checkbox');
         checkboxes.forEach(cb => cb.checked = false);
         const master = document.getElementById('selectAllCheckbox');
         if (master) master.checked = false;
-        if (typeof updateBatchToolbar === 'function') {
-            updateBatchToolbar();
-        }
+        updateBatchToolbar();
     }
 
     function getSelectedPayslipIds(statusFilter = null) {
-        const checkboxes = Array.from(document.querySelectorAll('.payslip-row-checkbox:checked'));
-        const filtered = statusFilter 
-            ? checkboxes.filter(cb => (cb.getAttribute('data-status') || '').toLowerCase().trim() === statusFilter)
-            : checkboxes;
-        return filtered.map(cb => cb.value);
+        const ids = [];
+        selectedPayslipsState.forEach(item => {
+            if (!statusFilter || (item.status || '').toLowerCase().trim() === statusFilter) {
+                ids.push(item.id);
+            }
+        });
+        return ids;
     }
 
     function submitBatchStatus(targetStatus) {
@@ -1038,13 +762,34 @@
         }
     });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const yearSelect = document.getElementById('payrollYearFilter');
-        if (yearSelect) {
-            currentSelectedPayrollYear = yearSelect.value || 'ALL';
+    function exportFilteredPayroll() {
+        const q = encodeURIComponent(document.getElementById('payrollSearch')?.value || '');
+        const status = encodeURIComponent(document.getElementById('payrollStatusFilter')?.value || 'all');
+        const year = encodeURIComponent(document.getElementById('payrollYearFilter')?.value || '');
+        const activeMonthBtn = document.querySelector('.payroll-month-btn.bg-teal-700');
+        let month = 0;
+        if (activeMonthBtn && activeMonthBtn.id) {
+            const m = activeMonthBtn.id.replace('month-btn-', '');
+            month = (m === 'ALL') ? 0 : m;
         }
-        updateMonthIndicators();
-        filterPayslips();
+        window.location.href = `/payroll/export-excel?q=${q}&status=${status}&year=${year}&month=${month}`;
+    }
+
+    function submitBatchExportExcel() {
+        const keys = (typeof selectedPayslipsState !== 'undefined') 
+            ? Object.keys(selectedPayslipsState).filter(k => selectedPayslipsState[k])
+            : [];
+        if (keys.length === 0) {
+            alert('Please select at least one payslip to export.');
+            return;
+        }
+        window.location.href = `/payroll/export-excel?ids=${keys.join(',')}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     });
 
 </script>

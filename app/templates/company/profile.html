@@ -4,38 +4,46 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-6">
-    
+
     <!-- Top Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-slate-200">
         <div>
             <div class="flex items-center space-x-2.5">
-                <h2 class="text-xl font-bold font-heading text-slate-900 tracking-tight">Organization Profile & Policy Hub</h2>
-                <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200 font-mono">
+                <h2 class="text-xl font-bold font-heading text-slate-900 tracking-tight">Organization Profile & Policy
+                    Hub</h2>
+                <span
+                    class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200 font-mono">
                     Admin Governance
                 </span>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">Configure corporate identity, work shifts, uniform lunch policies, statutory IDs, and GPS office perimeters</p>
         </div>
-        <div class="flex items-center space-x-2.5 self-start sm:self-auto bg-white border border-slate-200 rounded-xl px-3.5 py-2 shadow-2xs">
-            <img src="{{ company.logo_url or '/static/images/icon.jpeg' }}" alt="Logo" class="w-7 h-7 object-contain rounded-lg border border-slate-100" onerror="this.src='/static/images/icon.jpeg'">
+        <div
+            class="flex items-center space-x-2.5 self-start sm:self-auto bg-white border border-slate-200 rounded-xl px-3.5 py-2 shadow-2xs">
+            <img src="{{ company.logo_url or '/static/images/icon.jpeg' }}" alt="Logo"
+                class="w-7 h-7 object-contain rounded-lg border border-slate-100"
+                onerror="this.src='/static/images/icon.jpeg'">
             <div>
                 <p class="text-xs font-bold text-slate-800 font-heading truncate max-w-[160px]">{{ company.name }}</p>
-                <p class="text-[10px] text-slate-400 font-medium">{{ company.currency_code or 'INR' }} ({{ company.currency_symbol or '₹' }})</p>
+                <p class="text-[10px] text-slate-400 font-medium">{{ company.currency_code or 'INR' }} ({{
+                    company.currency_symbol or '₹' }})</p>
             </div>
         </div>
     </div>
 
     <!-- Main Layout: Sidebar Navigation + Dedicated Settings Panels -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
+
         <!-- Left Sidebar Navigation Tabs -->
         <div class="lg:col-span-3 space-y-1.5">
             <div class="bg-white rounded-2xl border border-slate-200 p-2.5 shadow-card sticky top-20">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-2 font-mono">Settings Domains</p>
-                
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-2 font-mono">Settings
+                    Domains</p>
+
                 <nav class="space-y-1">
-                    <button type="button" onclick="switchSettingsTab('branding')" id="tab-btn-branding" class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60 shrink-0">
+                    <button type="button" onclick="switchSettingsTab('branding')" id="tab-btn-branding"
+                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60 shrink-0">
                             <i data-lucide="building" class="w-3.5 h-3.5"></i>
                         </div>
                         <div class="truncate">
@@ -44,28 +52,36 @@
                         </div>
                     </button>
 
-                    <button type="button" onclick="switchSettingsTab('schedule')" id="tab-btn-schedule" class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div class="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200/60 shrink-0">
+                    <button type="button" onclick="switchSettingsTab('schedule')" id="tab-btn-schedule"
+                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200/60 shrink-0">
                             <i data-lucide="clock" class="w-3.5 h-3.5"></i>
                         </div>
                         <div class="truncate">
                             <span class="block text-xs font-bold font-heading">Work Shift & Lunch</span>
-                            <span class="block text-[10px] text-slate-400 font-normal">Hours, breaks & lunch policy</span>
+                            <span class="block text-[10px] text-slate-400 font-normal">Hours, breaks & lunch
+                                policy</span>
                         </div>
                     </button>
 
-                    <button type="button" onclick="switchSettingsTab('payroll')" id="tab-btn-payroll" class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60 shrink-0">
+                    <button type="button" onclick="switchSettingsTab('payroll')" id="tab-btn-payroll"
+                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60 shrink-0">
                             <i data-lucide="coins" class="w-3.5 h-3.5"></i>
                         </div>
                         <div class="truncate">
                             <span class="block text-xs font-bold font-heading">Payroll & Currency</span>
-                            <span class="block text-[10px] text-slate-400 font-normal">Currency symbols & pay days</span>
+                            <span class="block text-[10px] text-slate-400 font-normal">Currency symbols & pay
+                                days</span>
                         </div>
                     </button>
 
-                    <button type="button" onclick="switchSettingsTab('statutory')" id="tab-btn-statutory" class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200/60 shrink-0">
+                    <button type="button" onclick="switchSettingsTab('statutory')" id="tab-btn-statutory"
+                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200/60 shrink-0">
                             <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
                         </div>
                         <div class="truncate">
@@ -74,18 +90,23 @@
                         </div>
                     </button>
 
-                    <button type="button" onclick="switchSettingsTab('geofence')" id="tab-btn-geofence" class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200/60 shrink-0">
+                    <button type="button" onclick="switchSettingsTab('geofence')" id="tab-btn-geofence"
+                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200/60 shrink-0">
                             <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
                         </div>
                         <div class="truncate">
                             <span class="block text-xs font-bold font-heading">Office Geofencing</span>
-                            <span class="block text-[10px] text-slate-400 font-normal">GPS coordinates & perimeter</span>
+                            <span class="block text-[10px] text-slate-400 font-normal">GPS coordinates &
+                                perimeter</span>
                         </div>
                     </button>
 
-                    <button type="button" onclick="switchSettingsTab('permissions')" id="tab-btn-permissions" class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div class="w-7 h-7 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-200/60 shrink-0">
+                    <button type="button" onclick="switchSettingsTab('permissions')" id="tab-btn-permissions"
+                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-200/60 shrink-0">
                             <i data-lucide="lock" class="w-3.5 h-3.5"></i>
                         </div>
                         <div class="truncate">
@@ -101,84 +122,126 @@
         <div class="lg:col-span-9 space-y-6">
 
             <!-- ================= PANEL 1: CORPORATE BRANDING ================= -->
-            <div id="panel-branding" class="settings-panel bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
+            <div id="panel-branding"
+                class="settings-panel bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
                 <form action="/company/profile" method="POST" class="space-y-6">
                     <input type="hidden" name="section" value="branding">
 
                     <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                         <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200 shrink-0">
+                            <div
+                                class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200 shrink-0">
                                 <i data-lucide="building-2" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Corporate Branding & Identity</h3>
-                                <p class="text-xs text-slate-500">Brand identity displayed in portal headers, navigation, login screens, and payslip certificates</p>
+                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Corporate
+                                    Branding & Identity</h3>
+                                <p class="text-xs text-slate-500">Brand identity displayed in portal headers,
+                                    navigation, login screens, and payslip certificates</p>
                             </div>
                         </div>
-                        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+                        <span
+                            class="px-2.5 py-1 rounded-md text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200">
                             Branding
                         </span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                         <div class="sm:col-span-2">
-                            <label for="name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Company Legal Name <span class="text-rose-500">*</span></label>
-                            <input type="text" name="name" id="name" value="{{ company.name }}" required class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                        </div>
-                        
-                        <div>
-                            <label for="tagline" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Company Tagline / Subtitle</label>
-                            <input type="text" name="tagline" id="tagline" value="{{ company.tagline or '' }}" placeholder="e.g. Enterprise Personnel & Payroll Platform" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="name"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Company
+                                Legal Name <span class="text-rose-500">*</span></label>
+                            <input type="text" name="name" id="name" value="{{ company.name }}" required
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
 
                         <div>
-                            <label for="logo_url" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Logo URL / Image Path</label>
-                            <input type="text" name="logo_url" id="logo_url" value="{{ company.logo_url or '' }}" placeholder="e.g. /static/images/icon.jpeg or https://..." class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="tagline"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Company
+                                Tagline / Subtitle</label>
+                            <input type="text" name="tagline" id="tagline" value="{{ company.tagline or '' }}"
+                                placeholder="e.g. Enterprise Personnel & Payroll Platform"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
 
                         <div>
-                            <label for="website" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Corporate Website</label>
-                            <input type="url" name="website" id="website" value="{{ company.website or '' }}" placeholder="https://example.com" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="logo_url"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Logo
+                                URL / Image Path</label>
+                            <input type="text" name="logo_url" id="logo_url" value="{{ company.logo_url or '' }}"
+                                placeholder="e.g. /static/images/icon.jpeg or https://..."
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
 
                         <div>
-                            <label for="support_email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">HR / Support Contact Email</label>
-                            <input type="email" name="support_email" id="support_email" value="{{ company.support_email or '' }}" placeholder="hr@company.com" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="website"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Corporate
+                                Website</label>
+                            <input type="url" name="website" id="website" value="{{ company.website or '' }}"
+                                placeholder="https://example.com"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
 
                         <div>
-                            <label for="employee_id_prefix" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Employee ID Prefix</label>
-                            <input type="text" name="employee_id_prefix" id="employee_id_prefix" value="{{ company.employee_id_prefix or '' }}" placeholder="e.g. TURTU or EMP (Leave empty for #0001)" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                            <span class="text-[10px] text-slate-400 mt-1 block">Custom badge prefix (e.g. TURTU-0001). If blank, default (#0001) is used.</span>
+                            <label for="support_email"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">HR /
+                                Support Contact Email</label>
+                            <input type="email" name="support_email" id="support_email"
+                                value="{{ company.support_email or '' }}" placeholder="hr@company.com"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                        </div>
+
+                        <div>
+                            <label for="employee_id_prefix"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Employee
+                                ID Prefix</label>
+                            <input type="text" name="employee_id_prefix" id="employee_id_prefix"
+                                value="{{ company.employee_id_prefix or '' }}"
+                                placeholder="e.g. Company or EMP (Leave empty for #0001)"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <span class="text-[10px] text-slate-400 mt-1 block">Custom badge prefix (e.g. Company-0001).
+                                If blank, default (#0001) is used.</span>
                         </div>
 
                         <div class="sm:col-span-2">
-                            <label for="address" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Registered Corporate Address</label>
-                            <input type="text" name="address" id="address" value="{{ company.address or '' }}" placeholder="City, State, Country" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="address"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Registered
+                                Corporate Address</label>
+                            <input type="text" name="address" id="address" value="{{ company.address or '' }}"
+                                placeholder="City, State, Country"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
                     </div>
 
                     <!-- Live Branding Preview Card -->
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5">Live Header & Payslip Identity Preview</p>
-                        <div class="flex items-center space-x-3.5 bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
-                            <img src="{{ company.logo_url or '/static/images/icon.jpeg' }}" alt="Logo Preview" class="w-10 h-10 object-contain rounded-lg border border-slate-200 p-1 bg-slate-50" onerror="this.src='/static/images/icon.jpeg'">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5">Live Header &
+                            Payslip Identity Preview</p>
+                        <div
+                            class="flex items-center space-x-3.5 bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                            <img src="{{ company.logo_url or '/static/images/icon.jpeg' }}" alt="Logo Preview"
+                                class="w-10 h-10 object-contain rounded-lg border border-slate-200 p-1 bg-slate-50"
+                                onerror="this.src='/static/images/icon.jpeg'">
                             <div>
                                 <div class="flex items-center space-x-2">
                                     <h4 class="text-sm font-bold text-slate-900 font-heading">{{ company.name }}</h4>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-teal-50 text-teal-800 border border-teal-200">
+                                    <span
+                                        class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-teal-50 text-teal-800 border border-teal-200">
                                         ID Format: {{ format_emp_code(1, company) }}
                                     </span>
                                 </div>
                                 <p class="text-xs text-slate-500">{{ company.tagline or '' }}</p>
-                                <p class="text-[11px] text-teal-700 font-mono mt-0.5">{{ company.website or 'https://company.com' }} • {{ company.support_email or 'hr@company.com' }}</p>
+                                <p class="text-[11px] text-teal-700 font-mono mt-0.5">{{ company.website or
+                                    'https://company.com' }} • {{ company.support_email or 'hr@company.com' }}</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <span class="text-xs text-slate-400">Updates will reflect across all portal headers and PDF exports</span>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 shadow-sm transition-all active:scale-95 flex items-center">
+                        <span class="text-xs text-slate-400">Updates will reflect across all portal headers and PDF
+                            exports</span>
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 shadow-sm transition-all active:scale-95 flex items-center">
                             <i data-lucide="check" class="w-4 h-4 mr-1.5"></i> Save Branding
                         </button>
                     </div>
@@ -186,21 +249,26 @@
             </div>
 
             <!-- ================= PANEL 2: WORK SCHEDULE & LUNCH POLICY ================= -->
-            <div id="panel-schedule" class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
+            <div id="panel-schedule"
+                class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
                 <form action="/company/profile" method="POST" class="space-y-6">
                     <input type="hidden" name="section" value="schedule">
 
                     <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                         <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200 shrink-0">
+                            <div
+                                class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200 shrink-0">
                                 <i data-lucide="clock" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Work Schedule & Lunch Policy</h3>
-                                <p class="text-xs text-slate-500">Company standard shift hours, lunch break window, and payroll baselines configured by Admin — applied uniformly to all employees</p>
+                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Work Schedule &
+                                    Lunch Policy</h3>
+                                <p class="text-xs text-slate-500">Company standard shift hours, lunch break window, and
+                                    payroll baselines configured by Admin — applied uniformly to all employees</p>
                             </div>
                         </div>
-                        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 font-mono">
+                        <span
+                            class="px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 font-mono">
                             Uniform Policy
                         </span>
                     </div>
@@ -208,25 +276,43 @@
                     <!-- Work Shift Baselines -->
                     <div>
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 mb-3 flex items-center">
-                            <i data-lucide="briefcase" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Standard Shift Baselines
+                            <i data-lucide="briefcase" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Standard Shift
+                            Baselines
                         </h4>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label for="working_days_per_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Working Days / Mo <span class="text-rose-500">*</span></label>
-                                <input type="number" min="1" max="31" name="working_days_per_month" id="working_days_per_month" value="{{ company.working_days_per_month }}" required class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                                <span class="text-[10px] text-slate-400 mt-1 block">Baseline monthly working days for salary calculation</span>
+                                <label for="working_days_per_month"
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Working
+                                    Days / Mo <span class="text-rose-500">*</span></label>
+                                <input type="number" min="1" max="31" name="working_days_per_month"
+                                    id="working_days_per_month" value="{{ company.working_days_per_month }}" required
+                                    class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Baseline monthly working days for
+                                    salary calculation</span>
                             </div>
 
                             <div>
-                                <label for="standard_hours_per_day" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Full Day Work Hours</label>
-                                <input type="number" step="0.5" min="1" max="24" name="standard_hours_per_day" id="standard_hours_per_day" value="{{ company.standard_hours_per_day or 8.0 }}" required class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                                <span class="text-[10px] text-slate-400 mt-1 block">Full-day active working threshold</span>
+                                <label for="standard_hours_per_day"
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Full
+                                    Day Work Hours</label>
+                                <input type="number" step="0.5" min="1" max="24" name="standard_hours_per_day"
+                                    id="standard_hours_per_day" value="{{ company.standard_hours_per_day or 8.0 }}"
+                                    required
+                                    class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Full-day active working
+                                    threshold</span>
                             </div>
 
                             <div>
-                                <label for="half_day_threshold_hours" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Half Day Threshold (Hours)</label>
-                                <input type="number" step="0.5" min="1" max="24" name="half_day_threshold_hours" id="half_day_threshold_hours" value="{{ company.half_day_threshold_hours or 4.0 }}" required class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                                <span class="text-[10px] text-slate-400 mt-1 block">Minimum active hours for half-day credit</span>
+                                <label for="half_day_threshold_hours"
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Half
+                                    Day Threshold (Hours)</label>
+                                <input type="number" step="0.5" min="1" max="24" name="half_day_threshold_hours"
+                                    id="half_day_threshold_hours" value="{{ company.half_day_threshold_hours or 4.0 }}"
+                                    required
+                                    class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Minimum active hours for half-day
+                                    credit</span>
                             </div>
                         </div>
                     </div>
@@ -237,28 +323,46 @@
                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center">
                                 <span class="mr-1.5">🍱</span> Official Lunch Break Standard (All Users)
                             </h4>
-                            <span class="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                            <span
+                                class="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
                                 Governs Punch Buttons
                             </span>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label for="lunch_break_hours" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Lunch Break Duration (Hours)</label>
-                                <input type="number" step="0.25" min="0" max="8" name="lunch_break_hours" id="lunch_break_hours" value="{{ company.lunch_break_hours if (company.lunch_break_hours is not none) else 1.0 }}" required class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                                <span class="text-[10px] text-slate-400 mt-1 block">Allocated meal break duration (e.g. 1.0h = 60 mins)</span>
+                                <label for="lunch_break_hours"
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Lunch
+                                    Break Duration (Hours)</label>
+                                <input type="number" step="0.25" min="0" max="8" name="lunch_break_hours"
+                                    id="lunch_break_hours"
+                                    value="{{ company.lunch_break_hours if (company.lunch_break_hours is not none) else 1.0 }}"
+                                    required
+                                    class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Allocated meal break duration (e.g.
+                                    1.0h = 60 mins)</span>
                             </div>
 
                             <div>
-                                <label for="lunch_start_time" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Lunch Window (Start Time)</label>
-                                <input type="time" name="lunch_start_time" id="lunch_start_time" value="{{ company.lunch_start_time or '13:00' }}" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                                <span class="text-[10px] text-slate-400 mt-1 block">Triggers "Go for Lunch" button for staff</span>
+                                <label for="lunch_start_time"
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Lunch
+                                    Window (Start Time)</label>
+                                <input type="time" name="lunch_start_time" id="lunch_start_time"
+                                    value="{{ company.lunch_start_time or '13:00' }}"
+                                    class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Triggers "Go for Lunch" button for
+                                    staff</span>
                             </div>
 
                             <div>
-                                <label for="lunch_end_time" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Lunch Window (End Time)</label>
-                                <input type="time" name="lunch_end_time" id="lunch_end_time" value="{{ company.lunch_end_time or '14:00' }}" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                                <span class="text-[10px] text-slate-400 mt-1 block">Triggers "Return from Lunch" resume reminder</span>
+                                <label for="lunch_end_time"
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Lunch
+                                    Window (End Time)</label>
+                                <input type="time" name="lunch_end_time" id="lunch_end_time"
+                                    value="{{ company.lunch_end_time or '14:00' }}"
+                                    class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Triggers "Return from Lunch" resume
+                                    reminder</span>
                             </div>
                         </div>
                     </div>
@@ -267,34 +371,45 @@
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                         <div class="flex items-center justify-between">
                             <p class="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center">
-                                <i data-lucide="layout-grid" class="w-3.5 h-3.5 mr-1.5 text-teal-600"></i> Daily Shift & Lunch Visualizer
+                                <i data-lucide="layout-grid" class="w-3.5 h-3.5 mr-1.5 text-teal-600"></i> Daily Shift &
+                                Lunch Visualizer
                             </p>
-                            <span class="text-[11px] font-mono font-bold text-slate-700">Total Work: {{ company.standard_hours_per_day or 8.0 }}h + Lunch: {{ company.lunch_break_hours or 1.0 }}h</span>
+                            <span class="text-[11px] font-mono font-bold text-slate-700">Total Work: {{
+                                company.standard_hours_per_day or 8.0 }}h + Lunch: {{ company.lunch_break_hours or 1.0
+                                }}h</span>
                         </div>
 
                         <!-- Timeline Bar -->
-                        <div class="w-full h-8 rounded-lg overflow-hidden flex font-mono text-[11px] font-bold text-white shadow-2xs border border-slate-200">
-                            <div class="bg-teal-700 flex items-center justify-center px-2 flex-1" title="Morning Work Session">
+                        <div
+                            class="w-full h-8 rounded-lg overflow-hidden flex font-mono text-[11px] font-bold text-white shadow-2xs border border-slate-200">
+                            <div class="bg-teal-700 flex items-center justify-center px-2 flex-1"
+                                title="Morning Work Session">
                                 <span>Morning Work</span>
                             </div>
-                            <div class="bg-amber-500 text-amber-950 flex items-center justify-center px-3 shrink-0" style="min-width: 130px;" title="Lunch Break ({{ company.lunch_start_time or '13:00' }} - {{ company.lunch_end_time or '14:00' }})">
+                            <div class="bg-amber-500 text-amber-950 flex items-center justify-center px-3 shrink-0"
+                                style="min-width: 130px;"
+                                title="Lunch Break ({{ company.lunch_start_time or '13:00' }} - {{ company.lunch_end_time or '14:00' }})">
                                 <span>🍱 Lunch ({{ company.lunch_break_hours or 1.0 }}h)</span>
                             </div>
-                            <div class="bg-teal-700 flex items-center justify-center px-2 flex-1" title="Afternoon Work Session">
+                            <div class="bg-teal-700 flex items-center justify-center px-2 flex-1"
+                                title="Afternoon Work Session">
                                 <span>Afternoon Work</span>
                             </div>
                         </div>
 
                         <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-1">
                             <span>09:00 AM (Check In)</span>
-                            <span class="text-amber-800 font-bold font-mono">{{ company.lunch_start_time or '13:00' }} (Go for Lunch) – {{ company.lunch_end_time or '14:00' }} (Return)</span>
+                            <span class="text-amber-800 font-bold font-mono">{{ company.lunch_start_time or '13:00' }}
+                                (Go for Lunch) – {{ company.lunch_end_time or '14:00' }} (Return)</span>
                             <span>06:00 PM (Check Out)</span>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <span class="text-xs text-slate-400">All non-admin employees will automatically follow this lunch and work standard</span>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition-all active:scale-95 flex items-center">
+                        <span class="text-xs text-slate-400">All non-admin employees will automatically follow this
+                            lunch and work standard</span>
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition-all active:scale-95 flex items-center">
                             <i data-lucide="check" class="w-4 h-4 mr-1.5"></i> Save Schedule & Lunch Policy
                         </button>
                     </div>
@@ -302,34 +417,43 @@
             </div>
 
             <!-- ================= PANEL 3: PAYROLL & CURRENCY ================= -->
-            <div id="panel-payroll" class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
+            <div id="panel-payroll"
+                class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
                 <form action="/company/profile" method="POST" class="space-y-6">
                     <input type="hidden" name="section" value="payroll">
 
                     <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                         <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shrink-0">
+                            <div
+                                class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shrink-0">
                                 <i data-lucide="coins" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Payroll & Currency Standards</h3>
-                                <p class="text-xs text-slate-500">Corporate currency codes, symbol formats, and monthly payable calculation baselines</p>
+                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Payroll &
+                                    Currency Standards</h3>
+                                <p class="text-xs text-slate-500">Corporate currency codes, symbol formats, and monthly
+                                    payable calculation baselines</p>
                             </div>
                         </div>
-                        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span
+                            class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             Finance
                         </span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                         <!-- Quick Currency Preset Dropdown -->
-                        <div class="sm:col-span-3 pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                        <div
+                            class="sm:col-span-3 pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Quick Currency Preset</label>
-                                <span class="text-[11px] text-slate-400">Apply standard global currency symbols and ISO formats automatically</span>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Quick
+                                    Currency Preset</label>
+                                <span class="text-[11px] text-slate-400">Apply standard global currency symbols and ISO
+                                    formats automatically</span>
                             </div>
                             <div class="min-w-[240px]">
-                                <select onchange="applyCurrencyPreset(this.value)" class="w-full text-xs font-bold bg-slate-50 hover:bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-all cursor-pointer shadow-2xs">
+                                <select onchange="applyCurrencyPreset(this.value)"
+                                    class="w-full text-xs font-bold bg-slate-50 hover:bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-all cursor-pointer shadow-2xs">
                                     <option value="">-- Select Standard Preset --</option>
                                     <option value="INR|₹">₹ INR — Indian Rupee</option>
                                     <option value="USD|$">$ USD — US Dollar</option>
@@ -344,43 +468,64 @@
                         </div>
 
                         <div>
-                            <label for="pay_currency_symbol" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Currency Symbol <span class="text-rose-500">*</span></label>
-                            <input type="text" name="currency_symbol" id="pay_currency_symbol" value="{{ company.currency_symbol }}" required placeholder="e.g. ₹ or $" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="pay_currency_symbol"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Currency
+                                Symbol <span class="text-rose-500">*</span></label>
+                            <input type="text" name="currency_symbol" id="pay_currency_symbol"
+                                value="{{ company.currency_symbol }}" required placeholder="e.g. ₹ or $"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
 
                         <div>
-                            <label for="pay_currency_code" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Currency Code <span class="text-rose-500">*</span></label>
-                            <input type="text" name="currency_code" id="pay_currency_code" value="{{ company.currency_code or 'INR' }}" required placeholder="e.g. INR, USD, EUR" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="pay_currency_code"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Currency
+                                Code <span class="text-rose-500">*</span></label>
+                            <input type="text" name="currency_code" id="pay_currency_code"
+                                value="{{ company.currency_code or 'INR' }}" required placeholder="e.g. INR, USD, EUR"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
 
                         <div>
-                            <label for="pay_working_days" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Default Payable Days / Month</label>
-                            <input type="number" min="1" max="31" name="working_days_per_month" id="pay_working_days" value="{{ company.working_days_per_month }}" required class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="pay_working_days"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Default
+                                Payable Days / Month</label>
+                            <input type="number" min="1" max="31" name="working_days_per_month" id="pay_working_days"
+                                value="{{ company.working_days_per_month }}" required
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
                     </div>
 
                     <!-- Live Sample Compensation Display -->
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5">Compensation & Payslip Calculation Preview</p>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5">Compensation &
+                            Payslip Calculation Preview</p>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div class="bg-white border border-slate-200 rounded-lg p-3">
                                 <span class="text-[10px] text-slate-400 font-semibold uppercase">Gross Pay Sample</span>
-                                <p class="text-sm font-bold font-mono text-slate-900 mt-0.5">{{ company.currency_symbol or '₹' }} 75,000.00</p>
+                                <p class="text-sm font-bold font-mono text-slate-900 mt-0.5">{{ company.currency_symbol
+                                    or '₹' }} 75,000.00</p>
                             </div>
                             <div class="bg-white border border-slate-200 rounded-lg p-3">
-                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Daily Pro-Rata Baseline</span>
-                                <p class="text-sm font-bold font-mono text-teal-700 mt-0.5">{{ company.currency_symbol or '₹' }} {{ "%.2f"|format(75000 / (company.working_days_per_month or 22)) }} / day</p>
+                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Daily Pro-Rata
+                                    Baseline</span>
+                                <p class="text-sm font-bold font-mono text-teal-700 mt-0.5">{{ company.currency_symbol
+                                    or '₹' }} {{ "%.2f"|format(75000 / (company.working_days_per_month or 22)) }} / day
+                                </p>
                             </div>
                             <div class="bg-white border border-slate-200 rounded-lg p-3">
-                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Take-Home Currency Code</span>
-                                <p class="text-sm font-bold font-mono text-emerald-700 mt-0.5">{{ company.currency_code or 'INR' }} Standard</p>
+                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Take-Home Currency
+                                    Code</span>
+                                <p class="text-sm font-bold font-mono text-emerald-700 mt-0.5">{{ company.currency_code
+                                    or 'INR' }} Standard</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <span class="text-xs text-slate-400">Used for salary structure components, tax statements, and payslip PDFs</span>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 shadow-sm transition-all active:scale-95 flex items-center">
+                        <span class="text-xs text-slate-400">Used for salary structure components, tax statements, and
+                            payslip PDFs</span>
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 shadow-sm transition-all active:scale-95 flex items-center">
                             <i data-lucide="check" class="w-4 h-4 mr-1.5"></i> Save Payroll Standards
                         </button>
                     </div>
@@ -388,48 +533,68 @@
             </div>
 
             <!-- ================= PANEL 4: STATUTORY & TAX COMPLIANCE ================= -->
-            <div id="panel-statutory" class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
+            <div id="panel-statutory"
+                class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
                 <form action="/company/profile" method="POST" class="space-y-6">
                     <input type="hidden" name="section" value="statutory">
 
                     <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                         <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200 shrink-0">
+                            <div
+                                class="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200 shrink-0">
                                 <i data-lucide="shield-check" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Statutory & Tax Identification</h3>
-                                <p class="text-xs text-slate-500">Corporate tax and registration numbers printed on official payslip certificates</p>
+                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Statutory & Tax
+                                    Identification</h3>
+                                <p class="text-xs text-slate-500">Corporate tax and registration numbers printed on
+                                    official payslip certificates</p>
                             </div>
                         </div>
-                        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                        <span
+                            class="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                             Compliance
                         </span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                         <div>
-                            <label for="cin" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Corporate ID (CIN)</label>
-                            <input type="text" name="cin" id="cin" value="{{ company.cin or '' }}" placeholder="e.g. U72200KA2024PTC123456" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="cin"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Corporate
+                                ID (CIN)</label>
+                            <input type="text" name="cin" id="cin" value="{{ company.cin or '' }}"
+                                placeholder="e.g. U72200KA2024PTC123456"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
                         <div>
-                            <label for="gstin" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">GSTIN</label>
-                            <input type="text" name="gstin" id="gstin" value="{{ company.gstin or '' }}" placeholder="e.g. 29AAAAA0000A1Z5" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="gstin"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">GSTIN</label>
+                            <input type="text" name="gstin" id="gstin" value="{{ company.gstin or '' }}"
+                                placeholder="e.g. 29AAAAA0000A1Z5"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
                         <div>
-                            <label for="pan" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Company PAN</label>
-                            <input type="text" name="pan" id="pan" value="{{ company.pan or '' }}" placeholder="e.g. ABCDE1234F" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            <label for="pan"
+                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Company
+                                PAN</label>
+                            <input type="text" name="pan" id="pan" value="{{ company.pan or '' }}"
+                                placeholder="e.g. ABCDE1234F"
+                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
                     </div>
 
-                    <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-blue-900 flex items-start space-x-2.5">
+                    <div
+                        class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-blue-900 flex items-start space-x-2.5">
                         <i data-lucide="info" class="w-4 h-4 text-blue-700 shrink-0 mt-0.5"></i>
-                        <span>Statutory identifiers are securely embedded in electronic payslip certificates, Form 16 statements, and official HR documentation.</span>
+                        <span>Statutory identifiers are securely embedded in electronic payslip certificates, Form 16
+                            statements, and official HR documentation.</span>
                     </div>
 
                     <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <span class="text-xs text-slate-400">All certificates generated will reflect these official registration credentials</span>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 shadow-sm transition-all active:scale-95 flex items-center">
+                        <span class="text-xs text-slate-400">All certificates generated will reflect these official
+                            registration credentials</span>
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 shadow-sm transition-all active:scale-95 flex items-center">
                             <i data-lucide="check" class="w-4 h-4 mr-1.5"></i> Save Statutory IDs
                         </button>
                     </div>
@@ -437,23 +602,30 @@
             </div>
 
             <!-- ================= PANEL 5: GEOFENCING & LOCATION ================= -->
-            <div id="panel-geofence" class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
+            <div id="panel-geofence"
+                class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
                 <form action="/company/profile" method="POST" class="space-y-6">
                     <input type="hidden" name="section" value="geofence">
 
                     <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                         <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200 shrink-0">
+                            <div
+                                class="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200 shrink-0">
                                 <i data-lucide="map-pin" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Geofencing & Office Perimeter</h3>
-                                <p class="text-xs text-slate-500">Restrict workforce check-in and check-out to verified office GPS boundaries</p>
+                                <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Geofencing &
+                                    Office Perimeter</h3>
+                                <p class="text-xs text-slate-500">Restrict workforce check-in and check-out to verified
+                                    office GPS boundaries</p>
                             </div>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="geofence_enabled" value="true" {% if company.geofence_enabled %}checked{% endif %} class="sr-only peer">
-                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                            <input type="checkbox" name="geofence_enabled" value="true" {% if company.geofence_enabled
+                                %}checked{% endif %} class="sr-only peer">
+                            <div
+                                class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600">
+                            </div>
                             <span class="ml-2 text-xs font-semibold text-slate-700">Enforce</span>
                         </label>
                     </div>
@@ -461,17 +633,28 @@
                     <div class="bg-slate-50/90 border border-slate-200 rounded-xl p-4 space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label for="office_latitude" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Office Latitude</label>
-                                <input type="number" step="any" name="office_latitude" id="office_latitude" value="{{ company.office_latitude if (company.office_latitude is not none) else '' }}" placeholder="e.g. 15.8497" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <label for="office_latitude"
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Office
+                                    Latitude</label>
+                                <input type="number" step="any" name="office_latitude" id="office_latitude"
+                                    value="{{ company.office_latitude if (company.office_latitude is not none) else '' }}"
+                                    placeholder="e.g. 15.8497"
+                                    class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                             </div>
                             <div>
-                                <label for="office_longitude" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Office Longitude</label>
-                                <input type="number" step="any" name="office_longitude" id="office_longitude" value="{{ company.office_longitude if (company.office_longitude is not none) else '' }}" placeholder="e.g. 74.4977" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <label for="office_longitude"
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Office
+                                    Longitude</label>
+                                <input type="number" step="any" name="office_longitude" id="office_longitude"
+                                    value="{{ company.office_longitude if (company.office_longitude is not none) else '' }}"
+                                    placeholder="e.g. 74.4977"
+                                    class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                             </div>
                         </div>
 
                         <div class="flex items-center justify-between pt-1">
-                            <button type="button" onclick="detectCurrentLocation()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors shadow-2xs">
+                            <button type="button" onclick="detectCurrentLocation()"
+                                class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors shadow-2xs">
                                 <i data-lucide="crosshair" class="w-3.5 h-3.5 mr-1.5 text-purple-600"></i>
                                 <span>📍 Capture My Current GPS Position</span>
                             </button>
@@ -480,26 +663,47 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200/80">
                             <div>
-                                <label for="geofence_radius_meters" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Perimeter Radius</label>
+                                <label for="geofence_radius_meters"
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Perimeter
+                                    Radius</label>
                                 <div class="flex items-center space-x-2">
-                                    <input type="number" min="10" max="50000" name="geofence_radius_meters" id="geofence_radius_meters" value="{{ company.geofence_radius_meters or 200 }}" required class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                    <input type="number" min="10" max="50000" name="geofence_radius_meters"
+                                        id="geofence_radius_meters" value="{{ company.geofence_radius_meters or 200 }}"
+                                        required
+                                        class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                                     <span class="text-xs font-semibold text-slate-500">meters</span>
                                 </div>
                                 <div class="flex space-x-1.5 mt-2">
-                                    <button type="button" onclick="document.getElementById('geofence_radius_meters').value=100" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">100m</button>
-                                    <button type="button" onclick="document.getElementById('geofence_radius_meters').value=200" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">200m</button>
-                                    <button type="button" onclick="document.getElementById('geofence_radius_meters').value=500" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">500m</button>
-                                    <button type="button" onclick="document.getElementById('geofence_radius_meters').value=1000" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">1km</button>
+                                    <button type="button"
+                                        onclick="document.getElementById('geofence_radius_meters').value=100"
+                                        class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">100m</button>
+                                    <button type="button"
+                                        onclick="document.getElementById('geofence_radius_meters').value=200"
+                                        class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">200m</button>
+                                    <button type="button"
+                                        onclick="document.getElementById('geofence_radius_meters').value=500"
+                                        class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">500m</button>
+                                    <button type="button"
+                                        onclick="document.getElementById('geofence_radius_meters').value=1000"
+                                        class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">1km</button>
                                 </div>
                             </div>
 
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Enforcement Mode</label>
-                                <label class="flex items-start space-x-2.5 p-2.5 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-slate-300">
-                                    <input type="checkbox" name="geofence_strict_mode" value="true" {% if company.geofence_strict_mode %}checked{% endif %} class="rounded text-purple-600 focus:ring-purple-500 mt-0.5">
+                                <label
+                                    class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Enforcement
+                                    Mode</label>
+                                <label
+                                    class="flex items-start space-x-2.5 p-2.5 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-slate-300">
+                                    <input type="checkbox" name="geofence_strict_mode" value="true" {% if
+                                        company.geofence_strict_mode %}checked{% endif %}
+                                        class="rounded text-purple-600 focus:ring-purple-500 mt-0.5">
                                     <div>
-                                        <span class="text-xs font-bold text-slate-800 block">Strict Mode (Block Offsite Punches)</span>
-                                        <span class="text-[11px] text-slate-500 block leading-snug">When checked, check-in/out is blocked outside perimeter. When unchecked, punches are permitted with an audit notice.</span>
+                                        <span class="text-xs font-bold text-slate-800 block">Strict Mode (Block Offsite
+                                            Punches)</span>
+                                        <span class="text-[11px] text-slate-500 block leading-snug">When checked,
+                                            check-in/out is blocked outside perimeter. When unchecked, punches are
+                                            permitted with an audit notice.</span>
                                     </div>
                                 </label>
                             </div>
@@ -507,8 +711,10 @@
                     </div>
 
                     <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <span class="text-xs text-slate-400">Exempt employees (Remote/Field) are configured in Employee Profiles</span>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-sm transition-all active:scale-95 flex items-center">
+                        <span class="text-xs text-slate-400">Exempt employees (Remote/Field) are configured in Employee
+                            Profiles</span>
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-sm transition-all active:scale-95 flex items-center">
                             <i data-lucide="check" class="w-4 h-4 mr-1.5"></i> Save Geofence Settings
                         </button>
                     </div>
@@ -524,15 +730,19 @@
 
                         <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                             <div class="flex items-center space-x-3">
-                                <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-200 shrink-0">
+                                <div
+                                    class="w-9 h-9 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-200 shrink-0">
                                     <i data-lucide="shield-alert" class="w-5 h-5"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Dynamic Role-Based Access Control (RBAC)</h3>
-                                    <p class="text-xs text-slate-500">Configure granular module permissions and operational rights for each system role</p>
+                                    <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Dynamic
+                                        Role-Based Access Control (RBAC)</h3>
+                                    <p class="text-xs text-slate-500">Configure granular module permissions and
+                                        operational rights for each system role</p>
                                 </div>
                             </div>
-                            <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                            <span
+                                class="px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                                 RBAC Matrix
                             </span>
                         </div>
@@ -541,7 +751,11 @@
                         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start space-x-3">
                             <i data-lucide="info" class="w-4 h-4 text-teal-700 mt-0.5 shrink-0"></i>
                             <div class="text-xs text-slate-600 leading-relaxed">
-                                <strong class="text-slate-800 font-semibold">Master Admin Access:</strong> The <code class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 font-mono text-[11px]">Super Admin</code> role inherently retains unconstrained master privileges across all capabilities. Check or uncheck modules below to customize access for HR Admins, Managers, Employees, and Interns.
+                                <strong class="text-slate-800 font-semibold">Master Admin Access:</strong> The <code
+                                    class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 font-mono text-[11px]">Super Admin</code>
+                                role inherently retains unconstrained master privileges across all capabilities. Check
+                                or uncheck modules below to customize access for HR Admins, Managers, Employees, and
+                                Interns.
                             </div>
                         </div>
 
@@ -549,9 +763,11 @@
                         <div class="overflow-x-auto border border-slate-200 rounded-xl">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                    <tr
+                                        class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
                                         <th class="py-3 px-4 min-w-[200px]">System Capability & Module</th>
-                                        <th class="py-3 px-2 text-center w-24 text-purple-900 bg-purple-50/50">Super Admin</th>
+                                        <th class="py-3 px-2 text-center w-24 text-purple-900 bg-purple-50/50">Super
+                                            Admin</th>
                                         <th class="py-3 px-2 text-center w-20 text-indigo-900">Admin</th>
                                         <th class="py-3 px-2 text-center w-20 text-teal-900">HR</th>
                                         <th class="py-3 px-2 text-center w-20 text-blue-900">Manager</th>
@@ -564,36 +780,39 @@
                                     <tr class="hover:bg-teal-50/20 transition-colors">
                                         <td class="py-3 px-4">
                                             <div class="flex items-center space-x-2">
-                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-slate-100 text-slate-700 border border-slate-200">
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-slate-100 text-slate-700 border border-slate-200">
                                                     {{ perm.category }}
                                                 </span>
                                                 <span class="font-bold text-slate-900">{{ perm.name }}</span>
                                             </div>
                                             <p class="text-[11px] text-slate-500 mt-0.5">{{ perm.description }}</p>
                                         </td>
-                                        
+
                                         <!-- Super Admin (Permanent Master - Locked) -->
                                         <td class="py-3 px-2 text-center bg-purple-50/30">
                                             <div class="inline-flex items-center justify-center">
-                                                <input type="checkbox" checked disabled class="rounded text-purple-600 focus:ring-purple-500 opacity-70 cursor-not-allowed h-4 w-4">
+                                                <input type="checkbox" checked disabled
+                                                    class="rounded text-purple-600 focus:ring-purple-500 opacity-70 cursor-not-allowed h-4 w-4">
                                             </div>
                                         </td>
 
                                         <!-- Admin -->
                                         <td class="py-3 px-2 text-center">
                                             <label class="inline-flex items-center justify-center cursor-pointer p-1">
-                                                <input type="checkbox" name="perm_admin_{{ perm.key }}" value="true"
-                                                       {% if permissions_matrix['admin'].get(perm.key) %}checked{% endif %}
-                                                       class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                                                <input type="checkbox" name="perm_admin_{{ perm.key }}" value="true" {%
+                                                    if permissions_matrix['admin'].get(perm.key) %}checked{% endif %}
+                                                    class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4">
                                             </label>
                                         </td>
 
                                         <!-- HR -->
                                         <td class="py-3 px-2 text-center">
                                             <label class="inline-flex items-center justify-center cursor-pointer p-1">
-                                                <input type="checkbox" name="perm_hr_{{ perm.key }}" value="true"
-                                                       {% if permissions_matrix['hr'].get(perm.key) or permissions_matrix['hr_admin'].get(perm.key) %}checked{% endif %}
-                                                       class="rounded text-teal-600 focus:ring-teal-500 h-4 w-4">
+                                                <input type="checkbox" name="perm_hr_{{ perm.key }}" value="true" {% if
+                                                    permissions_matrix['hr'].get(perm.key) or
+                                                    permissions_matrix['hr_admin'].get(perm.key) %}checked{% endif %}
+                                                    class="rounded text-teal-600 focus:ring-teal-500 h-4 w-4">
                                             </label>
                                         </td>
 
@@ -601,8 +820,8 @@
                                         <td class="py-3 px-2 text-center">
                                             <label class="inline-flex items-center justify-center cursor-pointer p-1">
                                                 <input type="checkbox" name="perm_manager_{{ perm.key }}" value="true"
-                                                       {% if permissions_matrix['manager'].get(perm.key) %}checked{% endif %}
-                                                       class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                                    {% if permissions_matrix['manager'].get(perm.key) %}checked{% endif
+                                                    %} class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
                                             </label>
                                         </td>
 
@@ -610,17 +829,17 @@
                                         <td class="py-3 px-2 text-center">
                                             <label class="inline-flex items-center justify-center cursor-pointer p-1">
                                                 <input type="checkbox" name="perm_employee_{{ perm.key }}" value="true"
-                                                       {% if permissions_matrix['employee'].get(perm.key) %}checked{% endif %}
-                                                       class="rounded text-slate-700 focus:ring-slate-500 h-4 w-4">
+                                                    {% if permissions_matrix['employee'].get(perm.key) %}checked{% endif
+                                                    %} class="rounded text-slate-700 focus:ring-slate-500 h-4 w-4">
                                             </label>
                                         </td>
 
                                         <!-- Intern -->
                                         <td class="py-3 px-2 text-center">
                                             <label class="inline-flex items-center justify-center cursor-pointer p-1">
-                                                <input type="checkbox" name="perm_intern_{{ perm.key }}" value="true"
-                                                       {% if permissions_matrix['intern'].get(perm.key) %}checked{% endif %}
-                                                       class="rounded text-amber-600 focus:ring-amber-500 h-4 w-4">
+                                                <input type="checkbox" name="perm_intern_{{ perm.key }}" value="true" {%
+                                                    if permissions_matrix['intern'].get(perm.key) %}checked{% endif %}
+                                                    class="rounded text-amber-600 focus:ring-amber-500 h-4 w-4">
                                             </label>
                                         </td>
                                     </tr>
@@ -630,8 +849,10 @@
                         </div>
 
                         <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-                            <span class="text-xs text-slate-400">Permissions take effect immediately for all active user sessions</span>
-                            <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-700 hover:bg-rose-800 shadow-sm transition-all active:scale-95 flex items-center">
+                            <span class="text-xs text-slate-400">Permissions take effect immediately for all active user
+                                sessions</span>
+                            <button type="submit"
+                                class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-700 hover:bg-rose-800 shadow-sm transition-all active:scale-95 flex items-center">
                                 <i data-lucide="check" class="w-4 h-4 mr-1.5"></i> Save Access Matrix
                             </button>
                         </div>
@@ -640,19 +861,24 @@
 
                 <!-- Card B: Staff Role Assignment Table -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
-                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3.5 pb-4 border-b border-slate-100">
+                    <div
+                        class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3.5 pb-4 border-b border-slate-100">
                         <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200 shrink-0">
+                            <div
+                                class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200 shrink-0">
                                 <i data-lucide="users" class="w-5 h-5"></i>
                             </div>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Staff Role Assignment Hub</h3>
-                                    <span id="role-assign-count" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                                    <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Staff Role
+                                        Assignment Hub</h3>
+                                    <span id="role-assign-count"
+                                        class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
                                         {{ employees|length }} staff
                                     </span>
                                 </div>
-                                <p class="text-xs text-slate-500">Dynamically promote, reassign, or revoke user access levels across your organization</p>
+                                <p class="text-xs text-slate-500">Dynamically promote, reassign, or revoke user access
+                                    levels across your organization</p>
                             </div>
                         </div>
 
@@ -661,12 +887,15 @@
                             <!-- Search Filter Input -->
                             <div class="relative flex-1 sm:w-56 min-w-[180px]">
                                 <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
-                                <input type="text" id="role-assign-search" onkeyup="filterRoleAssignTable()" placeholder="Search name, email, ID..." class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                                <input type="text" id="role-assign-search" onkeyup="filterRoleAssignTable()"
+                                    placeholder="Search name, email, ID..."
+                                    class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                             </div>
 
                             <!-- Filter by Role Dropdown -->
                             <div class="min-w-[130px]">
-                                <select id="role-assign-filter-role" onchange="filterRoleAssignTable()" class="w-full text-xs font-semibold bg-slate-50 hover:bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors cursor-pointer shadow-2xs">
+                                <select id="role-assign-filter-role" onchange="filterRoleAssignTable()"
+                                    class="w-full text-xs font-semibold bg-slate-50 hover:bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors cursor-pointer shadow-2xs">
                                     <option value="all">All Roles</option>
                                     <option value="super_admin">Super Admin</option>
                                     <option value="admin">Admin</option>
@@ -679,7 +908,8 @@
 
                             <!-- Filter by Department Dropdown -->
                             <div class="min-w-[140px]">
-                                <select id="role-assign-filter-dept" onchange="filterRoleAssignTable()" class="w-full text-xs font-semibold bg-slate-50 hover:bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors cursor-pointer shadow-2xs">
+                                <select id="role-assign-filter-dept" onchange="filterRoleAssignTable()"
+                                    class="w-full text-xs font-semibold bg-slate-50 hover:bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors cursor-pointer shadow-2xs">
                                     <option value="all">All Departments</option>
                                     {% for d in departments %}
                                     <option value="{{ d|lower }}">{{ d }}</option>
@@ -693,7 +923,8 @@
                     <div class="overflow-x-auto border border-slate-200 rounded-xl mt-4">
                         <table class="w-full text-left border-collapse" id="role-assign-table">
                             <thead>
-                                <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <tr
+                                    class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
                                     <th class="py-3 px-4">Employee</th>
                                     <th class="py-3 px-3">Department & Designation</th>
                                     <th class="py-3 px-3">Current System Role</th>
@@ -702,50 +933,75 @@
                             </thead>
                             <tbody class="divide-y divide-slate-100 text-xs">
                                 {% for emp in employees %}
-                                {% set emp_dept_name = emp.department.name if (emp.department and emp.department.name) else (emp.department or '') %}
-                                {% set emp_desig_name = emp.designation.name if (emp.designation and emp.designation.name) else (emp.designation or '') %}
-                                <tr class="hover:bg-slate-50/60 transition-colors role-assign-row" id="role-row-{{ emp.id }}" data-name="{{ emp.name|lower }}" data-dept="{{ emp_dept_name|lower }}" data-role="{{ emp.role }}" data-email="{{ emp.email|lower }}">
+                                {% set emp_dept_name = emp.department.name if (emp.department and emp.department.name)
+                                else (emp.department or '') %}
+                                {% set emp_desig_name = emp.designation.name if (emp.designation and
+                                emp.designation.name) else (emp.designation or '') %}
+                                <tr class="hover:bg-slate-50/60 transition-colors role-assign-row"
+                                    id="role-row-{{ emp.id }}" data-name="{{ emp.name|lower }}"
+                                    data-dept="{{ emp_dept_name|lower }}" data-role="{{ emp.role }}"
+                                    data-email="{{ emp.email|lower }}">
                                     <td class="py-3 px-4">
                                         <div class="flex items-center space-x-2.5">
-                                            <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-xs border border-slate-200 shrink-0">
+                                            <div
+                                                class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-xs border border-slate-200 shrink-0">
                                                 {{ emp.name[:2]|upper }}
                                             </div>
                                             <div>
                                                 <div class="font-bold text-slate-900">{{ emp.name }}</div>
-                                                <div class="text-[11px] text-slate-400">{{ emp.email }} &bull; <span class="font-mono text-slate-500">{{ format_emp_code(emp, company) }}</span></div>
+                                                <div class="text-[11px] text-slate-400">{{ emp.email }} &bull; <span
+                                                        class="font-mono text-slate-500">{{ format_emp_code(emp,
+                                                        company) }}</span></div>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="py-3 px-3">
-                                        <div class="text-slate-800 font-semibold">{{ emp_dept_name or 'Unassigned' }}</div>
+                                        <div class="text-slate-800 font-semibold">{{ emp_dept_name or 'Unassigned' }}
+                                        </div>
                                         <div class="text-[11px] text-slate-400">{{ emp_desig_name or 'Staff' }}</div>
                                     </td>
                                     <td class="py-3 px-3">
                                         {% if emp.role == 'super_admin' %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Super Admin</span>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Super
+                                            Admin</span>
                                         {% elif emp.role == 'admin' %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Admin</span>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Admin</span>
                                         {% elif emp.role in ['hr', 'hr_admin'] %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">HR</span>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">HR</span>
                                         {% elif emp.role == 'manager' %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Manager</span>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Manager</span>
                                         {% elif emp.role == 'intern' %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Intern</span>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Intern</span>
                                         {% else %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Employee</span>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Employee</span>
                                         {% endif %}
                                     </td>
                                     <td class="py-3 px-4 text-right">
-                                        <form action="/company/assign-role" method="POST" hx-post="/company/assign-role" hx-target="#role-row-{{ emp.id }}" hx-swap="outerHTML" class="inline-flex items-center justify-end">
+                                        <form action="/company/assign-role" method="POST" hx-post="/company/assign-role"
+                                            hx-target="#role-row-{{ emp.id }}" hx-swap="outerHTML"
+                                            class="inline-flex items-center justify-end">
                                             <input type="hidden" name="employee_id" value="{{ emp.id }}">
-                                            <select name="role" onchange="this.form.requestSubmit()" class="text-xs font-bold bg-white border border-slate-300 hover:border-slate-400 rounded-lg px-3 py-1.5 text-slate-800 focus:outline-none focus:border-teal-600 shadow-2xs cursor-pointer">
-                                                <option value="employee" {% if emp.role == 'employee' %}selected{% endif %}>Employee</option>
-                                                <option value="intern" {% if emp.role == 'intern' %}selected{% endif %}>Intern</option>
-                                                <option value="manager" {% if emp.role == 'manager' %}selected{% endif %}>Manager</option>
-                                                <option value="hr" {% if emp.role in ['hr', 'hr_admin'] %}selected{% endif %}>HR</option>
-                                                <option value="admin" {% if emp.role == 'admin' %}selected{% endif %}>Admin</option>
+                                            <select name="role" onchange="this.form.requestSubmit()"
+                                                class="text-xs font-bold bg-white border border-slate-300 hover:border-slate-400 rounded-lg px-3 py-1.5 text-slate-800 focus:outline-none focus:border-teal-600 shadow-2xs cursor-pointer">
+                                                <option value="employee" {% if emp.role=='employee' %}selected{% endif
+                                                    %}>Employee</option>
+                                                <option value="intern" {% if emp.role=='intern' %}selected{% endif %}>
+                                                    Intern</option>
+                                                <option value="manager" {% if emp.role=='manager' %}selected{% endif %}>
+                                                    Manager</option>
+                                                <option value="hr" {% if emp.role in ['hr', 'hr_admin' ] %}selected{%
+                                                    endif %}>HR</option>
+                                                <option value="admin" {% if emp.role=='admin' %}selected{% endif %}>
+                                                    Admin</option>
                                                 {% if user.role == 'super_admin' %}
-                                                <option value="super_admin" {% if emp.role == 'super_admin' %}selected{% endif %}>Super Admin</option>
+                                                <option value="super_admin" {% if emp.role=='super_admin' %}selected{%
+                                                    endif %}>Super Admin</option>
                                                 {% endif %}
                                             </select>
                                         </form>
@@ -767,7 +1023,7 @@
     function switchSettingsTab(tabName) {
         // Hide all panels
         document.querySelectorAll('.settings-panel').forEach(p => p.classList.add('hidden'));
-        
+
         // Reset all tab button styles
         document.querySelectorAll('.settings-tab-btn').forEach(btn => {
             btn.classList.remove('bg-teal-50/80', 'text-teal-900', 'ring-1', 'ring-teal-200');
