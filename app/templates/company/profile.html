@@ -55,100 +55,53 @@
         </div>
     </div>
 
-    <!-- Main Layout: Sidebar Navigation + Dedicated Settings Panels -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Top Horizontal Settings Domain Tabs (Pills) -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-2 shadow-xs mb-6 overflow-x-auto">
+        <nav class="flex items-center space-x-1.5 min-w-max">
+            <button type="button" onclick="switchSettingsTab('branding')" id="tab-btn-branding"
+                class="settings-tab-btn flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer">
+                <i data-lucide="building" class="w-4 h-4 shrink-0"></i>
+                <span>Corporate Branding</span>
+            </button>
 
-        <!-- Left Sidebar Navigation Tabs -->
-        <div class="lg:col-span-3 space-y-1.5">
-            <div class="bg-white rounded-2xl border border-slate-200 p-2.5 shadow-card sticky top-20">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-2 font-mono">Settings
-                    Domains</p>
+            <button type="button" onclick="switchSettingsTab('schedule')" id="tab-btn-schedule"
+                class="settings-tab-btn flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer">
+                <i data-lucide="clock" class="w-4 h-4 shrink-0"></i>
+                <span>Work Shift & Lunch</span>
+            </button>
 
-                <nav class="space-y-1">
-                    <button type="button" onclick="switchSettingsTab('branding')" id="tab-btn-branding"
-                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div
-                            class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60 shrink-0">
-                            <i data-lucide="building" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <div class="truncate">
-                            <span class="block text-xs font-bold font-heading">Corporate Branding</span>
-                            <span class="block text-[10px] text-slate-400 font-normal">Identity, logo & contacts</span>
-                        </div>
-                    </button>
+            <button type="button" onclick="switchSettingsTab('payroll')" id="tab-btn-payroll"
+                class="settings-tab-btn flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer">
+                <i data-lucide="coins" class="w-4 h-4 shrink-0"></i>
+                <span>Payroll & Currency</span>
+            </button>
 
-                    <button type="button" onclick="switchSettingsTab('schedule')" id="tab-btn-schedule"
-                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div
-                            class="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200/60 shrink-0">
-                            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <div class="truncate">
-                            <span class="block text-xs font-bold font-heading">Work Shift & Lunch</span>
-                            <span class="block text-[10px] text-slate-400 font-normal">Hours, breaks & lunch
-                                policy</span>
-                        </div>
-                    </button>
+            <button type="button" onclick="switchSettingsTab('statutory')" id="tab-btn-statutory"
+                class="settings-tab-btn flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer">
+                <i data-lucide="shield-check" class="w-4 h-4 shrink-0"></i>
+                <span>Statutory & Tax IDs</span>
+            </button>
 
-                    <button type="button" onclick="switchSettingsTab('payroll')" id="tab-btn-payroll"
-                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div
-                            class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60 shrink-0">
-                            <i data-lucide="coins" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <div class="truncate">
-                            <span class="block text-xs font-bold font-heading">Payroll & Currency</span>
-                            <span class="block text-[10px] text-slate-400 font-normal">Currency symbols & pay
-                                days</span>
-                        </div>
-                    </button>
+            <button type="button" onclick="switchSettingsTab('geofence')" id="tab-btn-geofence"
+                class="settings-tab-btn flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer">
+                <i data-lucide="map-pin" class="w-4 h-4 shrink-0"></i>
+                <span>Office Geofencing</span>
+            </button>
 
-                    <button type="button" onclick="switchSettingsTab('statutory')" id="tab-btn-statutory"
-                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div
-                            class="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200/60 shrink-0">
-                            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <div class="truncate">
-                            <span class="block text-xs font-bold font-heading">Statutory & Tax IDs</span>
-                            <span class="block text-[10px] text-slate-400 font-normal">CIN, GSTIN & PAN numbers</span>
-                        </div>
-                    </button>
+            <button type="button" onclick="switchSettingsTab('permissions')" id="tab-btn-permissions"
+                class="settings-tab-btn flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer">
+                <i data-lucide="lock" class="w-4 h-4 shrink-0"></i>
+                <span>Access & Permissions</span>
+            </button>
+        </nav>
+    </div>
 
-                    <button type="button" onclick="switchSettingsTab('geofence')" id="tab-btn-geofence"
-                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div
-                            class="w-7 h-7 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200/60 shrink-0">
-                            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <div class="truncate">
-                            <span class="block text-xs font-bold font-heading">Office Geofencing</span>
-                            <span class="block text-[10px] text-slate-400 font-normal">GPS coordinates &
-                                perimeter</span>
-                        </div>
-                    </button>
-
-                    <button type="button" onclick="switchSettingsTab('permissions')" id="tab-btn-permissions"
-                        class="settings-tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all text-left">
-                        <div
-                            class="w-7 h-7 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-200/60 shrink-0">
-                            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
-                        </div>
-                        <div class="truncate">
-                            <span class="block text-xs font-bold font-heading">Access & Permissions</span>
-                            <span class="block text-[10px] text-slate-400 font-normal">Dynamic RBAC & staff roles</span>
-                        </div>
-                    </button>
-                </nav>
-            </div>
-        </div>
-
-        <!-- Right Content Panels (Each panel is an independent, dedicated section form) -->
-        <div class="lg:col-span-9 space-y-6">
+    <!-- Main Full-Width Content Panels -->
+    <div class="w-full space-y-6">
 
             <!-- ================= PANEL 1: CORPORATE BRANDING ================= -->
             <div id="panel-branding"
-                class="settings-panel bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
+                class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
                 <form action="/company/profile" method="POST" class="space-y-6">
                     <input type="hidden" name="section" value="branding">
 
@@ -216,18 +169,6 @@
                                 class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                         </div>
 
-                        <div>
-                            <label for="employee_id_prefix"
-                                class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Employee
-                                ID Prefix</label>
-                            <input type="text" name="employee_id_prefix" id="employee_id_prefix"
-                                value="{{ company.employee_id_prefix or '' }}"
-                                placeholder="e.g. Company or EMP (Leave empty for #0001)"
-                                class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                            <span class="text-[10px] text-slate-400 mt-1 block">Custom badge prefix (e.g. Company-0001).
-                                If blank, default (#0001) is used.</span>
-                        </div>
-
                         <div class="sm:col-span-2">
                             <label for="address"
                                 class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Registered
@@ -235,6 +176,142 @@
                             <input type="text" name="address" id="address" value="{{ company.address or '' }}"
                                 placeholder="City, State, Country"
                                 class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                        </div>
+                    </div>
+
+                    <!-- ================= DEDICATED EMPLOYEE ID CONFIGURATION & DYNAMIC SEPARATOR CARD ================= -->
+                    <div class="bg-white rounded-xl border border-teal-200/80 shadow-2xs p-4 sm:p-5 space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div class="flex items-center space-x-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/80 shrink-0">
+                                    <i data-lucide="badge-check" class="w-4 h-4 text-teal-700"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs sm:text-sm font-bold font-heading text-slate-900">Employee ID Format & Dynamic Separator</h4>
+                                    <p class="text-[11px] text-slate-500">Configure corporate badge prefix, joining year, department code, sequence padding & delimiter</p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-teal-50 text-teal-800 border border-teal-200">
+                                Real-time Format Engine
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Field 1: Prefix -->
+                            <div>
+                                <label for="employee_id_prefix" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                                    Brand / Company Prefix <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="employee_id_prefix" id="employee_id_prefix"
+                                    value="{{ company.employee_id_prefix or 'TU' }}"
+                                    placeholder="e.g. TU, TURTU, EMP"
+                                    oninput="updateEmpIdLivePreview()"
+                                    class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono font-bold uppercase focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                            </div>
+
+                            <!-- Field 2: Delimiter / Separator -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                                    Segment Separator <span class="text-rose-500">*</span>
+                                </label>
+                                {% set cur_sep = company.employee_id_separator or '-' %}
+                                {% set is_predefined = cur_sep in ['-', '/', '.', '_'] %}
+                                <div class="flex items-center space-x-1 bg-slate-50 border border-slate-300 rounded-lg p-1 h-[38px]">
+                                    <label class="flex-1 text-center py-1.5 rounded-md cursor-pointer transition-all flex items-center justify-center text-sm font-mono font-bold {% if cur_sep == '-' %}bg-teal-700 text-white shadow-2xs{% else %}text-slate-700 hover:bg-slate-200/80 hover:text-slate-900{% endif %}" onclick="selectSeparator('-')" title="Hyphen (-)">
+                                        <input type="radio" name="employee_id_separator" value="-" class="hidden" {% if cur_sep == '-' %}checked{% endif %}>
+                                        <span>-</span>
+                                    </label>
+                                    <label class="flex-1 text-center py-1.5 rounded-md cursor-pointer transition-all flex items-center justify-center text-sm font-mono font-bold {% if cur_sep == '/' %}bg-teal-700 text-white shadow-2xs{% else %}text-slate-700 hover:bg-slate-200/80 hover:text-slate-900{% endif %}" onclick="selectSeparator('/')" title="Forward Slash (/)">
+                                        <input type="radio" name="employee_id_separator" value="/" class="hidden" {% if cur_sep == '/' %}checked{% endif %}>
+                                        <span>/</span>
+                                    </label>
+                                    <label class="flex-1 text-center py-1.5 rounded-md cursor-pointer transition-all flex items-center justify-center text-sm font-mono font-bold {% if cur_sep == '.' %}bg-teal-700 text-white shadow-2xs{% else %}text-slate-700 hover:bg-slate-200/80 hover:text-slate-900{% endif %}" onclick="selectSeparator('.')" title="Dot / Period (.)">
+                                        <input type="radio" name="employee_id_separator" value="." class="hidden" {% if cur_sep == '.' %}checked{% endif %}>
+                                        <span>.</span>
+                                    </label>
+                                    <label class="flex-1 text-center py-1.5 rounded-md cursor-pointer transition-all flex items-center justify-center text-sm font-mono font-bold {% if cur_sep == '_' %}bg-teal-700 text-white shadow-2xs{% else %}text-slate-700 hover:bg-slate-200/80 hover:text-slate-900{% endif %}" onclick="selectSeparator('_')" title="Underscore (_)">
+                                        <input type="radio" name="employee_id_separator" value="_" class="hidden" {% if cur_sep == '_' %}checked{% endif %}>
+                                        <span>_</span>
+                                    </label>
+                                    <label class="flex-1 text-center py-1.5 rounded-md cursor-pointer transition-all flex items-center justify-center text-xs font-semibold {% if not is_predefined %}bg-teal-700 text-white shadow-2xs{% else %}text-slate-700 hover:bg-slate-200/80 hover:text-slate-900{% endif %}" onclick="selectSeparator('custom')" title="Custom Delimiter">
+                                        <input type="radio" name="employee_id_separator" value="custom" id="sep-radio-custom" class="hidden" {% if not is_predefined %}checked{% endif %}>
+                                        <span>Custom</span>
+                                    </label>
+                                </div>
+                                <div id="custom-sep-container" class="{% if is_predefined %}hidden{% endif %} mt-1.5">
+                                    <input type="text" name="custom_separator" id="custom_separator" value="{{ cur_sep if not is_predefined else '' }}" maxlength="4" placeholder="Type custom separator (e.g. ~ or :)"
+                                        oninput="updateEmpIdLivePreview()"
+                                        class="w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-center focus:outline-none focus:border-teal-600 shadow-2xs">
+                                </div>
+                            </div>
+
+                            <!-- Field 3: Sequence Padding -->
+                            <div>
+                                <label for="employee_id_padding" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                                    Sequence Number Padding
+                                </label>
+                                <select name="employee_id_padding" id="employee_id_padding" onchange="updateEmpIdLivePreview()"
+                                    data-custom-select="true"
+                                    class="custom-select w-full">
+                                    <option value="3" data-badge="3 Digits" {% if (company.employee_id_padding or 3) == 3 %}selected{% endif %}>3 Digits (001, 002, 042)</option>
+                                    <option value="4" data-badge="4 Digits" {% if company.employee_id_padding == 4 %}selected{% endif %}>4 Digits (0001, 0002, 0042)</option>
+                                    <option value="5" data-badge="5 Digits" {% if company.employee_id_padding == 5 %}selected{% endif %}>5 Digits (00001, 00042)</option>
+                                    <option value="2" data-badge="2 Digits" {% if company.employee_id_padding == 2 %}selected{% endif %}>2 Digits (01, 02, 42)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Pattern Options Switches -->
+                        <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-700">
+                            <label class="flex items-center space-x-2 cursor-pointer select-none">
+                                <input type="checkbox" name="employee_id_include_year" id="employee_id_include_year" value="1"
+                                    {% if company.employee_id_include_year or company.employee_id_include_year is none %}checked{% endif %}
+                                    onchange="updateEmpIdLivePreview()"
+                                    class="w-4 h-4 rounded text-teal-600 border-slate-300 focus:ring-teal-500">
+                                <span class="font-semibold text-slate-800">Include Joining Year</span>
+                                <span class="text-[11px] text-slate-400">(e.g. 2012, 2024)</span>
+                            </label>
+
+                            <label class="flex items-center space-x-2 cursor-pointer select-none">
+                                <input type="checkbox" name="employee_id_include_dept" id="employee_id_include_dept" value="1"
+                                    {% if company.employee_id_include_dept or company.employee_id_include_dept is none %}checked{% endif %}
+                                    onchange="updateEmpIdLivePreview()"
+                                    class="w-4 h-4 rounded text-teal-600 border-slate-300 focus:ring-teal-500">
+                                <span class="font-semibold text-slate-800">Include Department Code</span>
+                                <span class="text-[11px] text-slate-400">(e.g. EX, HR, EN, DS, or any added department)</span>
+                            </label>
+                        </div>
+
+                        <!-- Live Real-Time Multi-Department Showcase -->
+                        <div class="bg-gradient-to-r from-teal-50/70 via-slate-50 to-teal-50/50 border border-teal-200/90 rounded-xl p-3.5 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-teal-900 font-mono flex items-center">
+                                    <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1 text-teal-600"></i>
+                                    Dynamic Live Output Preview Across Departments
+                                </span>
+                                <span id="preview-schema-formula" class="text-[10px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                                    [PREFIX]-[YEAR]-[DEPT]-[SEQ]
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                <div class="bg-white rounded-lg p-2.5 border border-slate-200 shadow-2xs flex flex-col justify-between">
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Executive (EX · 2025)</span>
+                                    <span id="preview-id-ex" class="text-xs sm:text-sm font-mono font-bold text-teal-900 mt-1">TU-2025-EX-001</span>
+                                </div>
+                                <div class="bg-white rounded-lg p-2.5 border border-slate-200 shadow-2xs flex flex-col justify-between">
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Human Resources (HR · 2025)</span>
+                                    <span id="preview-id-hr" class="text-xs sm:text-sm font-mono font-bold text-teal-900 mt-1">TU-2025-HR-001</span>
+                                </div>
+                                <div class="bg-white rounded-lg p-2.5 border border-slate-200 shadow-2xs flex flex-col justify-between">
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Engineering (EN · 2026)</span>
+                                    <span id="preview-id-en" class="text-xs sm:text-sm font-mono font-bold text-teal-900 mt-1">TU-2026-EN-001</span>
+                                </div>
+                                <div class="bg-white rounded-lg p-2.5 border border-teal-300 bg-teal-50/40 shadow-2xs flex flex-col justify-between">
+                                    <span class="text-[10px] font-bold text-teal-800 uppercase tracking-tight">New Custom Dept (AI · 2026)</span>
+                                    <span id="preview-id-custom" class="text-xs sm:text-sm font-mono font-bold text-teal-900 mt-1">TU-2026-AI-042</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -250,7 +327,7 @@
                             <div>
                                 <div class="flex items-center space-x-2">
                                     <h4 class="text-sm font-bold text-slate-900 font-heading">{{ company.name }}</h4>
-                                    <span
+                                    <span id="header-preview-badge"
                                         class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-teal-50 text-teal-800 border border-teal-200">
                                         ID Format: {{ format_emp_code(1, company) }}
                                     </span>
@@ -288,8 +365,7 @@
                             <div>
                                 <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Work Schedule &
                                     Lunch Policy</h3>
-                                <p class="text-xs text-slate-500">Company standard shift hours, lunch break window, and
-                                    payroll baselines configured by Admin — applied uniformly to all employees</p>
+                                
                             </div>
                         </div>
                         <span
@@ -308,7 +384,7 @@
                             <div>
                                 <label for="working_days_per_month"
                                     class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Working
-                                    Days / Mo <span class="text-rose-500">*</span></label>
+                                    Days / Month <span class="text-rose-500">*</span></label>
                                 <input type="number" min="1" max="31" name="working_days_per_month"
                                     id="working_days_per_month" value="{{ company.working_days_per_month }}" required
                                     class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
@@ -478,16 +554,17 @@
                             </div>
                             <div class="min-w-[240px]">
                                 <select onchange="applyCurrencyPreset(this.value)"
-                                    class="w-full text-xs font-bold bg-slate-50 hover:bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-all cursor-pointer shadow-2xs">
+                                    data-custom-select="true"
+                                    class="custom-select w-full">
                                     <option value="">-- Select Standard Preset --</option>
-                                    <option value="INR|₹">₹ INR — Indian Rupee</option>
-                                    <option value="USD|$">$ USD — US Dollar</option>
-                                    <option value="EUR|€">€ EUR — Euro</option>
-                                    <option value="GBP|£">£ GBP — British Pound</option>
-                                    <option value="AED|د.إ">د.إ AED — UAE Dirham</option>
-                                    <option value="CAD|C$">C$ CAD — Canadian Dollar</option>
-                                    <option value="AUD|A$">A$ AUD — Australian Dollar</option>
-                                    <option value="SGD|S$">S$ SGD — Singapore Dollar</option>
+                                    <option value="INR|₹" data-badge="INR">₹ INR — Indian Rupee</option>
+                                    <option value="USD|$" data-badge="USD">$ USD — US Dollar</option>
+                                    <option value="EUR|€" data-badge="EUR">€ EUR — Euro</option>
+                                    <option value="GBP|£" data-badge="GBP">£ GBP — British Pound</option>
+                                    <option value="AED|د.إ" data-badge="AED">د.إ AED — UAE Dirham</option>
+                                    <option value="CAD|C$" data-badge="CAD">C$ CAD — Canadian Dollar</option>
+                                    <option value="AUD|A$" data-badge="AUD">A$ AUD — Australian Dollar</option>
+                                    <option value="SGD|S$" data-badge="SGD">S$ SGD — Singapore Dollar</option>
                                 </select>
                             </div>
                         </div>
@@ -626,8 +703,8 @@
                 </form>
             </div>
 
-            <!-- ================= PAN            <div id="panel-geofence"
-                class="settings-panel hidden space-y-6">
+            <!-- ================= PANEL 5: OFFICE GEOFENCING & MULTI-SITE PERIMETERS ================= -->
+            <div id="panel-geofence" class="settings-panel hidden space-y-6">
 
                 <!-- Card 1: Master Geofencing Policies -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
@@ -765,8 +842,6 @@
                         </div>
                     </div>
                 </div>
-
-            </div>
 
             <!-- MODAL 1: ADD LOCATION MODAL -->
             <div id="addLocationModal" class="hidden fixed inset-0 z-[9999] overflow-y-auto">
@@ -1120,9 +1195,10 @@
                             </div>
 
                             <!-- Filter by Role Dropdown -->
-                            <div class="min-w-[130px]">
+                            <div class="w-44 sm:w-48">
                                 <select id="role-assign-filter-role" onchange="filterRoleAssignTable()"
-                                    class="w-full text-xs font-semibold bg-slate-50 hover:bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors cursor-pointer shadow-2xs">
+                                    data-custom-select="true"
+                                    class="custom-select w-full">
                                     <option value="all">All Roles</option>
                                     <option value="super_admin">Super Admin</option>
                                     <option value="admin">Admin</option>
@@ -1134,9 +1210,10 @@
                             </div>
 
                             <!-- Filter by Department Dropdown -->
-                            <div class="min-w-[140px]">
+                            <div class="w-44 sm:w-48">
                                 <select id="role-assign-filter-dept" onchange="filterRoleAssignTable()"
-                                    class="w-full text-xs font-semibold bg-slate-50 hover:bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors cursor-pointer shadow-2xs">
+                                    data-custom-select="true"
+                                    class="custom-select w-full">
                                     <option value="all">All Departments</option>
                                     {% for d in departments %}
                                     <option value="{{ d|lower }}">{{ d }}</option>
@@ -1148,7 +1225,7 @@
 
                     <!-- Staff Table -->
                     <div class="overflow-x-auto border border-slate-200 rounded-xl mt-4">
-                        <table class="w-full text-left border-collapse" id="role-assign-table">
+                        <table class="w-full text-left border-collapse" id="role-assign-table" data-paginate="true" data-page-size="15" data-entity-label="staff members">
                             <thead>
                                 <tr
                                     class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
@@ -1215,20 +1292,15 @@
                                             class="inline-flex items-center justify-end">
                                             <input type="hidden" name="employee_id" value="{{ emp.id }}">
                                             <select name="role" onchange="this.form.requestSubmit()"
-                                                class="text-xs font-bold bg-white border border-slate-300 hover:border-slate-400 rounded-lg px-3 py-1.5 text-slate-800 focus:outline-none focus:border-teal-600 shadow-2xs cursor-pointer">
-                                                <option value="employee" {% if emp.role=='employee' %}selected{% endif
-                                                    %}>Employee</option>
-                                                <option value="intern" {% if emp.role=='intern' %}selected{% endif %}>
-                                                    Intern</option>
-                                                <option value="manager" {% if emp.role=='manager' %}selected{% endif %}>
-                                                    Manager</option>
-                                                <option value="hr" {% if emp.role in ['hr', 'hr_admin' ] %}selected{%
-                                                    endif %}>HR</option>
-                                                <option value="admin" {% if emp.role=='admin' %}selected{% endif %}>
-                                                    Admin</option>
+                                                data-custom-select="true"
+                                                class="custom-select min-w-[130px]">
+                                                <option value="employee" {% if emp.role=='employee' %}selected{% endif %}>Employee</option>
+                                                <option value="intern" {% if emp.role=='intern' %}selected{% endif %}>Intern</option>
+                                                <option value="manager" {% if emp.role=='manager' %}selected{% endif %}>Manager</option>
+                                                <option value="hr" {% if emp.role in ['hr', 'hr_admin' ] %}selected{% endif %}>HR</option>
+                                                <option value="admin" {% if emp.role=='admin' %}selected{% endif %}>Admin</option>
                                                 {% if user.role == 'super_admin' %}
-                                                <option value="super_admin" {% if emp.role=='super_admin' %}selected{%
-                                                    endif %}>Super Admin</option>
+                                                <option value="super_admin" {% if emp.role=='super_admin' %}selected{% endif %}>Super Admin</option>
                                                 {% endif %}
                                             </select>
                                         </form>
@@ -1243,9 +1315,37 @@
 
         </div>
     </div>
-</div>
 
 <script>
+    function filterRoleAssignTable() {
+        const q = (document.getElementById('role-assign-search')?.value || '').toLowerCase().trim();
+        const role = (document.getElementById('role-assign-filter-role')?.value || 'all').toLowerCase().trim();
+        const dept = (document.getElementById('role-assign-filter-dept')?.value || 'all').toLowerCase().trim();
+        const rows = document.querySelectorAll('.role-assign-row');
+
+        rows.forEach(row => {
+            const name = (row.getAttribute('data-name') || '').toLowerCase();
+            const email = (row.getAttribute('data-email') || '').toLowerCase();
+            const rowRole = (row.getAttribute('data-role') || '').toLowerCase();
+            const rowDept = (row.getAttribute('data-dept') || '').toLowerCase();
+
+            const matchQ = !q || name.includes(q) || email.includes(q);
+            const matchRole = role === 'all' || rowRole === role;
+            const matchDept = dept === 'all' || rowDept === dept;
+
+            if (matchQ && matchRole && matchDept) {
+                row.classList.remove('filter-hidden');
+            } else {
+                row.classList.add('filter-hidden');
+            }
+        });
+
+        const table = document.getElementById('role-assign-table');
+        if (window.HRMSTablePagination && table) {
+            HRMSTablePagination.refresh(table);
+        }
+    }
+
     // Locations Data from Backend
     const officeLocationsData = [
         {% for loc in locations %}
@@ -1275,10 +1375,11 @@
             const defaultLat = officeLocationsData.length > 0 ? officeLocationsData[0].latitude : 12.9716;
             const defaultLng = officeLocationsData.length > 0 ? officeLocationsData[0].longitude : 77.5946;
 
-            geofenceMap = L.map('geofenceMapContainer').setView([defaultLat, defaultLng], 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap'
+            geofenceMap = L.map('geofenceMapContainer', {
+                attributionControl: false
+            }).setView([defaultLat, defaultLng], 14);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19
             }).addTo(geofenceMap);
 
             geofenceLayerGroup = L.featureGroup().addTo(geofenceMap);
@@ -1363,7 +1464,7 @@
                 attributionControl: false
             }).setView([pLat, pLon], 15);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
                 maxZoom: 19
             }).addTo(addModalPickerMap);
 
@@ -1436,7 +1537,7 @@
                 attributionControl: false
             }).setView([pLat, pLon], 15);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
                 maxZoom: 19
             }).addTo(editModalPickerMap);
 
@@ -1599,17 +1700,27 @@
 
     // Tab Switching Logic with URL Synchronization & Map Trigger
     function switchSettingsTab(tabName) {
-        // Hide all panels
-        document.querySelectorAll('.settings-panel').forEach(p => p.classList.add('hidden'));
+        if (!tabName || tabName === 'general' || tabName === 'emp-id') {
+            tabName = 'branding';
+        }
+
+        // Hide 100% of panels
+        document.querySelectorAll('.settings-panel').forEach(p => {
+            p.classList.add('hidden');
+        });
 
         // Reset all tab button styles
         document.querySelectorAll('.settings-tab-btn').forEach(btn => {
-            btn.classList.remove('bg-teal-50/80', 'text-teal-900', 'ring-1', 'ring-teal-200');
-            btn.classList.add('text-slate-700');
+            btn.classList.remove('bg-teal-700', 'text-white', 'shadow-xs');
+            btn.classList.add('text-slate-700', 'hover:bg-slate-50');
         });
 
-        // Show selected panel
-        const activePanel = document.getElementById('panel-' + tabName);
+        // Show strictly the selected panel
+        let activePanel = document.getElementById('panel-' + tabName);
+        if (!activePanel) {
+            tabName = 'branding';
+            activePanel = document.getElementById('panel-branding');
+        }
         if (activePanel) {
             activePanel.classList.remove('hidden');
         }
@@ -1617,8 +1728,8 @@
         // Highlight active tab button
         const activeBtn = document.getElementById('tab-btn-' + tabName);
         if (activeBtn) {
-            activeBtn.classList.remove('text-slate-700');
-            activeBtn.classList.add('bg-teal-50/80', 'text-teal-900', 'ring-1', 'ring-teal-200');
+            activeBtn.classList.remove('text-slate-700', 'hover:bg-slate-50');
+            activeBtn.classList.add('bg-teal-700', 'text-white', 'shadow-xs');
         }
 
         // If Geofence tab is opened, render the multi-site map
@@ -1626,8 +1737,36 @@
             setTimeout(initGeofenceMap, 150);
         }
 
-        // Update URL hash without scroll jump
-        history.replaceState(null, null, '#' + tabName);
+        // Update URL query without reload
+        try {
+            history.replaceState(null, null, '/company/profile?tab=' + tabName);
+        } catch (e) {}
+
+        // Sync sidebar sub-item active highlights
+        const subItems = document.querySelectorAll('.company-sub-item');
+        if (subItems.length > 0) {
+            subItems.forEach(sub => {
+                const subTab = sub.getAttribute('data-submenu-tab');
+                const isMatch = subTab === tabName;
+                if (isMatch) {
+                    sub.classList.remove('text-teal-200/80', 'hover:bg-[#004040]');
+                    sub.classList.add('bg-[#005050]', 'text-white', 'font-semibold', 'shadow-xs');
+                    const dot = sub.querySelector('.sub-dot');
+                    if (dot) {
+                        dot.classList.remove('bg-teal-400/60');
+                        dot.classList.add('bg-teal-300', 'ring-2', 'ring-teal-400/40');
+                    }
+                } else {
+                    sub.classList.add('text-teal-200/80');
+                    sub.classList.remove('bg-[#005050]', 'text-white', 'font-semibold', 'shadow-xs');
+                    const dot = sub.querySelector('.sub-dot');
+                    if (dot) {
+                        dot.classList.add('bg-teal-400/60');
+                        dot.classList.remove('bg-teal-300', 'ring-2', 'ring-teal-400/40');
+                    }
+                }
+            });
+        }
     }
 
     // Quick Currency Preset Helper
@@ -1680,6 +1819,102 @@
         }
     }
 
+    // Employee ID Dynamic Format Live Preview Engine
+    function selectSeparator(sep) {
+        const customContainer = document.getElementById('custom-sep-container');
+        
+        // Update all radio labels styling
+        document.querySelectorAll('input[name="employee_id_separator"]').forEach(radio => {
+            const label = radio.closest('label');
+            const isCustom = radio.value === 'custom';
+            const typography = isCustom ? 'text-xs font-semibold ' : 'text-sm font-mono font-bold ';
+            const baseClasses = 'flex-1 text-center py-1.5 rounded-md cursor-pointer transition-all flex items-center justify-center ';
+            
+            if (radio.value === sep || (sep === 'custom' && radio.value === 'custom')) {
+                radio.checked = true;
+                if (label) {
+                    label.className = baseClasses + typography + 'bg-teal-700 text-white shadow-2xs';
+                }
+            } else {
+                radio.checked = false;
+                if (label) {
+                    label.className = baseClasses + typography + 'text-slate-700 hover:bg-slate-200/80 hover:text-slate-900';
+                }
+            }
+        });
+
+        if (sep === 'custom') {
+            if (customContainer) customContainer.classList.remove('hidden');
+        } else {
+            if (customContainer) customContainer.classList.add('hidden');
+        }
+
+        updateEmpIdLivePreview();
+    }
+
+    function updateEmpIdLivePreview() {
+        const prefixInput = document.getElementById('employee_id_prefix');
+        const prefix = (prefixInput ? prefixInput.value.trim().toUpperCase() : 'TU') || 'TU';
+
+        // Get selected separator
+        let sep = '-';
+        const checkedRadio = document.querySelector('input[name="employee_id_separator"]:checked');
+        if (checkedRadio) {
+            if (checkedRadio.value === 'custom') {
+                const customInput = document.getElementById('custom_separator');
+                sep = (customInput && customInput.value !== '') ? customInput.value : '-';
+            } else {
+                sep = checkedRadio.value;
+            }
+        }
+
+        const incYear = document.getElementById('employee_id_include_year') ? document.getElementById('employee_id_include_year').checked : true;
+        const incDept = document.getElementById('employee_id_include_dept') ? document.getElementById('employee_id_include_dept').checked : true;
+        const paddingSelect = document.getElementById('employee_id_padding');
+        const padding = paddingSelect ? parseInt(paddingSelect.value) || 3 : 3;
+
+        // Helper to construct sample
+        function buildSample(year, deptCode, seqNum) {
+            const parts = [];
+            if (prefix) parts.push(prefix);
+            if (incYear && year) parts.push(year);
+            if (incDept && deptCode) parts.push(deptCode);
+            const paddedSeq = String(seqNum).padStart(padding, '0');
+            parts.push(paddedSeq);
+            return parts.join(sep);
+        }
+
+        // Schema formula string
+        const formulaParts = [];
+        if (prefix) formulaParts.push(`[${prefix}]`);
+        if (incYear) formulaParts.push('[YEAR]');
+        if (incDept) formulaParts.push('[DEPT]');
+        formulaParts.push(`[${'#'.repeat(padding)}]`);
+        const formulaStr = formulaParts.join(sep);
+
+        const formulaEl = document.getElementById('preview-schema-formula');
+        if (formulaEl) formulaEl.textContent = formulaStr;
+
+        // Update live sample cards
+        const exEl = document.getElementById('preview-id-ex');
+        if (exEl) exEl.textContent = buildSample('2025', 'EX', 1);
+
+        const hrEl = document.getElementById('preview-id-hr');
+        if (hrEl) hrEl.textContent = buildSample('2025', 'HR', 1);
+
+        const enEl = document.getElementById('preview-id-en');
+        if (enEl) enEl.textContent = buildSample('2026', 'EN', 1);
+
+        const customEl = document.getElementById('preview-id-custom');
+        if (customEl) customEl.textContent = buildSample('2026', 'AI', 42);
+
+        // Update header preview badge
+        const headerBadge = document.getElementById('header-preview-badge');
+        if (headerBadge) {
+            headerBadge.textContent = 'ID Format: ' + buildSample('2026', 'EX', 1);
+        }
+    }
+
     // Auto-detect initial tab from URL hash or query param (?tab=...)
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -1687,6 +1922,7 @@
         const hashTab = window.location.hash.replace('#', '');
         const targetTab = queryTab || hashTab || 'branding';
         switchSettingsTab(targetTab);
+        updateEmpIdLivePreview();
     });
 </script>
 {% endblock %}

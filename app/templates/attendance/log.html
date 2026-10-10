@@ -93,7 +93,7 @@
     <div class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 shadow-card flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
         <!-- Search Input -->
         <div class="relative flex-1 min-w-[240px]">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <i data-lucide="search" class="w-4 h-4"></i>
             </div>
             <input type="text" id="attendanceSearch" name="q" value="{{ q }}"
@@ -103,16 +103,16 @@
                 hx-include="#statusFilter, #dateFilter"
                 hx-push-url="true"
                 hx-indicator="#att-search-spinner"
-                placeholder="Search by employee name or keywords..."
-                class="w-full pl-9 pr-9 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-            <div id="att-search-spinner" class="htmx-indicator absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-teal-700">
+                placeholder="Search employee, designation, notes..."
+                class="w-full pl-9 pr-9 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 font-medium focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 shadow-2xs hover:border-teal-500 transition-colors">
+            <div id="att-search-spinner" class="htmx-indicator absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-teal-700">
                 <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
             </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
             <!-- Calendar Date Picker -->
-            <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1">
+            <div class="flex items-center space-x-2 bg-white border border-slate-300 rounded-xl px-3 py-1.5 shadow-2xs">
                 <label for="dateFilter" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider shrink-0 flex items-center space-x-1">
                     <i data-lucide="calendar" class="w-3.5 h-3.5 text-teal-600"></i>
                     <span>Date:</span>
@@ -125,28 +125,29 @@
                         hx-include="#attendanceSearch, #statusFilter"
                         hx-push-url="true"
                         onchange="toggleDateClearBtn(this.value)"
-                        class="py-1 px-2 text-xs bg-white border border-slate-200 rounded-md text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 shadow-2xs">
+                        class="py-0.5 px-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono font-semibold focus:outline-none focus:border-teal-600">
                     <button type="button" id="clearDateBtn" onclick="clearDateFilter()" title="Clear date selection" class="{% if not selected_date %}hidden{% endif %} ml-1.5 p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 transition-colors">
                         <i data-lucide="x" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
-                <button type="button" onclick="setTodayDateFilter()" title="Select Today" class="px-2 py-0.5 rounded text-[11px] font-bold text-teal-800 bg-teal-100/70 hover:bg-teal-200/80 border border-teal-300/70 transition-colors cursor-pointer shadow-2xs">
+                <button type="button" onclick="setTodayDateFilter()" title="Select Today" class="px-2 py-0.5 rounded text-[11px] font-bold text-teal-800 bg-teal-100 hover:bg-teal-200 border border-teal-300 transition-colors cursor-pointer shadow-2xs">
                     Today
                 </button>
             </div>
 
             <!-- Status Filter -->
-            <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1">
-                <label for="statusFilter" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider shrink-0">Status:</label>
+            <div class="flex items-center space-x-2">
+                <label for="statusFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 hidden xs:inline">Status:</label>
                 <select id="statusFilter" name="status"
+                    data-custom-select="true"
                     hx-get="/attendance"
                     hx-trigger="change"
                     hx-target="#attendanceTableContainer"
                     hx-include="#attendanceSearch, #dateFilter"
                     hx-push-url="true"
                     hx-indicator="#att-search-spinner"
-                    class="py-1 px-2 text-xs bg-white border border-slate-200 rounded-md text-slate-900 font-medium focus:outline-none focus:border-teal-600 shadow-2xs">
-                    <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Records</option>
+                    class="custom-select w-full sm:w-44">
+                    <option value="all">All Records</option>
                     <option value="normal" {% if selected_status == 'normal' %}selected{% endif %}>Verified Normal</option>
                     <option value="missed" {% if selected_status == 'missed' %}selected{% endif %}>Missed Punch</option>
                     <option value="overridden" {% if selected_status == 'overridden' %}selected{% endif %}>Overridden</option>

@@ -76,7 +76,7 @@
                 <label for="excel_file" class="w-full inline-flex items-center justify-center px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 active:scale-95 cursor-pointer transition-all shadow-xs group" title="Import Employees from Excel Template">
                     <i data-lucide="upload" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i>
                     <span class="truncate">Import</span>
-                    <input type="file" id="excel_file" name="file" accept=".xlsx" class="hidden" onchange="this.form.submit()">
+                    <input type="file" id="excel_file" name="file" accept=".xlsx" class="hidden" onchange="handleExcelImport(this)">
                 </label>
             </form>
 
@@ -121,16 +121,17 @@
                 <div class="flex-1 sm:flex-initial flex items-center space-x-1.5">
                     <label for="roleFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 hidden xs:inline">Role:</label>
                     <select id="roleFilter" name="role"
+                        data-custom-select="true"
                         hx-get="/employees"
                         hx-trigger="change"
                         hx-target="#employeesTableContainer"
                         hx-include="#employeeSearch, #sortSelector"
                         hx-push-url="true"
-                        class="w-full sm:w-auto py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
+                        class="custom-select w-full sm:w-44">
                         <option value="all" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
                         <option value="super_admin" {% if current_role == 'super_admin' %}selected{% endif %}>Super Admin</option>
                         <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Admin</option>
-                        <option value="hr" {% if current_role in ['hr', 'hr_admin'] %}selected{% endif %}>HR</option>
+                        <option value="hr" {% if current_role in ['hr', 'hr_admin'] %}selected{% endif %}>HR Admin</option>
                         <option value="manager" {% if current_role == 'manager' %}selected{% endif %}>Manager</option>
                         <option value="employee" {% if current_role == 'employee' %}selected{% endif %}>Employee</option>
                         <option value="intern" {% if current_role == 'intern' %}selected{% endif %}>Intern</option>
@@ -141,12 +142,13 @@
                 <div class="flex-1 sm:flex-initial flex items-center space-x-1.5">
                     <label for="sortSelector" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 hidden xs:inline">Sort:</label>
                     <select id="sortSelector" name="sort"
+                        data-custom-select="true"
                         hx-get="/employees"
                         hx-trigger="change"
                         hx-target="#employeesTableContainer"
                         hx-include="#employeeSearch, #roleFilter"
                         hx-push-url="true"
-                        class="w-full sm:w-auto py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:bg-white focus:outline-none focus:border-teal-600">
+                        class="custom-select w-full sm:w-44">
                         <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
                         <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
                         <option value="dept_asc" {% if current_sort == 'dept_asc' %}selected{% endif %}>Department</option>
@@ -244,26 +246,23 @@
                         <input type="hidden" name="employee_id" id="modal_employee_id" value="{{ eligible_emps[0].id if eligible_emps else '' }}" required>
                         
                         <!-- Trigger Box -->
-                        <button type="button" id="empPayslipTriggerBtn" onclick="toggleEmpPayslipDropdown()" class="w-full flex items-center justify-between text-left text-xs sm:text-sm bg-slate-50 hover:bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 transition-colors shadow-2xs">
-                            <div class="flex items-center space-x-2.5 min-w-0">
-                                <div class="w-6 h-6 rounded-md bg-teal-700 text-white font-bold flex items-center justify-center text-[10px] shrink-0" id="empPayslipSelectedAvatar">
-                                    {{ eligible_emps[0].name[0]|upper if eligible_emps else 'E' }}
-                                </div>
-                                <div class="min-w-0 truncate">
-                                    <span class="font-bold text-slate-900 truncate" id="empPayslipSelectedName">{{ eligible_emps[0].name if eligible_emps else 'Choose Employee' }}</span>
-                                    <span class="text-slate-400 text-xs ml-1" id="empPayslipSelectedDept">({{ (eligible_emps[0].department.name if eligible_emps[0].department and eligible_emps[0].department.name else (eligible_emps[0].department if eligible_emps[0].department else 'General')) if eligible_emps else '' }})</span>
-                                </div>
+                        <button type="button" id="empPayslipTriggerBtn" onclick="toggleEmpPayslipDropdown()" class="w-full flex items-center justify-between text-left text-xs sm:text-sm bg-slate-50 hover:bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 transition-colors shadow-2xs">
+                            <div class="min-w-0 flex-1 truncate">
+                                <span class="font-bold text-slate-900 truncate" id="empPayslipSelectedName">{{ eligible_emps[0].name if eligible_emps else 'Choose Employee' }}</span>
+                                <span class="text-slate-400 text-xs ml-1" id="empPayslipSelectedDept">({{ (eligible_emps[0].department.name if eligible_emps[0].department and eligible_emps[0].department.name else (eligible_emps[0].department if eligible_emps[0].department else 'General')) if eligible_emps else '' }})</span>
                             </div>
                             <i data-lucide="chevron-down" id="empPayslipChevron" class="w-4 h-4 text-slate-400 shrink-0 ml-2 transition-transform"></i>
                         </button>
 
                         <!-- Downward-Opening Options Panel with Real-time Search -->
                         <div id="empPayslipDropdownMenu" class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200 p-2 z-50 transition-all">
-                            <!-- Search Bar inside dropdown -->
+                            <!-- Search Bar inside dropdown (only if > 7 records) -->
+                            {% if eligible_emps|length > 7 %}
                             <div class="relative mb-2">
                                 <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
                                 <input type="text" id="empPayslipSearchInput" onkeyup="filterEmpPayslipList()" placeholder="Search by name, ID, or department..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
                             </div>
+                            {% endif %}
 
                             <!-- Scrollable Employee Cards List -->
                             <div class="max-h-52 overflow-y-auto space-y-1 divide-y divide-slate-100" id="empPayslipListContainer">
@@ -275,18 +274,10 @@
                                      data-dept="{{ emp_dept }}"
                                      data-code="{{ format_emp_code(emp, company) }}"
                                      onclick="selectEmpPayslipEmployee('{{ emp.id }}', '{{ emp.name|escape }}', '{{ emp_dept|escape }}')">
-                                    <div class="flex items-center space-x-2.5 min-w-0">
-                                        <div class="w-7 h-7 rounded-lg bg-teal-700 text-white font-bold flex items-center justify-center text-xs shrink-0 font-heading">
-                                            {{ emp.name[0]|upper }}
-                                        </div>
-                                        <div class="min-w-0">
-                                            <p class="text-xs font-bold text-slate-900 truncate leading-tight">{{ emp.name }}</p>
-                                            <p class="text-[11px] text-slate-500 truncate mt-0.5"><span class="font-mono font-medium text-slate-400">{{ format_emp_code(emp, company) }}</span> • {{ emp_dept }}</p>
-                                        </div>
+                                    <div class="min-w-0 flex-1 pr-2">
+                                        <p class="text-xs font-bold text-slate-900 truncate leading-tight">{{ emp.name }}</p>
+                                        <p class="text-[11px] text-slate-500 truncate mt-0.5"><span class="font-mono font-medium text-slate-400">{{ format_emp_code(emp, company) }}</span> • {{ emp_dept }} • <span class="capitalize text-teal-800 font-semibold">{{ emp.role|replace('_', ' ') }}</span></p>
                                     </div>
-                                    <span class="text-[10px] font-semibold text-teal-700 bg-teal-50 border border-teal-200/80 px-1.5 py-0.5 rounded capitalize shrink-0 ml-2">
-                                        {{ emp.role|replace('_', ' ') }}
-                                    </span>
                                 </div>
                                 {% endfor %}
                                 <div id="empPayslipEmptyState" class="hidden py-4 text-center text-xs text-slate-400">
@@ -299,7 +290,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="modal_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Month</label>
-                            <select name="month" id="modal_month" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <select name="month" id="modal_month" required data-custom-select="true" class="custom-select w-full">
                                 {% for i in range(1, 13) %}
                                 <option value="{{ i }}" {% if i == (current_month or get_today().month) %}selected{% endif %}>{{ "%02d" % i }} - {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }}</option>
                                 {% endfor %}
@@ -307,7 +298,7 @@
                         </div>
                         <div>
                             <label for="modal_year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Year</label>
-                            <select name="year" id="modal_year" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <select name="year" id="modal_year" required data-custom-select="true" class="custom-select w-full">
                                 {% for yr in (available_years or range(app_year - 2, app_year + 3)) %}
                                 <option value="{{ yr }}" {% if yr == (current_year or app_year) %}selected{% endif %}>{{ yr }}</option>
                                 {% endfor %}
@@ -519,11 +510,9 @@
         const input = document.getElementById('modal_employee_id');
         const nameEl = document.getElementById('empPayslipSelectedName');
         const deptEl = document.getElementById('empPayslipSelectedDept');
-        const avatarEl = document.getElementById('empPayslipSelectedAvatar');
         if (input) input.value = id;
         if (nameEl) nameEl.textContent = name;
         if (deptEl) deptEl.textContent = dept ? `(${dept})` : '';
-        if (avatarEl && name) avatarEl.textContent = name.charAt(0).toUpperCase();
         
         const menu = document.getElementById('empPayslipDropdownMenu');
         if (menu) menu.classList.add('hidden');
@@ -565,6 +554,24 @@
             }
         }
     });
+
+    function handleExcelImport(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const maxBytes = 2 * 1024 * 1024; // 2 MB
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext !== 'xlsx') {
+            alert('Invalid file format. Only .xlsx Excel spreadsheets are allowed.');
+            input.value = '';
+            return;
+        }
+        if (file.size > maxBytes) {
+            alert(`File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 2 MB maximum limit.`);
+            input.value = '';
+            return;
+        }
+        input.form.submit();
+    }
 
     function exportFilteredEmployees() {
         const q = encodeURIComponent(document.getElementById('employeeSearch')?.value || '');

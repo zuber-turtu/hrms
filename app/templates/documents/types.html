@@ -97,7 +97,7 @@
     <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
        
         <div class="overflow-x-auto touch-scroll">
-            <table class="min-w-full divide-y divide-slate-200 text-xs">
+            <table class="min-w-full divide-y divide-slate-200 text-xs" data-paginate="true" data-page-size="10" data-entity-label="document types">
                 <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
                     <tr>
                         <th class="py-3 px-5 text-left">Document Name & Details</th>
@@ -165,7 +165,7 @@
                         </td>
                         <td class="py-3.5 px-4 whitespace-nowrap font-mono text-slate-600">
                             {{ dt.allowed_extensions.upper().replace(',', ', ') }}
-                            <span class="text-[10px] text-slate-400 block font-normal">Max {{ dt.max_file_size_mb }} MB</span>
+                            <span class="text-[10px] text-slate-400 block font-normal">Max {{ dt.formatted_max_size }}</span>
                         </td>
                         <td class="py-3.5 px-4 whitespace-nowrap">
                             <div class="flex items-center space-x-1.5 font-mono">
@@ -175,7 +175,7 @@
                         </td>
                         <td class="py-3.5 px-5 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end space-x-1.5">
-                                <button onclick="openEditTypeModal({{ dt.id }}, '{{ dt.title }}', '{{ dt.description or '' }}', '{{ dt.category }}', {{ 'true' if dt.is_mandatory else 'false' }}, '{{ dt.who_uploads }}', '{{ dt.allowed_extensions }}', {{ dt.max_file_size_mb }}, {{ dt.department_id or 'null' }}, {{ 'true' if dt.is_active else 'false' }})"
+                                <button onclick="openEditTypeModal({{ dt.id }}, '{{ dt.title }}', '{{ dt.description or '' }}', '{{ dt.category }}', {{ 'true' if dt.is_mandatory else 'false' }}, '{{ dt.who_uploads }}', '{{ dt.allowed_extensions }}', {{ dt.effective_max_kb }}, {{ dt.department_id or 'null' }}, {{ 'true' if dt.is_active else 'false' }})"
                                     class="p-1 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-md transition-colors" title="Edit Field">
                                     <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                                 </button>
@@ -230,45 +230,53 @@
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label for="category" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Category</label>
-                    <select name="category" id="form_category" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
-                        <option value="KYC">Identity & KYC</option>
-                        <option value="Education">Education & Academic</option>
-                        <option value="Experience">Past Experience</option>
-                        <option value="Company Letters">Company Letters (HR)</option>
-                        <option value="Compliance">Legal & Compliance</option>
-                        <option value="Other">Other / Miscellaneous</option>
+                    <select name="category" id="form_category" data-custom-select="true" class="custom-select w-full">
+                        <option value="KYC" data-badge="KYC">Identity & KYC</option>
+                        <option value="Education" data-badge="Academic">Education & Academic</option>
+                        <option value="Experience" data-badge="Past Work">Past Experience</option>
+                        <option value="Company Letters" data-badge="Company">Company Letters (HR)</option>
+                        <option value="Compliance" data-badge="Legal">Legal & Compliance</option>
+                        <option value="Other" data-badge="Misc">Other / Miscellaneous</option>
                     </select>
                 </div>
 
                 <div>
                     <label for="who_uploads" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Who Uploads?</label>
-                    <select name="who_uploads" id="form_who_uploads" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
-                        <option value="employee">Employee (Self-upload)</option>
-                        <option value="admin_only">HR Admin Only (e.g. Offer Letter)</option>
+                    <select name="who_uploads" id="form_who_uploads" data-custom-select="true" class="custom-select w-full">
+                        <option value="employee" data-badge="Staff">Employee (Self-upload)</option>
+                        <option value="admin_only" data-badge="HR Admin">HR Admin Only</option>
                     </select>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label for="allowed_extensions" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Allowed Formats</label>
-                    <input type="text" name="allowed_extensions" id="form_allowed_extensions" value="pdf,jpg,jpeg,png,webp" placeholder="pdf,jpg,png"
+                    <label for="form_allowed_extensions" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Allowed Formats</label>
+                    <input type="text" name="allowed_extensions" id="form_allowed_extensions" value="pdf,jpg,jpeg,png,webp,docx" placeholder="pdf,jpg,png,docx,xlsx,txt"
                         class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
+                    <span class="text-[10px] text-slate-400 mt-1 block">Comma-separated (e.g. pdf, docx, xlsx, txt, csv, zip, png)</span>
                 </div>
 
                 <div>
-                    <label for="max_file_size_mb" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Max Size (MB)</label>
-                    <input type="number" name="max_file_size_mb" id="form_max_size" value="10" min="1" max="50"
-                        class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Max File Size</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" name="max_size_value" id="form_max_size_value" value="1" min="1" step="any" required
+                            class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 font-mono">
+                        <select name="max_size_unit" id="form_max_size_unit" data-custom-select="true" class="custom-select w-24">
+                            <option value="MB" selected>MB</option>
+                            <option value="KB">KB</option>
+                        </select>
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-1 block">Default: 1 MB (can easily configure in KB e.g. 500 KB)</span>
                 </div>
             </div>
 
             <div>
                 <label for="department_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Department Scope (Optional)</label>
-                <select name="department_id" id="form_department_id" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
+                <select name="department_id" id="form_department_id" data-custom-select="true" class="custom-select w-full">
                     <option value="">All Departments (Company-wide)</option>
                     {% for d in departments %}
-                        <option value="{{ d.id }}">{{ d.name }}</option>
+                        <option value="{{ d.id }}" {% if d.code %}data-badge="{{ d.code }}"{% endif %}>{{ d.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -298,32 +306,50 @@
 </div>
 
 <script>
+    function syncSelect(id, value) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = value;
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
     function openCreateTypeModal() {
         document.getElementById('modalTitle').textContent = "Add New Document Field";
         document.getElementById('typeForm').action = "/documents/types/create";
         document.getElementById('form_title').value = "";
         document.getElementById('form_description').value = "";
-        document.getElementById('form_category').value = "KYC";
-        document.getElementById('form_who_uploads').value = "employee";
-        document.getElementById('form_allowed_extensions').value = "pdf,jpg,jpeg,png,webp";
-        document.getElementById('form_max_size').value = "10";
-        document.getElementById('form_department_id').value = "";
+        syncSelect('form_category', 'KYC');
+        syncSelect('form_who_uploads', 'employee');
+        document.getElementById('form_allowed_extensions').value = "pdf,jpg,jpeg,png,webp,docx";
+        document.getElementById('form_max_size_value').value = "1";
+        syncSelect('form_max_size_unit', 'MB');
+        syncSelect('form_department_id', '');
         document.getElementById('form_is_mandatory').checked = false;
         document.getElementById('activeToggleContainer').classList.add('hidden');
         document.getElementById('submitBtn').textContent = "Create Field";
         document.getElementById('typeModal').classList.remove('hidden');
     }
 
-    function openEditTypeModal(id, title, desc, cat, mandatory, who, exts, maxSize, deptId, isActive) {
+    function openEditTypeModal(id, title, desc, cat, mandatory, who, exts, maxKb, deptId, isActive) {
         document.getElementById('modalTitle').textContent = "Edit Document Field — " + title;
         document.getElementById('typeForm').action = "/documents/types/" + id + "/edit";
         document.getElementById('form_title').value = title;
         document.getElementById('form_description').value = desc;
-        document.getElementById('form_category').value = cat;
-        document.getElementById('form_who_uploads').value = who;
+        syncSelect('form_category', cat);
+        syncSelect('form_who_uploads', who);
         document.getElementById('form_allowed_extensions').value = exts;
-        document.getElementById('form_max_size').value = maxSize;
-        document.getElementById('form_department_id').value = deptId || "";
+        
+        const kbVal = parseInt(maxKb) || 1024;
+        if (kbVal < 1024 || (kbVal % 1024 !== 0)) {
+            document.getElementById('form_max_size_value').value = kbVal;
+            syncSelect('form_max_size_unit', 'KB');
+        } else {
+            document.getElementById('form_max_size_value').value = (kbVal / 1024);
+            syncSelect('form_max_size_unit', 'MB');
+        }
+
+        syncSelect('form_department_id', deptId || "");
         document.getElementById('form_is_mandatory').checked = mandatory;
         document.getElementById('form_is_active').checked = isActive;
         document.getElementById('activeToggleContainer').classList.remove('hidden');

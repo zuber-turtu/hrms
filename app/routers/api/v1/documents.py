@@ -79,7 +79,8 @@ async def api_create_document_type(
         is_mandatory=payload.is_mandatory,
         who_uploads=payload.who_uploads,
         allowed_extensions=payload.allowed_extensions.lower(),
-        max_file_size_mb=payload.max_file_size_mb,
+        max_file_size_mb=payload.max_file_size_mb or 1,
+        max_file_size_kb=payload.max_file_size_kb or ((payload.max_file_size_mb * 1024) if payload.max_file_size_mb else 1024),
         department_id=payload.department_id,
         is_active=payload.is_active,
         display_order=payload.display_order,
@@ -200,9 +201,10 @@ async def api_upload_employee_document(
         raise HTTPException(status_code=400, detail="Empty file content")
 
     file_size = len(file_bytes)
-    max_size_mb = doc_type.max_file_size_mb if doc_type else 15
-    if file_size > max_size_mb * 1024 * 1024:
-        raise HTTPException(status_code=400, detail=f"File exceeds maximum size of {max_size_mb} MB")
+    max_size_kb = doc_type.effective_max_kb if doc_type else 1024
+    if file_size > max_size_kb * 1024:
+        display_max = doc_type.formatted_max_size if doc_type else "1 MB"
+        raise HTTPException(status_code=400, detail=f"File exceeds maximum size of {display_max}")
 
     ext = os.path.splitext(file.filename)[1].lower().strip(".")
     allowed = [x.strip() for x in (doc_type.allowed_extensions if doc_type else "pdf,jpg,jpeg,png,webp,docx").split(",")]

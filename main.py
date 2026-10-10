@@ -124,7 +124,8 @@ def ensure_schema_columns(db_engine):
                 "is_mandatory": "BOOLEAN DEFAULT FALSE",
                 "who_uploads": "VARCHAR(50) DEFAULT 'employee'",
                 "allowed_extensions": "VARCHAR(200) DEFAULT 'pdf,jpg,jpeg,png,webp,docx'",
-                "max_file_size_mb": "INTEGER DEFAULT 10",
+                "max_file_size_mb": "INTEGER DEFAULT 1",
+                "max_file_size_kb": "INTEGER DEFAULT 1024",
                 "department_id": "INTEGER",
                 "is_active": "BOOLEAN DEFAULT TRUE",
                 "display_order": "INTEGER DEFAULT 0",
@@ -562,7 +563,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         )
 
     if exc.status_code == 401:
-        return RedirectResponse(url="/login?error=Please+log+in+to+continue", status_code=303)
+        return RedirectResponse(url="/login", status_code=303)
 
     if exc.status_code == 403:
         safe_target = get_safe_redirect(request, default="/dashboard")
@@ -646,8 +647,11 @@ def health_check():
     }
 
 @app.get("/")
-def root():
-    return RedirectResponse(url="/dashboard")
+def root(request: Request):
+    token = extract_token_from_request(request)
+    if token:
+        return RedirectResponse(url="/dashboard", status_code=302)
+    return RedirectResponse(url="/login", status_code=302)
 
 if __name__ == "__main__":
     import uvicorn

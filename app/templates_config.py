@@ -36,17 +36,19 @@ from jinja2.runtime import Undefined
 
 def format_emp_code(emp_or_id, company_or_prefix=None) -> str:
     """
-    Formats employee ID.
-    If company.employee_id_prefix is set (e.g. 'Company'), returns 'Company-0001'.
-    If prefix is not set or empty, returns original format '#0001'.
+    Formats employee ID dynamically based on Company Settings & Department Code:
+    Pattern: {PREFIX}{SEPARATOR}{YEAR}{SEPARATOR}{DEPT_CODE}{SEPARATOR}{SEQUENCE}
+    Example: TU-2012-EX-001 or TU/2012/EX/001 or TU.2012.EX.001
     """
     if emp_or_id is None or isinstance(emp_or_id, Undefined):
         return ""
     
     emp_id = None
+    emp_obj = None
     if hasattr(emp_or_id, "id") and not isinstance(emp_or_id, Undefined):
         try:
             emp_id = int(emp_or_id.id)
+            emp_obj = emp_or_id
         except (ValueError, TypeError):
             pass
     if emp_id is None:
@@ -55,27 +57,80 @@ def format_emp_code(emp_or_id, company_or_prefix=None) -> str:
         except (ValueError, TypeError):
             return ""
 
-    prefix = None
-    if isinstance(company_or_prefix, str):
-        prefix = company_or_prefix.strip() if company_or_prefix.strip() else None
-    elif company_or_prefix is not None and not isinstance(company_or_prefix, Undefined):
+    # Resolve company settings
+    company = None
+    if company_or_prefix is not None and not isinstance(company_or_prefix, (str, Undefined)):
+        company = company_or_prefix
+    
+    if company is None or not hasattr(company, "employee_id_prefix"):
         try:
-            if hasattr(company_or_prefix, "employee_id_prefix") and company_or_prefix.employee_id_prefix:
-                prefix = str(company_or_prefix.employee_id_prefix).strip()
+            company = get_global_company()
         except Exception:
-            pass
+            company = None
 
-    if prefix is None and (company_or_prefix is None or isinstance(company_or_prefix, Undefined)):
-        try:
-            comp = get_global_company()
-            if comp and comp.employee_id_prefix:
-                prefix = comp.employee_id_prefix.strip()
-        except Exception:
-            pass
-            
+    # Determine format parameters
+    prefix = "TU"
+    separator = "-"
+    include_year = True
+    include_dept = True
+    padding = 3
+
+    if isinstance(company_or_prefix, str) and company_or_prefix.strip():
+        prefix = company_or_prefix.strip()
+    elif company:
+        if company.employee_id_prefix:
+            prefix = str(company.employee_id_prefix).strip()
+        if hasattr(company, "employee_id_separator") and company.employee_id_separator is not None:
+            separator = str(company.employee_id_separator)
+        if hasattr(company, "employee_id_include_year") and company.employee_id_include_year is not None:
+            include_year = bool(company.employee_id_include_year)
+        if hasattr(company, "employee_id_include_dept") and company.employee_id_include_dept is not None:
+            include_dept = bool(company.employee_id_include_dept)
+        if hasattr(company, "employee_id_padding") and company.employee_id_padding:
+            try:
+                padding = max(1, min(8, int(company.employee_id_padding)))
+            except (ValueError, TypeError):
+                padding = 3
+
+    # Extract Year
+    year_str = None
+    if include_year:
+        if emp_obj and hasattr(emp_obj, "joining_date") and emp_obj.joining_date:
+            try:
+                year_str = str(emp_obj.joining_date.year)
+            except Exception:
+                year_str = str(get_ist_today().year)
+        else:
+            year_str = str(get_ist_today().year)
+
+    # Extract Department Code
+    dept_code = None
+    if include_dept:
+        if emp_obj and hasattr(emp_obj, "department") and emp_obj.department:
+            dept = emp_obj.department
+            if hasattr(dept, "code") and dept.code:
+                dept_code = str(dept.code).strip().upper()
+            elif hasattr(dept, "name") and dept.name:
+                dept_code = str(dept.name).strip()[:3].upper()
+            elif isinstance(dept, str) and dept.strip():
+                dept_code = dept.strip()[:3].upper()
+        if not dept_code:
+            dept_code = "GEN"
+
+    # Format Sequence Number with zero padding
+    seq_str = f"{emp_id:0{padding}d}"
+
+    # Build segments
+    segments = []
     if prefix:
-        return f"{prefix.upper()}-{emp_id:04d}"
-    return f"#{emp_id:04d}"
+        segments.append(prefix.upper())
+    if year_str:
+        segments.append(year_str)
+    if dept_code:
+        segments.append(dept_code)
+    segments.append(seq_str)
+
+    return separator.join(segments)
 
 
 from app.utils.flash import extract_flash_messages

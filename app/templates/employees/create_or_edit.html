@@ -57,7 +57,7 @@
                 </div>
                 <div class="flex-1 text-center sm:text-left">
                     <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-1">Profile Photo / Avatar</h4>
-                    <p class="text-xs text-slate-500 mb-2.5">Upload a clear portrait photo (JPG, PNG, or WEBP, max 5MB). Synced to storage.</p>
+                    <p class="text-xs text-slate-500 mb-2.5">Upload a clear portrait photo (JPG, PNG, or WEBP, max 2MB). Synced to storage.</p>
                     <label class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-teal-700 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-xs cursor-pointer transition-colors">
                         <i data-lucide="camera" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Choose Photo
                         <input type="file" name="photo" id="photo_input" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden" onchange="previewAvatar(event)">
@@ -77,11 +77,11 @@
                 <!-- Gender -->
                 <div>
                     <label for="gender" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Gender</label>
-                    <select name="gender" id="gender" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                    <select name="gender" id="gender" data-custom-select="true" class="custom-select w-full">
                         <option value="" {% if not employee or not employee.gender %}selected{% endif %}>Select Gender</option>
-                        <option value="Male" {% if employee and employee.gender == 'Male' %}selected{% endif %}>Male</option>
-                        <option value="Female" {% if employee and employee.gender == 'Female' %}selected{% endif %}>Female</option>
-                        <option value="Other" {% if employee and employee.gender == 'Other' %}selected{% endif %}>Other</option>
+                        <option value="Male" data-badge="Male" {% if employee and employee.gender == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" data-badge="Female" {% if employee and employee.gender == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Other" data-badge="Other" {% if employee and employee.gender == 'Other' %}selected{% endif %}>Other</option>
                     </select>
                 </div>
 
@@ -173,16 +173,18 @@
                         {% endif %}
                     </div>
                     <select name="department_id" id="department_id" onchange="filterDesignations()"
+                        data-custom-select="true"
                         hx-get="/departments/designations/options"
                         hx-target="#designation_id"
                         hx-trigger="change"
                         hx-include="this"
                         hx-swap="innerHTML"
-                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled{% endif %}
+                        class="custom-select w-full">
                         <option value="">-- Select Department --</option>
                         {% for dept in departments %}
-                        <option value="{{ dept.id }}" {% if employee and employee.department_id == dept.id %}selected{% endif %}>
-                            {{ dept.name }} {% if dept.code %}({{ dept.code }}){% endif %}
+                        <option value="{{ dept.id }}" {% if dept.code %}data-badge="{{ dept.code }}"{% endif %} {% if employee and employee.department_id == dept.id %}selected{% endif %}>
+                            {{ dept.name }}
                         </option>
                         {% endfor %}
                     </select>
@@ -194,7 +196,9 @@
                         <label for="designation_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Job Designation / Title</label>
                     </div>
                     <select name="designation_id" id="designation_id"
-                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
+                        data-custom-select="true"
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled{% endif %}
+                        class="custom-select w-full">
                         <option value="">-- Select Designation --</option>
                         {% for des in designations %}
                         <option value="{{ des.id }}" data-dept="{{ des.department_id or '' }}" {% if employee and employee.designation_id == des.id %}selected{% endif %}>
@@ -207,17 +211,20 @@
                 <!-- Role -->
                 <div>
                     <label for="role" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">System Access Role</label>
-                    <select name="role" id="role" {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled class="w-full text-xs sm:text-sm bg-slate-100 border border-slate-200 text-slate-400 rounded-lg px-3 py-2 cursor-not-allowed"{% else %}class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"{% endif %}>
-                        <option value="intern" {% if employee and employee.role == 'intern' %}selected{% endif %}>Intern</option>
-                        <option value="employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee</option>
-                        <option value="manager" {% if employee and employee.role == 'manager' %}selected{% endif %}>Manager</option>
-                        <option value="hr" {% if employee and employee.role in ['hr', 'hr_admin'] %}selected{% endif %}>HR</option>
+                    <select name="role" id="role"
+                        data-custom-select="true"
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled{% endif %}
+                        class="custom-select w-full">
+                        <option value="intern" data-badge="Intern" {% if employee and employee.role == 'intern' %}selected{% endif %}>Intern</option>
+                        <option value="employee" data-badge="Employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee</option>
+                        <option value="manager" data-badge="Manager" {% if employee and employee.role == 'manager' %}selected{% endif %}>Manager</option>
+                        <option value="hr" data-badge="HR" {% if employee and employee.role in ['hr', 'hr_admin'] %}selected{% endif %}>HR</option>
                         {% if user.role == 'super_admin' %}
-                        <option value="admin" {% if employee and employee.role == 'admin' %}selected{% endif %}>Admin</option>
-                        <option value="super_admin" {% if employee and employee.role == 'super_admin' %}selected{% endif %}>Super Admin</option>
+                        <option value="admin" data-badge="Admin" {% if employee and employee.role == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="super_admin" data-badge="Super Admin" {% if employee and employee.role == 'super_admin' %}selected{% endif %}>Super Admin</option>
                         {% elif user.role == 'admin' %}
                         {% if employee and employee.role == 'admin' %}
-                        <option value="admin" selected>Admin</option>
+                        <option value="admin" data-badge="Admin" selected>Admin</option>
                         {% endif %}
                         {% endif %}
                     </select>
@@ -426,9 +433,26 @@
         if (!input.files || !input.files[0]) return;
         
         const file = input.files[0];
+        const maxBytes = 2 * 1024 * 1024; // 2 MB
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        const ext = file.name.split('.').pop().toLowerCase();
+        const allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+
+        if (!allowedTypes.includes(file.type) && !allowedExts.includes(ext)) {
+            alert('Invalid file format. Please upload a JPG, PNG, or WEBP image.');
+            input.value = '';
+            return;
+        }
+
+        if (file.size > maxBytes) {
+            alert(`File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 2 MB maximum limit. Please choose a smaller image.`);
+            input.value = '';
+            return;
+        }
+
         const filenameSpan = document.getElementById('photo-filename');
         if (filenameSpan) {
-            filenameSpan.textContent = file.name;
+            filenameSpan.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
         }
 
         const reader = new FileReader();

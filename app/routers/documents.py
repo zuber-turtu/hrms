@@ -82,7 +82,10 @@ async def create_document_type(
     is_mandatory: Optional[str] = Form(None),
     who_uploads: str = Form("employee"),
     allowed_extensions: str = Form("pdf,jpg,jpeg,png,webp"),
-    max_file_size_mb: int = Form(10),
+    max_size_value: Optional[float] = Form(None),
+    max_size_unit: Optional[str] = Form("MB"),
+    max_file_size_mb: Optional[int] = Form(None),
+    max_file_size_kb: Optional[int] = Form(None),
     department_id: Optional[str] = Form(None),
     display_order: int = Form(0),
     db: Session = Depends(get_db),
@@ -98,6 +101,26 @@ async def create_document_type(
 
     parsed_dept_id = int(department_id.strip()) if department_id and str(department_id).strip().isdigit() and int(department_id.strip()) > 0 else None
 
+    # Calculate size in KB and MB (Default: 1 MB = 1024 KB)
+    if max_size_value is not None:
+        if (max_size_unit or "").upper() == "KB":
+            calc_kb = max(50, int(max_size_value))
+            calc_mb = max(1, int(round(max_size_value / 1024.0)))
+        else:
+            calc_kb = max(50, int(max_size_value * 1024))
+            calc_mb = max(1, int(round(max_size_value)))
+    elif max_file_size_kb:
+        calc_kb = max(50, max_file_size_kb)
+        calc_mb = max(1, int(round(max_file_size_kb / 1024.0)))
+    elif max_file_size_mb:
+        calc_mb = max(1, max_file_size_mb)
+        calc_kb = calc_mb * 1024
+    else:
+        calc_kb = 1024
+        calc_mb = 1
+
+    clean_extensions = ",".join([x.strip().lower().lstrip(".") for x in (allowed_extensions or "").split(",") if x.strip().lower().lstrip(".")]) or "pdf,jpg,jpeg,png,webp,docx"
+
     doc_type = DocumentType(
         title=title.strip(),
         code=code,
@@ -105,8 +128,9 @@ async def create_document_type(
         category=category.strip(),
         is_mandatory=bool(is_mandatory),
         who_uploads=who_uploads,
-        allowed_extensions=allowed_extensions.strip().lower(),
-        max_file_size_mb=max_file_size_mb,
+        allowed_extensions=clean_extensions,
+        max_file_size_mb=calc_mb,
+        max_file_size_kb=calc_kb,
         department_id=parsed_dept_id,
         display_order=display_order,
         is_active=True,
@@ -138,7 +162,10 @@ async def edit_document_type(
     is_mandatory: Optional[str] = Form(None),
     who_uploads: str = Form("employee"),
     allowed_extensions: str = Form("pdf,jpg,jpeg,png,webp"),
-    max_file_size_mb: int = Form(10),
+    max_size_value: Optional[float] = Form(None),
+    max_size_unit: Optional[str] = Form("MB"),
+    max_file_size_mb: Optional[int] = Form(None),
+    max_file_size_kb: Optional[int] = Form(None),
     department_id: Optional[str] = Form(None),
     is_active: Optional[str] = Form(None),
     display_order: int = Form(0),
@@ -151,13 +178,33 @@ async def edit_document_type(
 
     parsed_dept_id = int(department_id.strip()) if department_id and str(department_id).strip().isdigit() and int(department_id.strip()) > 0 else None
 
+    if max_size_value is not None:
+        if (max_size_unit or "").upper() == "KB":
+            calc_kb = max(50, int(max_size_value))
+            calc_mb = max(1, int(round(max_size_value / 1024.0)))
+        else:
+            calc_kb = max(50, int(max_size_value * 1024))
+            calc_mb = max(1, int(round(max_size_value)))
+    elif max_file_size_kb:
+        calc_kb = max(50, max_file_size_kb)
+        calc_mb = max(1, int(round(max_file_size_kb / 1024.0)))
+    elif max_file_size_mb:
+        calc_mb = max(1, max_file_size_mb)
+        calc_kb = calc_mb * 1024
+    else:
+        calc_kb = doc_type.effective_max_kb
+        calc_mb = doc_type.max_file_size_mb or 1
+
+    clean_extensions = ",".join([x.strip().lower().lstrip(".") for x in (allowed_extensions or "").split(",") if x.strip().lower().lstrip(".")]) or "pdf,jpg,jpeg,png,webp,docx"
+
     doc_type.title = title.strip()
     doc_type.description = description.strip() if description else None
     doc_type.category = category.strip()
     doc_type.is_mandatory = bool(is_mandatory)
     doc_type.who_uploads = who_uploads
-    doc_type.allowed_extensions = allowed_extensions.strip().lower()
-    doc_type.max_file_size_mb = max_file_size_mb
+    doc_type.allowed_extensions = clean_extensions
+    doc_type.max_file_size_mb = calc_mb
+    doc_type.max_file_size_kb = calc_kb
     doc_type.department_id = parsed_dept_id
     doc_type.is_active = bool(is_active)
     doc_type.display_order = display_order
@@ -299,25 +346,29 @@ async def upload_employee_document(
         if doc_type.who_uploads == "admin_only" and not is_hr:
             raise HTTPException(status_code=403, detail="This document can only be uploaded by HR Administration.")
 
+    target_redirect = redirect_target or (f"/employees/{employee.id}#documents" if is_hr else "/my-documents")
+
     if not file.filename:
-        raise HTTPException(status_code=400, detail="No file selected for upload")
+        return flash_redirect(url=target_redirect, message="No file selected for upload", category="error")
 
     file_bytes = await file.read()
     if not file_bytes:
-        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+        return flash_redirect(url=target_redirect, message="Uploaded file is empty", category="error")
 
     file_size = len(file_bytes)
-    max_size_mb = doc_type.max_file_size_mb if doc_type else 15
-    if file_size > max_size_mb * 1024 * 1024:
-        raise HTTPException(status_code=400, detail=f"File exceeds maximum allowed size of {max_size_mb} MB")
+    max_size_kb = doc_type.effective_max_kb if doc_type else 1024
+    if file_size > max_size_kb * 1024:
+        display_max = doc_type.formatted_max_size if doc_type else "1 MB"
+        return flash_redirect(url=target_redirect, message=f"File exceeds maximum allowed size of {display_max}", category="error")
 
     # Validate allowed extensions
     ext = os.path.splitext(file.filename)[1].lower().strip(".")
-    allowed_list = [x.strip() for x in (doc_type.allowed_extensions if doc_type else "pdf,jpg,jpeg,png,webp,docx").split(",")]
+    allowed_list = [x.strip().lower() for x in (doc_type.allowed_extensions if doc_type else "pdf,jpg,jpeg,png,webp,docx").split(",") if x.strip()]
     if ext not in allowed_list:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file extension '.{ext}'. Allowed formats: {', '.join(allowed_list)}"
+        return flash_redirect(
+            url=target_redirect,
+            message=f"Invalid file extension '.{ext}'. Allowed formats for this document: {', '.join(allowed_list).upper()}",
+            category="error"
         )
 
     # Upload to storage provider under 'documents/' folder

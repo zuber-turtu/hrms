@@ -42,8 +42,8 @@
             </button>
             {% endif %}
             {% if is_approver %}
-            <button onclick="openBulkAllocationModal('wfh')" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200/90 shadow-2xs transition-all active:scale-[0.98] cursor-pointer group" title="Bulk allocate WFH, grant leaves, or update quotas">
-                <i data-lucide="layers" class="w-4 h-4 mr-2 text-purple-700 group-hover:scale-110 transition-transform"></i>
+            <button onclick="openBulkAllocationModal('wfh')" type="button" class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-teal-900 bg-[#E0F4F4] hover:bg-[#B3E3E3] border border-teal-300/90 shadow-2xs transition-all active:scale-[0.98] cursor-pointer group" title="Bulk allocate WFH, grant leaves, or update quotas">
+                <i data-lucide="layers" class="w-4 h-4 mr-2 text-teal-700 group-hover:scale-110 transition-transform"></i>
                 <span>Bulk Allocation</span>
             </button>
             {% endif %}
@@ -311,7 +311,7 @@
 
                 <div class="flex items-center space-x-2">
                     <label class="text-xs font-bold text-slate-600">Status:</label>
-                    <select id="leaves-status-filter" onchange="filterLeavesTable()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 bg-white font-medium">
+                    <select id="leaves-status-filter" onchange="filterLeavesTable()" data-custom-select="true" class="custom-select w-44">
                         <option value="all">All Statuses</option>
                         <option value="approved">Approved</option>
                         <option value="pending">Pending</option>
@@ -324,7 +324,7 @@
 
             <!-- Leave Table -->
             <div class="overflow-x-auto rounded-xl border border-slate-200">
-                <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                <table id="my-leaves-table" data-paginate="true" data-page-size="10" data-entity-label="leave applications" class="min-w-full divide-y divide-slate-200 text-left text-xs">
                     <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
                         <tr>
                             <th class="px-5 py-3.5">Leave Category</th>
@@ -507,7 +507,7 @@
 
                 <div class="flex items-center space-x-2">
                     <label class="text-xs font-bold text-slate-600">Status:</label>
-                    <select id="wfh-status-filter" onchange="filterWfhTable()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 bg-white font-medium">
+                    <select id="wfh-status-filter" onchange="filterWfhTable()" data-custom-select="true" class="custom-select w-44">
                         <option value="all">All Statuses</option>
                         <option value="approved">Approved</option>
                         <option value="pending">Pending</option>
@@ -520,7 +520,7 @@
 
             <!-- WFH Table -->
             <div class="overflow-x-auto rounded-xl border border-slate-200">
-                <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                <table id="my-wfh-table" data-paginate="true" data-page-size="10" data-entity-label="WFH requests" class="min-w-full divide-y divide-slate-200 text-left text-xs">
                     <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
                         <tr>
                             <th class="px-5 py-3.5">Allocation Source</th>
@@ -1190,20 +1190,71 @@
 
         <form method="POST" action="/leaves/apply" class="p-6 space-y-4">
             
-            <!-- Category Selector with Live Quota Preview -->
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1.5">
+            <!-- Category Selector with Live Quota Preview & Custom Dropdown UI -->
+            <div class="relative" id="applyLeaveCategoryContainer">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                     Leave Category <span class="text-rose-500">*</span>
                 </label>
-                <select name="leave_type_id" id="modal-leave-type-select" required onchange="updateSelectedLeaveQuota(); calculateDuration();" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-medium">
-                    {% for lt in leave_types %}
-                    {% set b_match = my_balances|selectattr('leave_type_id', 'equalto', lt.id)|first %}
-                    {% set rem_val = b_match.remaining_days if b_match else lt.default_days_per_year %}
-                    <option value="{{ lt.id }}" data-remaining="{{ rem_val }}" data-paid="{{ 'true' if lt.is_paid else 'false' }}" data-code="{{ lt.code }}" data-name="{{ lt.name }}">
-                        {{ lt.name }} ({{ lt.code }}) — Available: {{ rem_val|int if rem_val.is_integer() else rem_val }} day(s) [{{ 'Paid' if lt.is_paid else 'Unpaid' }}]
-                    </option>
-                    {% endfor %}
-                </select>
+                {% set default_lt = leave_types[0] if leave_types else none %}
+                {% set b_match0 = my_balances|selectattr('leave_type_id', 'equalto', default_lt.id)|first if default_lt else none %}
+                {% set rem_val0 = (b_match0.remaining_days if b_match0 else default_lt.default_days_per_year) if default_lt else 0 %}
+                <input type="hidden" name="leave_type_id" id="modal-leave-type-select" value="{{ default_lt.id if default_lt else '' }}"
+                       data-remaining="{{ rem_val0 }}"
+                       data-paid="{{ 'true' if (default_lt and default_lt.is_paid) else 'false' }}"
+                       data-code="{{ default_lt.code if default_lt else '' }}"
+                       data-name="{{ default_lt.name if default_lt else '' }}" required>
+                
+                <!-- Trigger Box -->
+                <button type="button" id="applyCategoryTriggerBtn" onclick="toggleApplyCategoryDropdown()" class="w-full flex items-center justify-between text-left text-xs sm:text-sm bg-white hover:bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 transition-colors shadow-2xs cursor-pointer">
+                    <div class="flex items-center space-x-2.5 min-w-0">
+                        <div class="w-7 h-7 rounded-lg bg-[#008080] text-white font-bold flex items-center justify-center text-xs shrink-0 font-heading" id="applySelectedCategoryIcon">
+                            {{ default_lt.name[0]|upper if default_lt else 'L' }}
+                        </div>
+                        <div class="min-w-0 truncate">
+                            <span class="font-bold text-slate-900 truncate" id="applySelectedCategoryName">{{ default_lt.name if default_lt else 'Select Category' }}</span>
+                            <span class="text-slate-400 text-xs ml-1 font-mono" id="applySelectedCategoryCode">({{ default_lt.code if default_lt else '' }})</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200" id="applySelectedCategoryBadge">
+                            {% if default_lt %}
+                            {{ rem_val0|int if rem_val0.is_integer() else rem_val0 }}d Available
+                            {% endif %}
+                        </span>
+                        <i data-lucide="chevron-down" id="applyCategoryChevron" class="w-4 h-4 text-slate-400 ml-1 transition-transform"></i>
+                    </div>
+                </button>
+
+                <!-- Downward-Opening Options Panel -->
+                <div id="applyCategoryDropdownMenu" class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200 p-2 z-50 transition-all">
+                    <!-- Options List -->
+                    <div class="max-h-52 overflow-y-auto space-y-1 divide-y divide-slate-100" id="applyCategoryListContainer">
+                        {% for lt in leave_types %}
+                        {% set b_match = my_balances|selectattr('leave_type_id', 'equalto', lt.id)|first %}
+                        {% set rem_val = b_match.remaining_days if b_match else lt.default_days_per_year %}
+                        <div class="apply-category-option p-2 rounded-lg hover:bg-teal-50 cursor-pointer flex items-center justify-between transition-colors"
+                             data-id="{{ lt.id }}"
+                             data-name="{{ lt.name }}"
+                             data-code="{{ lt.code }}"
+                             data-remaining="{{ rem_val }}"
+                             data-paid="{{ 'true' if lt.is_paid else 'false' }}"
+                             onclick="selectApplyCategory('{{ lt.id }}', '{{ lt.name|escape }}', '{{ lt.code|escape }}', '{{ rem_val }}', '{{ 'true' if lt.is_paid else 'false' }}')">
+                            <div class="flex items-center space-x-2.5 min-w-0">
+                                <div class="w-7 h-7 rounded-lg bg-[#008080] text-white font-bold flex items-center justify-center text-xs shrink-0 font-heading">
+                                    {{ lt.name[0]|upper }}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-bold text-slate-900 truncate">{{ lt.name }}</p>
+                                    <p class="text-[10px] text-slate-400 font-mono">{{ lt.code }} &bull; {{ 'Paid Leave' if lt.is_paid else 'Unpaid' }}</p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 shrink-0 ml-2">
+                                {{ rem_val|int if rem_val.is_integer() else rem_val }}d Left
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
                 <p id="quota-hint-badge" class="text-[11px] text-teal-700 font-medium mt-1">
                     💡 <em>Select category to check available quota for this request.</em>
                 </p>
@@ -1324,44 +1375,38 @@
 </div>
 {% endif %}
 
-{% if is_approver %}
+{% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin', 'manager'] %}
 <!-- ========================================================================= -->
-<!-- MODAL: Bulk Allocation Center (WFH, Leave Grants, Quotas) -->
+<!-- MODAL: Bulk & Team Allocation Center (WFH, Leave Grants, Quotas) -->
 <!-- ========================================================================= -->
 <div id="bulk-allocation-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn flex flex-col max-h-[90vh]">
+    <div class="bg-white rounded-2xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <!-- Header -->
-        <div class="px-6 py-4 bg-gradient-to-r from-purple-50 via-slate-50 to-teal-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+        <div class="px-6 py-4 bg-[#F4F7F7] border-b border-slate-200 flex items-center justify-between shrink-0">
             <div class="flex items-center space-x-3 min-w-0">
-                <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold shrink-0 shadow-2xs border border-purple-200">
-                    <i data-lucide="layers" class="w-5 h-5 text-purple-700"></i>
+                <div class="w-10 h-10 rounded-xl bg-[#E0F4F4] text-[#008080] flex items-center justify-center font-bold shrink-0 shadow-2xs border border-teal-200">
+                    <i data-lucide="layers" class="w-5 h-5"></i>
                 </div>
                 <div class="min-w-0">
                     <h3 class="text-sm sm:text-base font-bold text-slate-900 font-heading">Bulk & Team Allocation Center</h3>
-                    <p class="text-[11px] text-slate-500 truncate">Allocate WFH, grant company-wide leaves, or update annual quotas in one go.</p>
+                    <p class="text-[11px] text-slate-500 truncate">Allocate WFH or grant team leaves in one go.</p>
                 </div>
             </div>
-            <button onclick="closeBulkAllocationModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0">
+            <button onclick="closeBulkAllocationModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0" aria-label="Close dialog">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
         <!-- Mode Sub-Tabs Switcher -->
         <div class="flex border-b border-slate-200 bg-slate-100/70 p-1.5 gap-1 shrink-0 px-6">
-            <button type="button" onclick="switchBulkTab('wfh')" id="bulk-tab-btn-wfh" class="bulk-tab-btn flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-2 bg-white text-purple-900 shadow-2xs cursor-pointer">
-                <i data-lucide="home" class="w-4 h-4 text-purple-600"></i>
+            <button type="button" onclick="switchBulkTab('wfh')" id="bulk-tab-btn-wfh" class="bulk-tab-btn flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-2 bg-white text-teal-900 border-b-2 border-[#008080] shadow-2xs cursor-pointer">
+                <i data-lucide="home" class="w-4 h-4 text-[#008080]"></i>
                 <span>Allocate WFH</span>
             </button>
             <button type="button" onclick="switchBulkTab('leave')" id="bulk-tab-btn-leave" class="bulk-tab-btn flex-1 py-2 px-3 text-xs font-semibold rounded-xl transition-all flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900 cursor-pointer">
                 <i data-lucide="plane-takeoff" class="w-4 h-4 text-teal-600"></i>
                 <span>Grant Leave Day</span>
             </button>
-            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-            <button type="button" onclick="switchBulkTab('quota')" id="bulk-tab-btn-quota" class="bulk-tab-btn flex-1 py-2 px-3 text-xs font-semibold rounded-xl transition-all flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900 cursor-pointer">
-                <i data-lucide="pie-chart" class="w-4 h-4 text-amber-600"></i>
-                <span>Annual Quotas</span>
-            </button>
-            {% endif %}
         </div>
 
         <!-- Scrollable Form Container -->
@@ -1371,52 +1416,47 @@
             <!-- TAB 1: WORK FROM HOME ALLOCATION -->
             <!-- ============================================================= -->
             <form id="bulk-form-wfh" method="POST" action="/leaves/wfh/allocate" class="bulk-pane space-y-4">
-                <!-- Target Selector Pill -->
+                <!-- Target Audience Segmented Control -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Target Audience <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">
+                        Target Audience <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="hidden" name="target_type" id="wfh-target-type-val" value="all">
                     <div class="grid grid-cols-3 gap-2">
-                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-purple-300 transition-all text-xs font-bold text-slate-700 has-checked:border-purple-600 has-checked:bg-purple-50/70 has-checked:text-purple-900">
-                            <input type="radio" name="target_type" value="all" checked onchange="toggleTargetFields('wfh', 'all')" class="sr-only">
-                            <div class="flex items-center space-x-1.5">
-                                <i data-lucide="users" class="w-3.5 h-3.5 text-purple-600"></i>
-                                <span>All Staff</span>
-                            </div>
-                        </label>
-                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-purple-300 transition-all text-xs font-bold text-slate-700 has-checked:border-purple-600 has-checked:bg-purple-50/70 has-checked:text-purple-900">
-                            <input type="radio" name="target_type" value="department" onchange="toggleTargetFields('wfh', 'department')" class="sr-only">
-                            <div class="flex items-center space-x-1.5">
-                                <i data-lucide="building-2" class="w-3.5 h-3.5 text-purple-600"></i>
-                                <span>Department</span>
-                            </div>
-                        </label>
-                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-purple-300 transition-all text-xs font-bold text-slate-700 has-checked:border-purple-600 has-checked:bg-purple-50/70 has-checked:text-purple-900">
-                            <input type="radio" name="target_type" value="individual" onchange="toggleTargetFields('wfh', 'individual')" class="sr-only">
-                            <div class="flex items-center space-x-1.5">
-                                <i data-lucide="user" class="w-3.5 h-3.5 text-purple-600"></i>
-                                <span>Individual</span>
-                            </div>
-                        </label>
+                        <button type="button" onclick="setBulkTargetType('wfh', 'all')" id="wfh-target-btn-all" class="wfh-target-btn py-2.5 px-3 rounded-xl border font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer bg-[#008080] text-white border-[#008080] shadow-xs">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            <span>All Staff</span>
+                        </button>
+                        <button type="button" onclick="setBulkTargetType('wfh', 'department')" id="wfh-target-btn-department" class="wfh-target-btn py-2.5 px-3 rounded-xl border font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
+                            <i data-lucide="building-2" class="w-4 h-4 text-slate-500"></i>
+                            <span>Department</span>
+                        </button>
+                        <button type="button" onclick="setBulkTargetType('wfh', 'individual')" id="wfh-target-btn-individual" class="wfh-target-btn py-2.5 px-3 rounded-xl border font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
+                            <i data-lucide="user" class="w-4 h-4 text-slate-500"></i>
+                            <span>Individual</span>
+                        </button>
                     </div>
                 </div>
 
                 <!-- Conditional Department Dropdown -->
                 <div id="wfh-target-dept-box" class="hidden">
                     <label class="block text-xs font-bold text-slate-700 mb-1">Select Department <span class="text-rose-500">*</span></label>
-                    <select name="department_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-medium bg-white">
+                    <select name="department_id" data-custom-select="true" class="custom-select w-full">
                         <option value="">-- Choose Department --</option>
                         {% for d in all_departments %}
-                        <option value="{{ d.id }}">{{ d.name }} ({{ d.code if d.code else 'DEPT' }})</option>
+                        <option value="{{ d.id }}" {% if d.code %}data-badge="{{ d.code }}"{% endif %}>{{ d.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <!-- Conditional Individual Member Dropdown -->
+                <!-- Conditional Employee Dropdown -->
                 <div id="wfh-target-emp-box" class="hidden">
                     <label class="block text-xs font-bold text-slate-700 mb-1">Select Employee <span class="text-rose-500">*</span></label>
-                    <select name="employee_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-medium bg-white">
+                    <select name="employee_id" data-custom-select="true" class="custom-select w-full">
                         <option value="">-- Choose Employee --</option>
                         {% for m in team_members %}
-                        <option value="{{ m.id }}">{{ m.name }} ({{ m.email }}) — {{ m.department.name if m.department else 'General' }}</option>
+                        {% set m_dept = m.department.name if m.department and m.department.name else (m.department or 'General') %}
+                        <option value="{{ m.id }}" data-subtitle="{{ m.employee_code or ('#' ~ m.id) }} • {{ m_dept }}" data-badge="{{ m.role|replace('_', ' ') }}">{{ m.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -1426,17 +1466,17 @@
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold text-slate-700">Date Range <span class="text-rose-500">*</span></label>
                         <div class="flex items-center space-x-1 text-[10px]">
-                            <button type="button" onclick="setQuickDatePreset('wfh', 'today')" class="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold border border-purple-200 cursor-pointer">Today</button>
-                            <button type="button" onclick="setQuickDatePreset('wfh', 'tomorrow')" class="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold border border-purple-200 cursor-pointer">Tomorrow</button>
-                            <button type="button" onclick="setQuickDatePreset('wfh', 'week')" class="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold border border-purple-200 cursor-pointer">Full Week</button>
+                            <button type="button" onclick="setQuickDatePreset('wfh', 'today')" class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 cursor-pointer transition-colors">Today</button>
+                            <button type="button" onclick="setQuickDatePreset('wfh', 'tomorrow')" class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 cursor-pointer transition-colors">Tomorrow</button>
+                            <button type="button" onclick="setQuickDatePreset('wfh', 'week')" class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 cursor-pointer transition-colors">Full Week</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <input type="date" id="wfh-start-date" name="start_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
+                            <input type="date" id="wfh-start-date" name="start_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 font-mono font-bold text-slate-900 bg-white">
                         </div>
                         <div>
-                            <input type="date" id="wfh-end-date" name="end_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 font-mono">
+                            <input type="date" id="wfh-end-date" name="end_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 font-mono font-bold text-slate-900 bg-white">
                         </div>
                     </div>
                 </div>
@@ -1444,18 +1484,18 @@
                 <!-- Reason with Presets -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Directive / Reason</label>
-                    <textarea id="wfh-reason-input" name="reason" rows="2" placeholder="e.g., Company-wide remote sprint, severe weather advisory..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500">Direct WFH Allocation by Management</textarea>
+                    <textarea id="wfh-reason-input" name="reason" rows="2" placeholder="e.g., Company-wide remote sprint, severe weather advisory..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 text-slate-900 bg-white">Direct WFH Allocation by Management</textarea>
                     <div class="flex flex-wrap gap-1.5 mt-1.5">
-                        <button type="button" onclick="setReasonText('wfh-reason-input', 'Company-wide Remote Work Directive')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-purple-800 transition-colors cursor-pointer">Remote Directive</button>
-                        <button type="button" onclick="setReasonText('wfh-reason-input', 'Severe Weather / Public Transit Advisory')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-purple-800 transition-colors cursor-pointer">Weather Advisory</button>
-                        <button type="button" onclick="setReasonText('wfh-reason-input', 'Office Deep Cleaning & IT Infrastructure Maintenance')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-purple-800 transition-colors cursor-pointer">Office Maintenance</button>
+                        <button type="button" onclick="setReasonText('wfh-reason-input', 'Company-wide Remote Work Directive')" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-700 hover:text-teal-900 transition-colors font-semibold cursor-pointer">Remote Directive</button>
+                        <button type="button" onclick="setReasonText('wfh-reason-input', 'Severe Weather / Public Transit Advisory')" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-700 hover:text-teal-900 transition-colors font-semibold cursor-pointer">Weather Advisory</button>
+                        <button type="button" onclick="setReasonText('wfh-reason-input', 'Office Deep Cleaning & IT Infrastructure Maintenance')" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-700 hover:text-teal-900 transition-colors font-semibold cursor-pointer">Office Maintenance</button>
                     </div>
                 </div>
 
                 <!-- Notification Checkbox -->
                 <div class="flex items-center space-x-2 pt-1">
-                    <input type="checkbox" id="wfh-send-email" name="send_email" value="true" checked class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300">
-                    <label for="wfh-send-email" class="text-xs text-slate-600 font-medium">Send automatic email notification to all allocated team members</label>
+                    <input type="checkbox" id="wfh-send-email" name="send_email" value="true" checked class="w-4 h-4 rounded text-[#008080] focus:ring-teal-500 border-slate-300">
+                    <label for="wfh-send-email" class="text-xs text-slate-700 font-medium cursor-pointer">Send automatic email notification to all allocated team members</label>
                 </div>
 
                 <!-- Footer / Actions -->
@@ -1463,64 +1503,58 @@
                     <button type="button" onclick="closeBulkAllocationModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">
                         Cancel
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-2">
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-2">
                         <i data-lucide="check-circle-2" class="w-4 h-4"></i>
                         <span>Allocate WFH (Instant Approval)</span>
                     </button>
                 </div>
             </form>
 
-
             <!-- ============================================================= -->
             <!-- TAB 2: DIRECT LEAVE GRANT (ALL / DEPT / INDIVIDUAL) -->
             <!-- ============================================================= -->
             <form id="bulk-form-leave" method="POST" action="/leaves/bulk-grant" class="bulk-pane hidden space-y-4">
-                <!-- Target Selector Pill -->
+                <!-- Target Audience Segmented Control -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Target Audience <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">
+                        Target Audience <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="hidden" name="target_type" id="leave-target-type-val" value="all">
                     <div class="grid grid-cols-3 gap-2">
-                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
-                            <input type="radio" name="target_type" value="all" checked onchange="toggleTargetFields('leave', 'all')" class="sr-only">
-                            <div class="flex items-center space-x-1.5">
-                                <i data-lucide="users" class="w-3.5 h-3.5 text-teal-600"></i>
-                                <span>All Staff</span>
-                            </div>
-                        </label>
-                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
-                            <input type="radio" name="target_type" value="department" onchange="toggleTargetFields('leave', 'department')" class="sr-only">
-                            <div class="flex items-center space-x-1.5">
-                                <i data-lucide="building-2" class="w-3.5 h-3.5 text-teal-600"></i>
-                                <span>Department</span>
-                            </div>
-                        </label>
-                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
-                            <input type="radio" name="target_type" value="individual" onchange="toggleTargetFields('leave', 'individual')" class="sr-only">
-                            <div class="flex items-center space-x-1.5">
-                                <i data-lucide="user" class="w-3.5 h-3.5 text-teal-600"></i>
-                                <span>Individual</span>
-                            </div>
-                        </label>
+                        <button type="button" onclick="setBulkTargetType('leave', 'all')" id="leave-target-btn-all" class="leave-target-btn py-2.5 px-3 rounded-xl border font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer bg-[#008080] text-white border-[#008080] shadow-xs">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            <span>All Staff</span>
+                        </button>
+                        <button type="button" onclick="setBulkTargetType('leave', 'department')" id="leave-target-btn-department" class="leave-target-btn py-2.5 px-3 rounded-xl border font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
+                            <i data-lucide="building-2" class="w-4 h-4 text-slate-500"></i>
+                            <span>Department</span>
+                        </button>
+                        <button type="button" onclick="setBulkTargetType('leave', 'individual')" id="leave-target-btn-individual" class="leave-target-btn py-2.5 px-3 rounded-xl border font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
+                            <i data-lucide="user" class="w-4 h-4 text-slate-500"></i>
+                            <span>Individual</span>
+                        </button>
                     </div>
                 </div>
 
                 <!-- Conditional Department Dropdown -->
                 <div id="leave-target-dept-box" class="hidden">
                     <label class="block text-xs font-bold text-slate-700 mb-1">Select Department <span class="text-rose-500">*</span></label>
-                    <select name="department_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-medium bg-white">
+                    <select name="department_id" data-custom-select="true" class="custom-select w-full">
                         <option value="">-- Choose Department --</option>
                         {% for d in all_departments %}
-                        <option value="{{ d.id }}">{{ d.name }} ({{ d.code if d.code else 'DEPT' }})</option>
+                        <option value="{{ d.id }}" {% if d.code %}data-badge="{{ d.code }}"{% endif %}>{{ d.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <!-- Conditional Individual Member Dropdown -->
+                <!-- Conditional Employee Dropdown -->
                 <div id="leave-target-emp-box" class="hidden">
                     <label class="block text-xs font-bold text-slate-700 mb-1">Select Employee <span class="text-rose-500">*</span></label>
-                    <select name="employee_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-medium bg-white">
+                    <select name="employee_id" data-custom-select="true" class="custom-select w-full">
                         <option value="">-- Choose Employee --</option>
                         {% for m in team_members %}
-                        <option value="{{ m.id }}">{{ m.name }} ({{ m.email }}) — {{ m.department.name if m.department else 'General' }}</option>
+                        {% set m_dept = m.department.name if m.department and m.department.name else (m.department or 'General') %}
+                        <option value="{{ m.id }}" data-subtitle="{{ m.employee_code or ('#' ~ m.id) }} • {{ m_dept }}" data-badge="{{ m.role|replace('_', ' ') }}">{{ m.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -1528,9 +1562,9 @@
                 <!-- Leave Type Category -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Leave Category <span class="text-rose-500">*</span></label>
-                    <select name="leave_type_id" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-medium bg-white">
+                    <select name="leave_type_id" required data-custom-select="true" class="custom-select w-full">
                         {% for lt in all_leave_types %}
-                        <option value="{{ lt.id }}">{{ lt.name }} ({{ lt.code }}) — {{ 'Paid' if lt.is_paid else 'Unpaid' }}</option>
+                        <option value="{{ lt.id }}" data-badge="{{ 'Paid' if lt.is_paid else 'Unpaid' }}" data-subtitle="{{ lt.code }}">{{ lt.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -1540,45 +1574,45 @@
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold text-slate-700">Date Range <span class="text-rose-500">*</span></label>
                         <div class="flex items-center space-x-1 text-[10px]">
-                            <button type="button" onclick="setQuickDatePreset('leave', 'today')" class="px-2 py-0.5 rounded bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold border border-teal-200 cursor-pointer">Today</button>
-                            <button type="button" onclick="setQuickDatePreset('leave', 'tomorrow')" class="px-2 py-0.5 rounded bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold border border-teal-200 cursor-pointer">Tomorrow</button>
-                            <button type="button" onclick="setQuickDatePreset('leave', 'week')" class="px-2 py-0.5 rounded bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold border border-teal-200 cursor-pointer">Full Week</button>
+                            <button type="button" onclick="setQuickDatePreset('leave', 'today')" class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 cursor-pointer transition-colors">Today</button>
+                            <button type="button" onclick="setQuickDatePreset('leave', 'tomorrow')" class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 cursor-pointer transition-colors">Tomorrow</button>
+                            <button type="button" onclick="setQuickDatePreset('leave', 'week')" class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 cursor-pointer transition-colors">Full Week</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <input type="date" id="leave-start-date" name="start_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
+                            <input type="date" id="leave-start-date" name="start_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 font-mono font-bold text-slate-900 bg-white">
                         </div>
                         <div>
-                            <input type="date" id="leave-end-date" name="end_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 font-mono">
+                            <input type="date" id="leave-end-date" name="end_date" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 font-mono font-bold text-slate-900 bg-white">
                         </div>
                     </div>
                 </div>
 
                 <!-- Quota Deduction Toggle -->
-                <div class="p-3 bg-amber-50/60 rounded-xl border border-amber-200/80 flex items-start space-x-2.5">
-                    <input type="checkbox" id="leave-deduct-quota" name="deduct_quota" value="true" class="w-4 h-4 mt-0.5 rounded text-teal-600 focus:ring-teal-500 border-slate-300">
+                <div class="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200 flex items-start space-x-2.5">
+                    <input type="checkbox" id="leave-deduct-quota" name="deduct_quota" value="true" class="w-4 h-4 mt-0.5 rounded text-[#008080] focus:ring-teal-500 border-slate-300 cursor-pointer">
                     <div>
-                        <label for="leave-deduct-quota" class="text-xs font-bold text-slate-800 cursor-pointer">Deduct days from employee annual leave balance</label>
-                        <p class="text-[11px] text-slate-500 mt-0.5">Leave unchecked if this is an extra company-granted holiday, festive day, or management gift leave without reducing quota.</p>
+                        <label for="leave-deduct-quota" class="text-xs font-bold text-slate-900 cursor-pointer">Deduct days from employee annual leave balance</label>
+                        <p class="text-[11px] text-slate-600 mt-0.5">Leave unchecked if this is an extra company-granted holiday, festive celebration, or management gift leave without reducing quota.</p>
                     </div>
                 </div>
 
                 <!-- Reason with Presets -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Grant Reason / Directive</label>
-                    <textarea id="leave-reason-input" name="reason" rows="2" placeholder="e.g., Company Foundation Day, Festive Holiday, Office shutdown..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500">Direct Leave Grant by Management</textarea>
+                    <textarea id="leave-reason-input" name="reason" rows="2" placeholder="e.g., Company Foundation Day, Festive Holiday, Office shutdown..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 text-slate-900 bg-white">Direct Leave Grant by Management</textarea>
                     <div class="flex flex-wrap gap-1.5 mt-1.5">
-                        <button type="button" onclick="setReasonText('leave-reason-input', 'Annual Company Foundation Day Holiday')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-800 transition-colors cursor-pointer">Foundation Day</button>
-                        <button type="button" onclick="setReasonText('leave-reason-input', 'Special Festive & Cultural Celebration Grant')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-800 transition-colors cursor-pointer">Festive Grant</button>
-                        <button type="button" onclick="setReasonText('leave-reason-input', 'Emergency Office Shutdown / Natural Calamity')" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-teal-100 text-slate-600 hover:text-teal-800 transition-colors cursor-pointer">Emergency Shutdown</button>
+                        <button type="button" onclick="setReasonText('leave-reason-input', 'Annual Company Foundation Day Holiday')" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-700 hover:text-teal-900 transition-colors font-semibold cursor-pointer">Foundation Day</button>
+                        <button type="button" onclick="setReasonText('leave-reason-input', 'Special Festive & Cultural Celebration Grant')" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-700 hover:text-teal-900 transition-colors font-semibold cursor-pointer">Festive Grant</button>
+                        <button type="button" onclick="setReasonText('leave-reason-input', 'Emergency Office Shutdown / Natural Calamity')" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-teal-100 text-slate-700 hover:text-teal-900 transition-colors font-semibold cursor-pointer">Emergency Shutdown</button>
                     </div>
                 </div>
 
                 <!-- Notification Checkbox -->
                 <div class="flex items-center space-x-2 pt-1">
-                    <input type="checkbox" id="leave-send-email" name="send_email" value="true" checked class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300">
-                    <label for="leave-send-email" class="text-xs text-slate-600 font-medium">Send automatic email notification to all granted team members</label>
+                    <input type="checkbox" id="leave-send-email" name="send_email" value="true" checked class="w-4 h-4 rounded text-[#008080] focus:ring-teal-500 border-slate-300 cursor-pointer">
+                    <label for="leave-send-email" class="text-xs text-slate-700 font-medium cursor-pointer">Send automatic email notification to all granted team members</label>
                 </div>
 
                 <!-- Footer / Actions -->
@@ -1592,110 +1626,10 @@
                     </button>
                 </div>
             </form>
-
-
-            <!-- ============================================================= -->
-            <!-- TAB 3: ANNUAL LEAVE QUOTAS ALLOCATION -->
-            <!-- ============================================================= -->
-            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-            <form id="bulk-form-quota" method="POST" action="/leaves/balances/bulk-allocate" class="bulk-pane hidden space-y-4">
-                <!-- Target Selector -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Target Audience <span class="text-rose-500">*</span></label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-amber-300 transition-all text-xs font-bold text-slate-700 has-checked:border-amber-600 has-checked:bg-amber-50/70 has-checked:text-amber-900">
-                            <input type="radio" name="target_type" value="all" checked onchange="toggleTargetFields('quota', 'all')" class="sr-only">
-                            <div class="flex items-center space-x-1.5">
-                                <i data-lucide="users" class="w-3.5 h-3.5 text-amber-600"></i>
-                                <span>All Active Staff</span>
-                            </div>
-                        </label>
-                        <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:border-amber-300 transition-all text-xs font-bold text-slate-700 has-checked:border-amber-600 has-checked:bg-amber-50/70 has-checked:text-amber-900">
-                            <input type="radio" name="target_type" value="department" onchange="toggleTargetFields('quota', 'department')" class="sr-only">
-                            <div class="flex items-center space-x-1.5">
-                                <i data-lucide="building-2" class="w-3.5 h-3.5 text-amber-600"></i>
-                                <span>Specific Department</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Conditional Department Dropdown -->
-                <div id="quota-target-dept-box" class="hidden">
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Department <span class="text-rose-500">*</span></label>
-                    <select name="department_id" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 font-medium bg-white">
-                        <option value="">-- Choose Department --</option>
-                        {% for d in all_departments %}
-                        <option value="{{ d.id }}">{{ d.name }} ({{ d.code if d.code else 'DEPT' }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <!-- Policy Year -->
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Policy Year <span class="text-rose-500">*</span></label>
-                        <select name="year" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 font-mono font-bold bg-white">
-                            <option value="{{ selected_year }}" selected>{{ selected_year }} (Current Policy Year)</option>
-                            <option value="{{ selected_year + 1 }}">{{ selected_year + 1 }} (Upcoming Policy Year)</option>
-                            <option value="{{ selected_year - 1 }}">{{ selected_year - 1 }} (Previous Year)</option>
-                        </select>
-                    </div>
-
-                    <!-- Leave Category -->
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Leave Category <span class="text-rose-500">*</span></label>
-                        <select name="leave_type_id" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 font-medium bg-white">
-                            {% for lt in all_leave_types %}
-                            <option value="{{ lt.id }}">{{ lt.name }} ({{ lt.code }}) — Default: {{ lt.default_days_per_year }}d</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Allocation Mode Switch -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Allocation Mode <span class="text-rose-500">*</span></label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="relative flex items-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-amber-300 transition-all text-xs font-medium text-slate-700 has-checked:border-amber-600 has-checked:bg-amber-50/70 has-checked:text-amber-900">
-                            <input type="radio" name="allocation_mode" value="set_fixed" checked class="sr-only">
-                            <div>
-                                <span class="font-bold block">Set Fixed Quota</span>
-                                <span class="text-[11px] text-slate-500">Sets the exact total quota (e.g. 12 days)</span>
-                            </div>
-                        </label>
-                        <label class="relative flex items-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-amber-300 transition-all text-xs font-medium text-slate-700 has-checked:border-amber-600 has-checked:bg-amber-50/70 has-checked:text-amber-900">
-                            <input type="radio" name="allocation_mode" value="add_bonus" class="sr-only">
-                            <div>
-                                <span class="font-bold block">Add Bonus Days</span>
-                                <span class="text-[11px] text-slate-500">Adds +X extra days to current quota</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Days Count -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Number of Days <span class="text-rose-500">*</span></label>
-                    <input type="number" step="0.5" min="0" max="365" name="days" value="12.0" required class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 font-mono font-bold">
-                </div>
-
-                <!-- Footer / Actions -->
-                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
-                    <button type="button" onclick="closeBulkAllocationModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">
-                        Cancel
-                    </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition-all active:scale-95 cursor-pointer flex items-center space-x-2">
-                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-                        <span>Update Annual Quotas</span>
-                    </button>
-                </div>
-            </form>
-            {% endif %}
-
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- ========================================================================= -->
 <!-- MODAL: Reject Request with Remarks -->
@@ -1731,7 +1665,6 @@
         </form>
     </div>
 </div>
-{% endif %}
 
 <!-- ========================================================================= -->
 <!-- MODAL: View Full Reason & Request Details -->
@@ -2270,17 +2203,52 @@
     });
 
     // Dynamic Quota Helper in Apply Leave Modal
+    function toggleApplyCategoryDropdown() {
+        const menu = document.getElementById('applyCategoryDropdownMenu');
+        const chevron = document.getElementById('applyCategoryChevron');
+        if (!menu) return;
+        const isHidden = menu.classList.contains('hidden');
+        menu.classList.toggle('hidden');
+        if (chevron) {
+            chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+    }
+
+    function selectApplyCategory(id, name, code, rem, isPaid) {
+        const idInput = document.getElementById('modal-leave-type-select');
+        const nameSpan = document.getElementById('applySelectedCategoryName');
+        const codeSpan = document.getElementById('applySelectedCategoryCode');
+        const badgeSpan = document.getElementById('applySelectedCategoryBadge');
+        const iconDiv = document.getElementById('applySelectedCategoryIcon');
+        if (idInput) {
+            idInput.value = id;
+            idInput.setAttribute('data-remaining', rem);
+            idInput.setAttribute('data-paid', isPaid);
+            idInput.setAttribute('data-code', code);
+            idInput.setAttribute('data-name', name);
+        }
+        if (nameSpan) nameSpan.textContent = name;
+        if (codeSpan) codeSpan.textContent = '(' + code + ')';
+        if (badgeSpan) badgeSpan.textContent = `${parseFloat(rem)}d Available`;
+        if (iconDiv) iconDiv.textContent = (name && name.length > 0) ? name[0].toUpperCase() : 'L';
+
+        const menu = document.getElementById('applyCategoryDropdownMenu');
+        const chevron = document.getElementById('applyCategoryChevron');
+        if (menu) menu.classList.add('hidden');
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+
+        updateSelectedLeaveQuota();
+        calculateDuration();
+    }
+
     function updateSelectedLeaveQuota() {
-        const select = document.getElementById('modal-leave-type-select');
+        const input = document.getElementById('modal-leave-type-select');
         const badge = document.getElementById('quota-hint-badge');
-        const submitBtn = document.getElementById('leave-submit-btn');
-        if (!select || !badge) return;
-        const opt = select.options[select.selectedIndex];
-        if (!opt) return;
-        const rem = parseFloat(opt.getAttribute('data-remaining') || '0');
-        const isPaid = opt.getAttribute('data-paid') === 'true';
-        const code = opt.getAttribute('data-code') || '';
-        const name = opt.getAttribute('data-name') || '';
+        if (!input || !badge) return;
+        const rem = parseFloat(input.getAttribute('data-remaining') || '0');
+        const isPaid = input.getAttribute('data-paid') === 'true';
+        const code = input.getAttribute('data-code') || '';
+        const name = input.getAttribute('data-name') || '';
 
         if (code === 'LWP') {
             badge.innerHTML = `💡 <em>Loss of Pay (Unpaid Leave) — No salary entitlement.</em>`;
@@ -2293,7 +2261,7 @@
 
     // Duration Auto-Calculator with Real-time Balance Checking
     function calculateDuration() {
-        const select = document.getElementById('modal-leave-type-select');
+        const input = document.getElementById('modal-leave-type-select');
         const s = document.getElementById('leave_start_date');
         const e = document.getElementById('leave_end_date');
         const isHalfDay = document.getElementById('is_half_day_cb')?.checked;
@@ -2301,11 +2269,10 @@
         const text = document.getElementById('leave-calc-text');
         const submitBtn = document.getElementById('leave-submit-btn');
 
-        if (!select || !s) return;
-        const opt = select.options[select.selectedIndex];
-        const rem = parseFloat(opt?.getAttribute('data-remaining') || '0');
-        const code = opt?.getAttribute('data-code') || '';
-        const name = opt?.getAttribute('data-name') || '';
+        if (!input || !s) return;
+        const rem = parseFloat(input.getAttribute('data-remaining') || '0');
+        const code = input.getAttribute('data-code') || '';
+        const name = input.getAttribute('data-name') || '';
 
         if (s && s.value) {
             if (!e.value) e.value = s.value;
@@ -2461,7 +2428,7 @@
 
     function switchBulkTab(tabName) {
         document.querySelectorAll('.bulk-tab-btn').forEach(btn => {
-            btn.classList.remove('bg-white', 'text-purple-900', 'text-teal-900', 'text-amber-900', 'shadow-2xs');
+            btn.classList.remove('bg-white', 'text-teal-900', 'text-amber-900', 'border-b-2', 'border-[#008080]', 'shadow-2xs');
             btn.classList.add('text-slate-600', 'hover:text-slate-900');
         });
         document.querySelectorAll('.bulk-pane').forEach(p => p.classList.add('hidden'));
@@ -2470,10 +2437,12 @@
         const pane = document.getElementById('bulk-form-' + tabName);
         if (btn && pane) {
             btn.classList.remove('text-slate-600', 'hover:text-slate-900');
-            btn.classList.add('bg-white', 'shadow-2xs');
-            if (tabName === 'wfh') btn.classList.add('text-purple-900');
-            else if (tabName === 'leave') btn.classList.add('text-teal-900');
-            else if (tabName === 'quota') btn.classList.add('text-amber-900');
+            btn.classList.add('bg-white', 'border-b-2', 'shadow-2xs');
+            if (tabName === 'quota') {
+                btn.classList.add('text-amber-900', 'border-amber-600');
+            } else {
+                btn.classList.add('text-teal-900', 'border-[#008080]');
+            }
             pane.classList.remove('hidden');
         }
         if (typeof lucide !== 'undefined') {
@@ -2481,7 +2450,28 @@
         }
     }
 
-    function toggleTargetFields(formType, targetType) {
+    function setBulkTargetType(formType, targetType) {
+        const valInput = document.getElementById(formType + '-target-type-val');
+        if (valInput) valInput.value = targetType;
+
+        // Update button states
+        const container = document.getElementById('bulk-form-' + formType);
+        if (container) {
+            const btns = container.querySelectorAll('.' + formType + '-target-btn');
+            btns.forEach(b => {
+                b.className = formType + '-target-btn py-2.5 px-3 rounded-xl border font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer bg-white text-slate-700 border-slate-300 hover:bg-slate-50';
+                const icon = b.querySelector('i, svg');
+                if (icon) icon.className = 'w-4 h-4 text-slate-500';
+            });
+            const activeBtn = document.getElementById(formType + '-target-btn-' + targetType);
+            if (activeBtn) {
+                activeBtn.className = formType + '-target-btn py-2.5 px-3 rounded-xl border font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer bg-[#008080] text-white border-[#008080] shadow-xs';
+                const icon = activeBtn.querySelector('i, svg');
+                if (icon) icon.className = 'w-4 h-4 text-white';
+            }
+        }
+
+        // Toggle dropdown containers
         const deptBox = document.getElementById(formType + '-target-dept-box');
         const empBox = document.getElementById(formType + '-target-emp-box');
         if (deptBox) {
@@ -2492,7 +2482,105 @@
             if (targetType === 'individual') empBox.classList.remove('hidden');
             else empBox.classList.add('hidden');
         }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
+
+    function setQuotaMode(mode) {
+        const valInput = document.getElementById('quota-allocation-mode-val');
+        if (valInput) valInput.value = mode;
+
+        document.querySelectorAll('.quota-mode-btn').forEach(btn => {
+            btn.className = 'quota-mode-btn text-left p-3 rounded-xl border font-bold text-xs transition-all cursor-pointer bg-white text-slate-700 border-slate-300 hover:bg-slate-50';
+            const sub = btn.querySelector('span:last-child');
+            if (sub) sub.className = 'text-[11px] font-normal text-slate-500 block mt-0.5';
+        });
+
+        const activeBtn = document.getElementById('quota-mode-btn-' + mode);
+        if (activeBtn) {
+            activeBtn.className = 'quota-mode-btn text-left p-3 rounded-xl border font-bold text-xs transition-all cursor-pointer bg-[#008080] text-white border-[#008080] shadow-xs';
+            const sub = activeBtn.querySelector('span:last-child');
+            if (sub) sub.className = 'text-[11px] font-normal opacity-90 block mt-0.5';
+        }
+    }
+
+    // Leave Grant Searchable Dropdown Handlers
+    function toggleLeaveEmpDropdown() {
+        const menu = document.getElementById('leaveEmpDropdownMenu');
+        const chevron = document.getElementById('leaveDropdownChevron');
+        if (!menu) return;
+        const isHidden = menu.classList.contains('hidden');
+        menu.classList.toggle('hidden');
+        if (chevron) {
+            chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+        if (isHidden) {
+            const searchInput = document.getElementById('leaveEmpSearchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                filterLeaveEmpList();
+                setTimeout(() => searchInput.focus(), 50);
+            }
+        }
+    }
+
+    function selectLeaveEmployee(id, name, dept) {
+        const idInput = document.getElementById('leave_modal_employee_id');
+        const nameSpan = document.getElementById('leaveSelectedEmpName');
+        const deptSpan = document.getElementById('leaveSelectedEmpDept');
+        const avatarDiv = document.getElementById('leaveSelectedEmpAvatar');
+        if (idInput) idInput.value = id;
+        if (nameSpan) nameSpan.textContent = name;
+        if (deptSpan) deptSpan.textContent = '(' + (dept || 'General') + ')';
+        if (avatarDiv) avatarDiv.textContent = (name && name.length > 0) ? name[0].toUpperCase() : 'E';
+        
+        const menu = document.getElementById('leaveEmpDropdownMenu');
+        const chevron = document.getElementById('leaveDropdownChevron');
+        if (menu) menu.classList.add('hidden');
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+
+    function filterLeaveEmpList() {
+        const query = (document.getElementById('leaveEmpSearchInput')?.value || '').toLowerCase().trim();
+        document.querySelectorAll('.leave-emp-option').forEach(el => {
+            const searchData = (el.getAttribute('data-search') || '').toLowerCase();
+            if (!query || searchData.includes(query)) {
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        });
+    }
+
+    // Global click listener to close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        const wfhContainer = document.getElementById('wfh-target-emp-box');
+        const leaveContainer = document.getElementById('leave-target-emp-box');
+        const categoryContainer = document.getElementById('applyLeaveCategoryContainer');
+        if (wfhContainer && !wfhContainer.contains(e.target)) {
+            const wfhMenu = document.getElementById('wfhEmpDropdownMenu');
+            const wfhChevron = document.getElementById('wfhDropdownChevron');
+            if (wfhMenu && !wfhMenu.classList.contains('hidden')) {
+                wfhMenu.classList.add('hidden');
+                if (wfhChevron) wfhChevron.style.transform = 'rotate(0deg)';
+            }
+        }
+        if (leaveContainer && !leaveContainer.contains(e.target)) {
+            const leaveMenu = document.getElementById('leaveEmpDropdownMenu');
+            const leaveChevron = document.getElementById('leaveDropdownChevron');
+            if (leaveMenu && !leaveMenu.classList.contains('hidden')) {
+                leaveMenu.classList.add('hidden');
+                if (leaveChevron) leaveChevron.style.transform = 'rotate(0deg)';
+            }
+        }
+        if (categoryContainer && !categoryContainer.contains(e.target)) {
+            const catMenu = document.getElementById('applyCategoryDropdownMenu');
+            const catChevron = document.getElementById('applyCategoryChevron');
+            if (catMenu && !catMenu.classList.contains('hidden')) {
+                catMenu.classList.add('hidden');
+                if (catChevron) catChevron.style.transform = 'rotate(0deg)';
+            }
+        }
+    });
 
     function setQuickDatePreset(formType, preset) {
         const s = document.getElementById(formType + '-start-date');
@@ -2610,9 +2698,21 @@
     }
 
     document.addEventListener('click', (e) => {
-        const modal = document.getElementById('reason-details-modal');
-        if (modal && e.target === modal) {
+        const reasonModal = document.getElementById('reason-details-modal');
+        if (reasonModal && e.target === reasonModal) {
             closeReasonDetailsModal();
+        }
+        const bulkModal = document.getElementById('bulk-allocation-modal');
+        if (bulkModal && e.target === bulkModal) {
+            closeBulkAllocationModal();
+        }
+        const rejectModal = document.getElementById('reject-modal');
+        if (rejectModal && e.target === rejectModal) {
+            closeRejectModal();
+        }
+        const adjustModal = document.getElementById('adjust-quota-modal');
+        if (adjustModal && e.target === adjustModal) {
+            closeAdjustQuotaModal();
         }
     });
 
@@ -2645,6 +2745,50 @@
         }
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
+        }
+    }
+
+    // Client-side search and filtering for My Leaves
+    function filterLeavesTable() {
+        const q = (document.getElementById('leaves-search')?.value || '').toLowerCase().trim();
+        const st = (document.getElementById('leaves-status-filter')?.value || 'all').toLowerCase().trim();
+        const rows = document.querySelectorAll('.leave-row');
+        rows.forEach(row => {
+            const data = (row.getAttribute('data-search') || '').toLowerCase();
+            const status = (row.getAttribute('data-status') || '').toLowerCase();
+            const matchQ = !q || data.includes(q);
+            const matchSt = st === 'all' || status === st;
+            if (matchQ && matchSt) {
+                row.classList.remove('filter-hidden');
+            } else {
+                row.classList.add('filter-hidden');
+            }
+        });
+        const table = document.getElementById('my-leaves-table');
+        if (window.HRMSTablePagination && table) {
+            HRMSTablePagination.refresh(table);
+        }
+    }
+
+    // Client-side search and filtering for My WFH
+    function filterWfhTable() {
+        const q = (document.getElementById('wfh-search')?.value || '').toLowerCase().trim();
+        const st = (document.getElementById('wfh-status-filter')?.value || 'all').toLowerCase().trim();
+        const rows = document.querySelectorAll('.wfh-row');
+        rows.forEach(row => {
+            const data = (row.getAttribute('data-search') || '').toLowerCase();
+            const status = (row.getAttribute('data-status') || '').toLowerCase();
+            const matchQ = !q || data.includes(q);
+            const matchSt = st === 'all' || status === st;
+            if (matchQ && matchSt) {
+                row.classList.remove('filter-hidden');
+            } else {
+                row.classList.add('filter-hidden');
+            }
+        });
+        const table = document.getElementById('my-wfh-table');
+        if (window.HRMSTablePagination && table) {
+            HRMSTablePagination.refresh(table);
         }
     }
 
@@ -2769,7 +2913,7 @@
         <form id="adjust-quota-form" method="POST" action="" class="p-6 space-y-4">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Select Leave Category <span class="text-rose-500">*</span></label>
-                <select id="adjust_balance_id" onchange="onAdjustCategoryChange()" required class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 bg-white font-medium"></select>
+                <select id="adjust_balance_id" onchange="onAdjustCategoryChange()" required data-custom-select="true" class="custom-select w-full"></select>
                 <p id="adjust-quota-info" class="text-[11px] text-slate-500 mt-1.5 p-2 bg-slate-50 rounded-lg border border-slate-200"></p>
             </div>
 

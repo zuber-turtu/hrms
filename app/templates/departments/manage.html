@@ -109,16 +109,19 @@
                             {{ dept.code or dept.name[:3]|upper }}
                         </button>
                         <div>
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center space-x-2 flex-wrap gap-y-1">
                                 <button type="button" onclick="openDepartmentRoster({{ dept.id }})" class="text-sm font-heading font-bold text-slate-900 hover:text-teal-700 transition-colors text-left flex items-center group cursor-pointer" title="Click to view employees in {{ dept.name }}">
                                     <span>{{ dept.name }}</span>
                                     <i data-lucide="external-link" class="w-3.5 h-3.5 ml-1.5 opacity-0 group-hover:opacity-100 text-teal-600 transition-opacity"></i>
                                 </button>
                                 {% if dept.code %}
-                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-slate-100 text-slate-600 border border-slate-200">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-teal-50 text-teal-800 border border-teal-200" title="Department Identifier Code">
                                     {{ dept.code }}
                                 </span>
                                 {% endif %}
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-600 border border-slate-200" title="Sample Employee ID Format">
+                                    ID: {{ format_emp_code({'id': 1, 'joining_date': get_today(), 'department': dept}) }}
+                                </span>
                             </div>
                             <p class="text-xs text-slate-500 mt-0.5">{{ dept.description or 'No operational scope defined' }}</p>
                         </div>
@@ -264,17 +267,21 @@
                 <form id="departmentForm" method="POST" action="/departments/create" class="mt-4 space-y-3.5">
                     <div>
                         <label for="dept_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Department Name <span class="text-rose-500">*</span></label>
-                        <input type="text" name="name" id="dept_name" required placeholder="e.g. Engineering" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                        <input type="text" name="name" id="dept_name" required placeholder="e.g. Artificial Intelligence" oninput="autoSuggestDeptCode(this.value)" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                     </div>
 
                     <div>
-                        <label for="dept_code" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Short Code</label>
-                        <input type="text" name="code" id="dept_code" placeholder="e.g. ENG" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 uppercase font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="dept_code" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Department Code <span class="text-rose-500">*</span></label>
+                            <span class="text-[10px] text-slate-400 font-mono">Used in Employee ID: e.g. TU-2024-<b>EX</b>-001</span>
+                        </div>
+                        <input type="text" name="code" id="dept_code" maxlength="6" required placeholder="e.g. EX, HR, EN, AI" oninput="this.dataset.manuallyEdited='true'" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 uppercase font-mono font-bold focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                        <span class="text-[10px] text-slate-400 mt-1 block">2–4 letter acronym (e.g. <strong>EX</strong>, <strong>HR</strong>, <strong>AI</strong>)</span>
                     </div>
 
                     <div>
                         <label for="dept_description" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Description</label>
-                        <textarea name="description" id="dept_description" rows="2" placeholder="Brief function or role of department" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"></textarea>
+                        <textarea name="description" id="dept_description" rows="2" placeholder="Brief function or role of department" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors"></textarea>
                     </div>
                     
                     <div class="flex justify-end space-x-2.5 pt-3.5 border-t border-slate-100">
@@ -322,10 +329,10 @@
 
                     <div>
                         <label for="desig_dept_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Parent Department</label>
-                        <select name="department_id" id="desig_dept_id" class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                        <select name="department_id" id="desig_dept_id" data-custom-select="true" class="custom-select w-full">
                             <option value="">-- Global / Cross-Department --</option>
                             {% for d in departments %}
-                            <option value="{{ d.id }}">{{ d.name }}</option>
+                            <option value="{{ d.id }}" {% if d.code %}data-badge="{{ d.code }}"{% endif %}>{{ d.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -365,22 +372,37 @@
 <form id="deleteDeptForm" method="POST" class="hidden"></form>
 
 <script>
+    function autoSuggestDeptCode(name) {
+        const codeInput = document.getElementById('dept_code');
+        if (codeInput && (!codeInput.dataset.manuallyEdited || codeInput.dataset.manuallyEdited === 'false')) {
+            const words = name.trim().split(/\s+/).filter(Boolean);
+            if (words.length >= 2) {
+                codeInput.value = (words[0][0] + words[1][0]).toUpperCase();
+            } else if (words.length === 1 && words[0].length >= 2) {
+                codeInput.value = words[0].substring(0, 2).toUpperCase();
+            }
+        }
+    }
+
     function openDepartmentModal(id = null, name = '', code = '', desc = '') {
         const modal = document.getElementById('departmentModal');
         const form = document.getElementById('departmentForm');
         const title = document.getElementById('deptModalTitle');
+        const codeInput = document.getElementById('dept_code');
 
         if (id) {
             title.textContent = "Edit Department";
             form.action = `/departments/${id}/edit`;
             document.getElementById('dept_name').value = name;
-            document.getElementById('dept_code').value = code;
+            codeInput.value = code;
+            codeInput.dataset.manuallyEdited = 'true';
             document.getElementById('dept_description').value = desc;
         } else {
             title.textContent = "Add Department";
             form.action = "/departments/create";
             document.getElementById('dept_name').value = "";
-            document.getElementById('dept_code').value = "";
+            codeInput.value = "";
+            codeInput.dataset.manuallyEdited = 'false';
             document.getElementById('dept_description').value = "";
         }
         modal.classList.remove('hidden');

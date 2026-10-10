@@ -66,10 +66,10 @@
             {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
             <div class="flex-1 min-w-[160px]">
                 <label for="department_id" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
-                <select name="department_id" onchange="this.form.submit()" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
+                <select name="department_id" onchange="this.form.submit()" data-custom-select="true" class="custom-select w-full">
                     <option value="">All Departments</option>
                     {% for d in departments %}
-                        <option value="{{ d.id }}" {{ 'selected' if selected_dept == d.id else '' }}>{{ d.name }}</option>
+                        <option value="{{ d.id }}" {% if d.code %}data-badge="{{ d.code }}"{% endif %} {{ 'selected' if selected_dept == d.id else '' }}>{{ d.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -77,11 +77,11 @@
 
             <div class="flex-1 min-w-[160px]">
                 <label for="status_filter" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Compliance Status</label>
-                <select name="status_filter" onchange="this.form.submit()" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
+                <select name="status_filter" onchange="this.form.submit()" data-custom-select="true" class="custom-select w-full">
                     <option value="">All Statuses</option>
-                    <option value="compliant" {{ 'selected' if selected_status == 'compliant' else '' }}>Fully Compliant (100%)</option>
-                    <option value="pending" {{ 'selected' if selected_status == 'pending' else '' }}>Has Pending Verifications</option>
-                    <option value="non_compliant" {{ 'selected' if selected_status == 'non_compliant' else '' }}>Missing Documents</option>
+                    <option value="compliant" data-badge="100%" {{ 'selected' if selected_status == 'compliant' else '' }}>Fully Compliant (100%)</option>
+                    <option value="pending" data-badge="Pending" {{ 'selected' if selected_status == 'pending' else '' }}>Has Pending Verifications</option>
+                    <option value="non_compliant" data-badge="Missing" {{ 'selected' if selected_status == 'non_compliant' else '' }}>Missing Documents</option>
                 </select>
             </div>
 
@@ -96,7 +96,7 @@
     <!-- Compliance Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
         <div class="overflow-x-auto touch-scroll">
-            <table class="min-w-full divide-y divide-slate-200 text-xs">
+            <table class="min-w-full divide-y divide-slate-200 text-xs" data-paginate="true" data-page-size="15" data-entity-label="compliance records">
                 <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
                     <tr>
                         <th class="py-3 px-5 text-left">Employee</th>

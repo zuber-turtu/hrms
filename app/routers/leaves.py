@@ -276,7 +276,7 @@ def sync_all_leave_quotas_with_policies(
     if year is None:
         year = get_ist_today().year
 
-    employees = db.query(Employee).filter(Employee.is_active == True, Employee.role != "admin").all()
+    employees = db.query(Employee).filter(Employee.is_active == True).all()
     
     if leave_type_id:
         target_types = db.query(LeaveType).filter(LeaveType.id == leave_type_id).all()
@@ -1107,7 +1107,6 @@ async def allocate_wfh(
         target_employees = db.query(Employee).filter(
             Employee.department_id == department_id,
             Employee.is_active == True,
-            Employee.role != "admin"
         ).all()
 
     else:  # "all"
@@ -1115,12 +1114,10 @@ async def allocate_wfh(
             target_employees = db.query(Employee).filter(
                 Employee.department_id == current_user.department_id,
                 Employee.is_active == True,
-                Employee.role != "admin"
             ).all()
         else:
             target_employees = db.query(Employee).filter(
                 Employee.is_active == True,
-                Employee.role != "admin"
             ).all()
 
     if not target_employees:
@@ -1259,7 +1256,6 @@ async def bulk_grant_leave(
         target_employees = db.query(Employee).filter(
             Employee.department_id == department_id,
             Employee.is_active == True,
-            Employee.role != "admin"
         ).all()
 
     else:  # "all"
@@ -1267,12 +1263,10 @@ async def bulk_grant_leave(
             target_employees = db.query(Employee).filter(
                 Employee.department_id == current_user.department_id,
                 Employee.is_active == True,
-                Employee.role != "admin"
             ).all()
         else:
             target_employees = db.query(Employee).filter(
                 Employee.is_active == True,
-                Employee.role != "admin"
             ).all()
 
     if not target_employees:
@@ -1375,20 +1369,20 @@ async def bulk_allocate_quota(
     if days < 0:
         return flash_redirect(url="/leaves", message="Days cannot be negative.", category="error")
 
-    if target_type == "department" and department_id:
+    if target_type == "department":
+        if not department_id:
+            return flash_redirect(url="/leaves?tab=team_balances", message="Please select a department.", category="error")
         target_employees = db.query(Employee).filter(
             Employee.department_id == department_id,
             Employee.is_active == True,
-            Employee.role != "admin"
         ).all()
     else:
         target_employees = db.query(Employee).filter(
             Employee.is_active == True,
-            Employee.role != "admin"
         ).all()
 
     if not target_employees:
-        return flash_redirect(url="/leaves", message="No active employees found to allocate.", category="error")
+        return flash_redirect(url="/leaves?tab=team_balances", message="No active employees found to allocate.", category="error")
 
     updated_count = 0
     for emp in target_employees:
@@ -1432,7 +1426,7 @@ async def bulk_allocate_quota(
     db.commit()
 
     return flash_redirect(
-        url="/leaves",
+        url="/leaves?tab=team_balances",
         message=f"Updated {leave_type.name} quota for {updated_count} employee(s) (Year {year}).",
         category="success",
     )

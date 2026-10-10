@@ -39,6 +39,9 @@ router = APIRouter(prefix="/employees")
 
 allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 
+MAX_AVATAR_FILE_SIZE = 2 * 1024 * 1024  # 2 MB
+ALLOWED_AVATAR_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+
 def clean_str(val):
     if val is None:
         return ""
@@ -331,18 +334,20 @@ async def create_employee(
     avatar_url = None
     photo_file_id = None
     if photo and photo.filename:
-        file_bytes = await photo.read()
-        if len(file_bytes) > 0:
-            try:
-                storage = get_storage_provider()
-                avatar_url, photo_file_id = storage.upload_file(
-                    file_bytes,
-                    filename=photo.filename,
-                    content_type=photo.content_type or "image/jpeg",
-                    folder="avatars",
-                )
-            except Exception as e:
-                print(f"[create_employee Photo Upload Error] {e}")
+        ext = photo.filename.split(".")[-1].lower() if "." in photo.filename else ""
+        if ext in ALLOWED_AVATAR_EXTENSIONS:
+            file_bytes = await photo.read(MAX_AVATAR_FILE_SIZE + 1)
+            if 0 < len(file_bytes) <= MAX_AVATAR_FILE_SIZE:
+                try:
+                    storage = get_storage_provider()
+                    avatar_url, photo_file_id = storage.upload_file(
+                        file_bytes,
+                        filename=photo.filename,
+                        content_type=photo.content_type or "image/jpeg",
+                        folder="avatars",
+                    )
+                except Exception as e:
+                    print(f"[create_employee Photo Upload Error] {e}")
 
     # 2. Create Profile
     profile = EmployeeProfile(
@@ -799,7 +804,18 @@ async def edit_employee(
 
     # Handle Photo Upload if present
     if photo and photo.filename:
-        file_bytes = await photo.read()
+        ext = photo.filename.split(".")[-1].lower() if "." in photo.filename else ""
+        if ext not in ALLOWED_AVATAR_EXTENSIONS:
+            return RedirectResponse(
+                url=f"/employees/{emp_id}/edit?error=Invalid+image+format.+Allowed+formats:+JPG,+PNG,+WEBP.",
+                status_code=302
+            )
+        file_bytes = await photo.read(MAX_AVATAR_FILE_SIZE + 1)
+        if len(file_bytes) > MAX_AVATAR_FILE_SIZE:
+            return RedirectResponse(
+                url=f"/employees/{emp_id}/edit?error=Avatar+image+exceeds+the+maximum+allowed+size+of+2MB.",
+                status_code=302
+            )
         if len(file_bytes) > 0:
             try:
                 storage = get_storage_provider()
@@ -851,7 +867,7 @@ async def edit_employee(
 
 
 
-MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_IMPORT_FILE_SIZE = 2 * 1024 * 1024  # 2 MB
 
 
 @router.post("/import")
@@ -870,7 +886,7 @@ async def import_employees(
     contents = await file.read(MAX_IMPORT_FILE_SIZE + 1)
     if len(contents) > MAX_IMPORT_FILE_SIZE:
         return RedirectResponse(
-            url="/employees?error=File+exceeds+the+maximum+allowed+size+of+5MB.",
+            url="/employees?error=File+exceeds+the+maximum+allowed+size+of+2MB.",
             status_code=302
         )
 

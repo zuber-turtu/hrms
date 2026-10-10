@@ -131,12 +131,37 @@ async def update_company_profile(
 
         if "employee_id_prefix" in form_data:
             p_val = form_data["employee_id_prefix"].strip()
-            company.employee_id_prefix = p_val.upper() if p_val else None
+            company.employee_id_prefix = p_val.upper() if p_val else "TU"
         elif employee_id_prefix is not None:
-            company.employee_id_prefix = employee_id_prefix.strip().upper() if employee_id_prefix.strip() else None
+            company.employee_id_prefix = employee_id_prefix.strip().upper() if employee_id_prefix.strip() else "TU"
+
+        if "employee_id_separator" in form_data:
+            sep = form_data["employee_id_separator"].strip()
+            if sep == "custom" and "custom_separator" in form_data and form_data["custom_separator"].strip():
+                sep = form_data["custom_separator"].strip()
+            company.employee_id_separator = sep if sep else "-"
+
+        if "employee_id_include_year" in form_data:
+            company.employee_id_include_year = form_data.get("employee_id_include_year") in ["1", "true", "on", True]
+        elif "section" in form_data and (form_data["section"] == "branding" or form_data["section"] == "employee_id"):
+            # When unchecked in form submission
+            company.employee_id_include_year = "employee_id_include_year" in form_data
+
+        if "employee_id_include_dept" in form_data:
+            company.employee_id_include_dept = form_data.get("employee_id_include_dept") in ["1", "true", "on", True]
+        elif "section" in form_data and (form_data["section"] == "branding" or form_data["section"] == "employee_id"):
+            company.employee_id_include_dept = "employee_id_include_dept" in form_data
+
+        if "employee_id_padding" in form_data:
+            try:
+                company.employee_id_padding = max(1, min(8, int(form_data["employee_id_padding"])))
+            except (ValueError, TypeError):
+                company.employee_id_padding = 3
 
         if section == "branding":
-            msg = "Corporate branding & identity updated successfully"
+            msg = "Corporate branding, ID pattern & identity updated successfully"
+        elif section == "employee_id":
+            msg = "Employee ID generation pattern updated successfully"
 
     if section == "schedule" or section is None:
         if working_days_per_month is not None:

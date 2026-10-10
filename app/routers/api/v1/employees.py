@@ -498,16 +498,31 @@ async def api_upload_employee_avatar(
             status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted"
         )
 
-    file_bytes = await upload.read()
+    # Format and Size validation
+    filename = upload.filename or "avatar.jpg"
+    ext = filename.split(".")[-1].lower() if "." in filename else ""
+    allowed_exts = {"jpg", "jpeg", "png", "webp"}
+    if ext not in allowed_exts:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid image format '.{ext}'. Allowed formats: {', '.join(allowed_exts)}"
+        )
+
+    file_bytes = await upload.read(2 * 1024 * 1024 + 1)
     if not file_bytes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file provided"
+        )
+    if len(file_bytes) > 2 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Avatar image exceeds maximum allowed size of 2 MB"
         )
 
     storage = get_storage_provider()
     avatar_url, photo_file_id = storage.upload_file(
         file_bytes,
-        filename=upload.filename or "avatar.jpg",
+        filename=filename,
         content_type=upload.content_type or "image/jpeg",
         folder="avatars",
     )

@@ -40,8 +40,12 @@ class Company(Base):
     # Dynamic Access Control & Role Permissions Matrix (JSON string)
     role_permissions = Column(String, nullable=True)
 
-    # Employee ID Prefix (e.g. 'Company', 'EMP' -> Company-0001; if null/empty -> #0001)
-    employee_id_prefix = Column(String, nullable=True)
+    # Employee ID Dynamic Format Configuration
+    employee_id_prefix = Column(String, default="TU", nullable=True)
+    employee_id_separator = Column(String, default="-", nullable=True)
+    employee_id_include_year = Column(Boolean, default=True, nullable=True)
+    employee_id_include_dept = Column(Boolean, default=True, nullable=True)
+    employee_id_padding = Column(Integer, default=3, nullable=True)
 
 
 class OfficeLocation(Base):

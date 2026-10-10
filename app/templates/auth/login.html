@@ -107,7 +107,8 @@
             </div>
 
             <!-- Error Flash Notification: Alert Red (#E53E3E) -->
-            {% set err_msg = error or request.query_params.get('error') %}
+            {% set raw_err = error or request.query_params.get('error') %}
+            {% set err_msg = None if (raw_err and ('Please log in' in raw_err or 'Not authenticated' in raw_err)) else raw_err %}
             {% if err_msg %}
             <div
                 class="mb-4 bg-rose-50 border border-[#E53E3E]/40 rounded-xl p-3.5 flex items-start space-x-2.5 text-xs text-[#E53E3E] font-semibold">

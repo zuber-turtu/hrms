@@ -65,21 +65,22 @@
         </div>
 
         <!-- Action Type Filter with HTMX -->
-        <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1">
+        <div class="flex items-center space-x-2">
             <label for="auditActionFilter" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider shrink-0">Action:</label>
             <select id="auditActionFilter" name="action"
+                data-custom-select="true"
                 hx-get="/audit"
                 hx-trigger="change"
                 hx-target="#auditTableContainer"
                 hx-include="#auditSearch, #auditDateFilter"
                 hx-push-url="true"
-                class="py-1 px-2 text-xs bg-white border border-slate-200 rounded-md text-slate-900 font-medium focus:outline-none focus:border-teal-600 shadow-2xs">
-                <option value="all" {% if action == 'all' %}selected{% endif %}>All Actions</option>
-                <option value="PASSWORD" {% if action == 'PASSWORD' %}selected{% endif %}>Password</option>
-                <option value="ROLE" {% if action == 'ROLE' %}selected{% endif %}>Role & Permissions</option>
-                <option value="DELETE" {% if action == 'DELETE' %}selected{% endif %}>Deletions</option>
-                <option value="CREATE" {% if action == 'CREATE' %}selected{% endif %}>Creations</option>
-                <option value="UPDATE" {% if action == 'UPDATE' %}selected{% endif %}>Updates</option>
+                class="custom-select w-full sm:w-auto">
+                <option value="all">All Actions</option>
+                <option value="PASSWORD" data-badge="Security" {% if action == 'PASSWORD' %}selected{% endif %}>Password</option>
+                <option value="ROLE" data-badge="Access" {% if action == 'ROLE' %}selected{% endif %}>Role & Permissions</option>
+                <option value="DELETE" data-badge="Danger" {% if action == 'DELETE' %}selected{% endif %}>Deletions</option>
+                <option value="CREATE" data-badge="New" {% if action == 'CREATE' %}selected{% endif %}>Creations</option>
+                <option value="UPDATE" data-badge="Edit" {% if action == 'UPDATE' %}selected{% endif %}>Updates</option>
             </select>
         </div>
     </div>

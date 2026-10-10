@@ -23,7 +23,8 @@ class DocumentType(Base):
     is_mandatory = Column(Boolean, default=False)
     who_uploads = Column(String, default="employee")               # "employee" or "admin_only"
     allowed_extensions = Column(String, default="pdf,jpg,jpeg,png,webp,docx")
-    max_file_size_mb = Column(Integer, default=10)
+    max_file_size_mb = Column(Integer, default=1)
+    max_file_size_kb = Column(Integer, default=1024)
     
     # Scope: optionally limit this document requirement to a specific department (e.g. Drivers only)
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
@@ -31,6 +32,18 @@ class DocumentType(Base):
     is_active = Column(Boolean, default=True)
     display_order = Column(Integer, default=0)
     created_at = Column(DateTime, default=get_ist_now)
+
+    @property
+    def formatted_max_size(self) -> str:
+        kb = getattr(self, "max_file_size_kb", None) or (self.max_file_size_mb * 1024 if self.max_file_size_mb else 1024)
+        if kb < 1024:
+            return f"{kb} KB"
+        mb = kb / 1024.0
+        return f"{int(mb)} MB" if mb.is_integer() else f"{mb:.1f} MB"
+
+    @property
+    def effective_max_kb(self) -> int:
+        return getattr(self, "max_file_size_kb", None) or (self.max_file_size_mb * 1024 if self.max_file_size_mb else 1024)
 
     # Relational mappings
     department = orm_relationship("Department", backref="required_document_types")

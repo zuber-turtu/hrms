@@ -1264,7 +1264,7 @@
                     <div class="grid grid-cols-2 gap-3.5">
                         <div>
                             <label for="modal_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Month</label>
-                            <select name="month" id="modal_month" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <select name="month" id="modal_month" required data-custom-select="true" class="custom-select w-full">
                                 {% for i in range(1, 13) %}
                                 <option value="{{ i }}" {% if i == (current_month or 9) %}selected{% endif %}>{{ "%02d" % i }} - {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }}</option>
                                 {% endfor %}
@@ -1272,7 +1272,7 @@
                         </div>
                         <div>
                             <label for="modal_year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Year</label>
-                            <select name="year" id="modal_year" required class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                            <select name="year" id="modal_year" required data-custom-select="true" class="custom-select w-full">
                                 {% for yr in (available_years or range(app_year - 2, app_year + 3)) %}
                                 <option value="{{ yr }}" {% if yr == (current_year or app_year) %}selected{% endif %}>{{ yr }}</option>
                                 {% endfor %}
@@ -1467,17 +1467,17 @@
 
             <div>
                 <label for="hr_doc_type" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Document Type</label>
-                <select name="document_type_id" id="hr_doc_type" class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600">
+                <select name="document_type_id" id="hr_doc_type" data-custom-select="true" onchange="updateHRDocAcceptList()" class="custom-select w-full">
                     {% for item in doc_checklist %}
-                        <option value="{{ item.type.id }}">{{ item.type.title }} ({{ item.type.category }})</option>
+                        <option value="{{ item.type.id }}" data-allowed-exts="{{ item.type.allowed_extensions }}" data-max-kb="{{ item.type.effective_max_kb }}" data-max-formatted="{{ item.type.formatted_max_size }}">{{ item.type.title }} (Max {{ item.type.formatted_max_size }})</option>
                     {% endfor %}
-                    <option value="">Other / Custom Document</option>
+                    <option value="" data-allowed-exts="pdf,jpg,jpeg,png,webp,docx" data-max-kb="1024" data-max-formatted="1 MB">Other / Custom Document (Max 1 MB)</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Select File (PDF / Image)</label>
-                <input type="file" name="file" required class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2 text-slate-900">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Select File (PDF, Image, or Doc)</label>
+                <input type="file" name="file" id="hr_doc_file_input" required accept=".pdf,.jpg,.jpeg,.png,.webp,.docx" onchange="validateHRDocUpload(this)" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2 text-slate-900">
             </div>
 
             <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
@@ -1766,12 +1766,57 @@
         document.getElementById('rejectModal').classList.add('hidden');
     }
 
+    function updateHRDocAcceptList() {
+        const select = document.getElementById('hr_doc_type');
+        const fileInput = document.getElementById('hr_doc_file_input');
+        if (!select || !fileInput) return;
+        const opt = select.options[select.selectedIndex];
+        if (opt && opt.dataset.allowedExts) {
+            const exts = opt.dataset.allowedExts.split(',').map(e => '.' + e.trim().toLowerCase()).join(',');
+            fileInput.setAttribute('accept', exts);
+        } else {
+            fileInput.setAttribute('accept', '.pdf,.jpg,.jpeg,.png,.webp,.docx');
+        }
+    }
+
+    function validateHRDocUpload(input) {
+        const file = input.files ? input.files[0] : null;
+        if (!file) return;
+
+        const select = document.getElementById('hr_doc_type');
+        const opt = select ? select.options[select.selectedIndex] : null;
+        
+        const rawAllowed = opt && opt.dataset.allowedExts ? opt.dataset.allowedExts : 'pdf,jpg,jpeg,png,webp,docx';
+        const allowedList = rawAllowed.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+        const maxKb = parseInt(opt && opt.dataset.maxKb ? opt.dataset.maxKb : '1024') || 1024;
+        const formattedMax = opt && opt.dataset.maxFormatted ? opt.dataset.maxFormatted : '1 MB';
+
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!allowedList.includes(ext)) {
+            alert(`Invalid file format '.${ext}'. Only ${allowedList.join(', ').toUpperCase()} files are permitted for this document.`);
+            input.value = '';
+            return;
+        }
+
+        if (file.size > maxKb * 1024) {
+            alert(`File size (${(file.size / 1024).toFixed(1)} KB) exceeds the maximum allowed limit of ${formattedMax}.`);
+            input.value = '';
+            return;
+        }
+    }
+
     function openHRUploadDocModal() {
+        updateHRDocAcceptList();
         document.getElementById('hrUploadModal').classList.remove('hidden');
     }
 
     function openUploadSpecificModal(typeId, title) {
-        document.getElementById('hr_doc_type').value = typeId;
+        const sel = document.getElementById('hr_doc_type');
+        if (sel) {
+            sel.value = typeId;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        updateHRDocAcceptList();
         document.getElementById('hrUploadModal').classList.remove('hidden');
     }
 
@@ -1842,8 +1887,36 @@
         document.getElementById('modal_check_in').value = inTime;
         document.getElementById('modal_check_out').value = outTime;
     }
-    function closeOverrideModal() {
-        document.getElementById('overrideModal').classList.add('hidden');
+    function openHRUploadModal() {
+        document.getElementById('hrUploadModal')?.classList.remove('hidden');
+    }
+    function closeHRUploadModal() {
+        document.getElementById('hrUploadModal')?.classList.add('hidden');
+    }
+    function validateHRDocUpload(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        
+        const typeSelect = document.getElementById('hr_doc_type');
+        const selectedOpt = typeSelect?.options[typeSelect.selectedIndex];
+        const maxKb = selectedOpt?.dataset.maxKb ? parseInt(selectedOpt.dataset.maxKb) : 1024;
+        const formattedSize = selectedOpt?.dataset.maxFormatted || "1 MB";
+        
+        const maxBytes = maxKb * 1024;
+        const allowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'docx'];
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        if (!allowedExts.includes(ext)) {
+            alert(`Invalid file format '.${ext}'. Allowed formats: PDF, JPG, JPEG, PNG, WEBP, DOCX.`);
+            input.value = '';
+            return;
+        }
+
+        if (file.size > maxBytes) {
+            alert(`File size (${(file.size / 1024).toFixed(1)} KB) exceeds the maximum allowed limit of ${formattedSize}.`);
+            input.value = '';
+            return;
+        }
     }
     {% endif %}
 </script>
