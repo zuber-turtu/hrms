@@ -1,4 +1,9 @@
-<div id="attendanceTableContainer" class="overflow-hidden">
+<div id="attendanceTableContainer" class="overflow-hidden"
+    hx-get="/attendance"
+    hx-trigger="refreshAttendanceLogs from:body"
+    hx-include="#attendanceSearch, #dateFilter, #statusFilter"
+    hx-target="#attendanceTableContainer"
+    hx-swap="outerHTML">
     <div class="overflow-x-auto touch-scroll">
         <table class="min-w-full divide-y divide-slate-200" id="attendanceTable">
             <thead class="bg-slate-50">
@@ -34,7 +39,14 @@
                                     <img src="{{ log.employee.avatar_url or log.employee.profile.avatar_url }}" alt="{{ log.employee.name }}" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
                                     {% endif %}
                                 </div>
-                                <span class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors">{{ log.employee.name }}</span>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors">{{ log.employee.name }}</span>
+                                    {% if log.employee.zone %}
+                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200" title="{{ log.employee.zone.name }}">
+                                        {{ log.employee.zone.code }}
+                                    </span>
+                                    {% endif %}
+                                </div>
                             </a>
                         </td>
 

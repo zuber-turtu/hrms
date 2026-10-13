@@ -1,13 +1,14 @@
 import json
+import httpx
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from urllib.parse import quote_plus
 
 from app.database import get_db
 from app.models.employee import Employee
-from app.models.company import Company, OfficeLocation
+from app.models.company import Company, OfficeLocation, CompanyZone
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.templates_config import templates
@@ -17,6 +18,7 @@ from app.utils.geofence import get_active_office_locations, get_or_create_compan
 router = APIRouter(prefix="/company")
 
 allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
+allow_admin_only = RoleChecker(["super_admin", "admin"])
 
 
 @router.get("/profile", response_class=HTMLResponse)
@@ -36,6 +38,10 @@ async def company_profile(
     permissions_matrix = get_company_permissions(company)
     locations = get_active_office_locations(db, company)
     
+    # Fetch operating zones and employee counts per zone
+    zones = db.query(CompanyZone).order_by(CompanyZone.id.asc()).all()
+    zone_counts = {z.id: db.query(Employee).filter(Employee.zone_id == z.id).count() for z in zones}
+
     dept_set = set()
     for emp in employees:
         if emp.department:
@@ -53,6 +59,8 @@ async def company_profile(
             "employees": employees,
             "departments": departments,
             "locations": locations,
+            "zones": zones,
+            "zone_counts": zone_counts,
             "available_permissions": AVAILABLE_PERMISSIONS,
             "permissions_matrix": permissions_matrix,
         }
@@ -370,8 +378,64 @@ async def assign_employee_role(
 
 
 # =========================================================================
-# NAMED GEOFENCE LOCATIONS CRUD
+# NAMED GEOFENCE LOCATIONS CRUD & OPENSTREETMAP ADDRESS SEARCH PROXY
 # =========================================================================
+
+@router.get("/locations/search-address", response_class=JSONResponse)
+async def search_address(
+    request: Request,
+    q: Optional[str] = None,
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """
+    100% Free OpenStreetMap Nominatim Geocoding API Proxy.
+    Returns parsed title, subtitle, display_name, latitude, and longitude.
+    """
+    if not q or len(q.strip()) < 2:
+        return []
+
+    query = q.strip()
+    headers = {
+        "User-Agent": "TurtuHRMS-App/1.0 (contact@turtu.in; HRMS Geofencing)",
+        "Accept-Language": "en",
+    }
+    params = {
+        "q": query,
+        "format": "json",
+        "addressdetails": "1",
+        "limit": "7",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(
+                "https://nominatim.openstreetmap.org/search",
+                params=params,
+                headers=headers,
+            )
+            if resp.status_code != 200:
+                return []
+            
+            data = resp.json()
+            results = []
+            for item in data:
+                raw_name = item.get("display_name", "")
+                parts = [p.strip() for p in raw_name.split(",") if p.strip()]
+                title = parts[0] if parts else query
+                subtitle = ", ".join(parts[1:5]) if len(parts) > 1 else raw_name
+
+                results.append({
+                    "title": title,
+                    "subtitle": subtitle,
+                    "display_name": raw_name,
+                    "latitude": float(item["lat"]),
+                    "longitude": float(item["lon"]),
+                })
+            return results
+    except Exception as e:
+        print(f"[OSM Search Error]: {e}")
+        return []
+
 
 @router.post("/locations/create")
 async def create_office_location(
@@ -565,4 +629,179 @@ async def set_primary_location(
         url=f"/company/profile?tab=geofence&success={quote_plus(f'«{loc.name}» set as primary office headquarters')}",
         status_code=302,
     )
+
+
+# =====================================================================
+# OPERATING ZONES MANAGEMENT ENDPOINTS
+# =====================================================================
+
+@router.post("/zones/create")
+async def create_company_zone(
+    request: Request,
+    name: str = Form(...),
+    code: str = Form(...),
+    description: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_admin_only),
+):
+    clean_name = name.strip()
+    clean_code = code.strip().upper()
+    clean_desc = description.strip() if description and description.strip() else None
+
+    # Check uniqueness of name and code
+    existing_name = db.query(CompanyZone).filter(CompanyZone.name.ilike(clean_name)).first()
+    if existing_name:
+        return RedirectResponse(
+            url=f"/company/profile?tab=zones&error={quote_plus(f'An operating zone named «{clean_name}» already exists.')}",
+            status_code=302,
+        )
+
+    existing_code = db.query(CompanyZone).filter(CompanyZone.code.ilike(clean_code)).first()
+    if existing_code:
+        return RedirectResponse(
+            url=f"/company/profile?tab=zones&error={quote_plus(f'An operating zone with code «{clean_code}» already exists.')}",
+            status_code=302,
+        )
+
+    zone = CompanyZone(
+        name=clean_name,
+        code=clean_code,
+        description=clean_desc,
+        is_active=True,
+    )
+    db.add(zone)
+    db.commit()
+
+    audit = AuditLog(
+        actor_id=current_user.id,
+        actor_email=current_user.email,
+        action="CREATE_COMPANY_ZONE",
+        entity="CompanyZone",
+        entity_id=zone.id,
+        new_value=f"{zone.name} ({zone.code})",
+    )
+    db.add(audit)
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/company/profile?tab=zones&success={quote_plus(f'Operating Zone «{zone.name}» ({zone.code}) created successfully')}",
+        status_code=302,
+    )
+
+
+@router.post("/zones/{zone_id}/edit")
+async def edit_company_zone(
+    zone_id: int,
+    request: Request,
+    name: str = Form(...),
+    code: str = Form(...),
+    description: Optional[str] = Form(None),
+    is_active: bool = Form(True),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_admin_only),
+):
+    zone = db.query(CompanyZone).filter(CompanyZone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(status_code=404, detail="Zone not found")
+
+    clean_name = name.strip()
+    clean_code = code.strip().upper()
+    clean_desc = description.strip() if description and description.strip() else None
+
+    existing_name = db.query(CompanyZone).filter(CompanyZone.name.ilike(clean_name), CompanyZone.id != zone_id).first()
+    if existing_name:
+        return RedirectResponse(
+            url=f"/company/profile?tab=zones&error={quote_plus(f'An operating zone named «{clean_name}» already exists.')}",
+            status_code=302,
+        )
+
+    existing_code = db.query(CompanyZone).filter(CompanyZone.code.ilike(clean_code), CompanyZone.id != zone_id).first()
+    if existing_code:
+        return RedirectResponse(
+            url=f"/company/profile?tab=zones&error={quote_plus(f'An operating zone with code «{clean_code}» already exists.')}",
+            status_code=302,
+        )
+
+    zone.name = clean_name
+    zone.code = clean_code
+    zone.description = clean_desc
+    zone.is_active = is_active
+    db.commit()
+
+    audit = AuditLog(
+        actor_id=current_user.id,
+        actor_email=current_user.email,
+        action="EDIT_COMPANY_ZONE",
+        entity="CompanyZone",
+        entity_id=zone.id,
+        new_value=f"{zone.name} ({zone.code}) - Active: {zone.is_active}",
+    )
+    db.add(audit)
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/company/profile?tab=zones&success={quote_plus(f'Operating Zone «{zone.name}» updated successfully')}",
+        status_code=302,
+    )
+
+
+@router.post("/zones/{zone_id}/toggle-status")
+async def toggle_company_zone_status(
+    zone_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_admin_only),
+):
+    zone = db.query(CompanyZone).filter(CompanyZone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(status_code=404, detail="Zone not found")
+
+    zone.is_active = not zone.is_active
+    db.commit()
+
+    status_str = "activated" if zone.is_active else "deactivated"
+    return RedirectResponse(
+        url=f"/company/profile?tab=zones&success={quote_plus(f'Zone «{zone.name}» has been {status_str}')}",
+        status_code=302,
+    )
+
+
+@router.post("/zones/{zone_id}/delete")
+async def delete_company_zone(
+    zone_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_admin_only),
+):
+    zone = db.query(CompanyZone).filter(CompanyZone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(status_code=404, detail="Zone not found")
+
+    assigned_emp_count = db.query(Employee).filter(Employee.zone_id == zone_id).count()
+    if assigned_emp_count > 0:
+        return RedirectResponse(
+            url=f"/company/profile?tab=zones&error={quote_plus(f'Cannot delete «{zone.name}» because {assigned_emp_count} employee(s) are assigned to it. Please reassign them first.')}",
+            status_code=302,
+        )
+
+    zone_name = zone.name
+    db.delete(zone)
+    db.commit()
+
+    audit = AuditLog(
+        actor_id=current_user.id,
+        actor_email=current_user.email,
+        action="DELETE_COMPANY_ZONE",
+        entity="CompanyZone",
+        entity_id=zone_id,
+        old_value=zone_name,
+    )
+    db.add(audit)
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/company/profile?tab=zones&success={quote_plus(f'Operating Zone «{zone_name}» has been deleted successfully')}",
+        status_code=302,
+    )
+
 

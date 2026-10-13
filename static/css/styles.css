@@ -329,3 +329,88 @@ select option:checked {
     transform: translateY(-50%) translateX(0);
   }
 }
+
+/* ==========================================================================
+   Comprehensive Responsive & Mobile Viewport Enhancements
+   ========================================================================== */
+
+/* Touch momentum scrolling utility */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Hide scrollbars cleanly for mobile horizontal swipe strips */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Table Responsive Container */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Responsive Map Constraints */
+#geofenceMapContainer {
+  min-height: 380px;
+  height: 380px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+#addModalMapPicker,
+#editModalMapPicker {
+  min-height: 220px;
+  height: 220px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 640px) {
+  /* Prevent iOS Safari auto-zoom on input focus by ensuring 16px font-size */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Compact Leaflet Maps for mobile touch screens */
+  #geofenceMapContainer {
+    min-height: 280px !important;
+    height: 280px !important;
+  }
+
+  #addModalMapPicker,
+  #editModalMapPicker {
+    min-height: 180px !important;
+    height: 180px !important;
+  }
+
+  /* Enhanced mobile tap targets */
+  button,
+  .btn,
+  a.btn {
+    min-height: 38px;
+  }
+
+  /* Ensure modal cards scroll cleanly within mobile viewports */
+  .modal-card-responsive {
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Ensure settings panels fit snugly on mobile */
+  .settings-panel {
+    padding: 1rem !important;
+    border-radius: 1rem !important;
+  }
+}

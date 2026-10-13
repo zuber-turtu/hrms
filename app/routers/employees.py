@@ -6,7 +6,7 @@ from io import BytesIO
 from collections import defaultdict
 import datetime
 import openpyxl
-from typing import Optional
+from typing import Optional, Union
 
 from app.database import get_db
 from app.models.employee import (
@@ -19,7 +19,7 @@ from app.models.employee import (
 from app.models.department import Department, Designation
 from app.models.attendance import Attendance
 from app.models.payroll import Payslip
-from app.models.company import Company
+from app.models.company import Company, CompanyZone
 from app.dependencies import require_auth, RoleChecker, get_password_hash, create_access_token
 from app.models.audit import AuditLog
 from app.config import settings
@@ -102,16 +102,31 @@ def resolve_dept_and_desig(
 @router.get("/", response_class=HTMLResponse)
 async def list_employees(
     request: Request,
-    page: Optional[int] = 1,
-    page_size: Optional[int] = 25,
+    page: Optional[Union[int, str]] = 1,
+    page_size: Optional[Union[int, str]] = 25,
     q: Optional[str] = None,
     role: Optional[str] = None,
+    zone_id: Optional[Union[int, str]] = None,
     sort: Optional[str] = "name_asc",
     letter: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
     from app.utils.pagination import paginate_query
+
+    try:
+        page_num = int(page) if page is not None and str(page).strip().isdigit() else 1
+    except (ValueError, TypeError):
+        page_num = 1
+
+    try:
+        page_sz = int(page_size) if page_size is not None and str(page_size).strip().isdigit() else 25
+    except (ValueError, TypeError):
+        page_sz = 25
+
+    parsed_zone_id: Optional[int] = None
+    if zone_id is not None and str(zone_id).strip() and str(zone_id).strip().isdigit():
+        parsed_zone_id = int(str(zone_id).strip())
 
     base_query = db.query(Employee)
 
@@ -121,17 +136,23 @@ async def list_employees(
             Employee.department_id == current_user.department_id,
             Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
         )
+    # Scoping for HR: restricted strictly to their assigned zone if hr_zone_scope is 'zone_only'
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all") == "zone_only" and current_user.zone_id:
+        base_query = base_query.filter(
+            Employee.zone_id == current_user.zone_id,
+            Employee.role.notin_(["super_admin", "admin"])
+        )
 
-    # Calculate letter counts for active A-Z indicators
-    all_scoped_emps = base_query.all()
+    # Calculate letter counts for active A-Z indicators directly in SQL (no full table load)
+    total_scoped_count = base_query.count()
+    first_char_expr = func.upper(func.substr(func.trim(Employee.name), 1, 1))
+    raw_counts = base_query.with_entities(first_char_expr, func.count(Employee.id)).group_by(first_char_expr).all()
     letter_counts = defaultdict(int)
-    for emp in all_scoped_emps:
-        if emp.name and emp.name.strip():
-            first_char = emp.name.strip()[0].upper()
-            if 'A' <= first_char <= 'Z':
-                letter_counts[first_char] += 1
-            else:
-                letter_counts['#'] += 1
+    for char, cnt in raw_counts:
+        if char and 'A' <= char <= 'Z':
+            letter_counts[char] += cnt
+        elif char:
+            letter_counts['#'] += cnt
 
     query = base_query
 
@@ -173,7 +194,15 @@ async def list_employees(
 
     # Role filter
     if role and role.strip() and role.strip() != "all":
-        query = query.filter(Employee.role == role.strip())
+        r = role.strip().lower()
+        if r in ["hr", "hr_admin"]:
+            query = query.filter(Employee.role.in_(["hr", "hr_admin"]))
+        else:
+            query = query.filter(func.lower(Employee.role) == r)
+
+    # Zone filter
+    if parsed_zone_id:
+        query = query.filter(Employee.zone_id == parsed_zone_id)
 
     # Alphabetical letter filter
     selected_letter = (letter or "").strip().upper()
@@ -202,18 +231,22 @@ async def list_employees(
     else:  # default: name_asc (A-Z)
         query = query.order_by(func.lower(Employee.name).asc())
 
-    page_data = paginate_query(query, page=page, page_size=page_size)
+    page_data = paginate_query(query, page=page_num, page_size=page_sz)
+
+    zones = db.query(CompanyZone).filter(CompanyZone.is_active == True).order_by(CompanyZone.name.asc()).all()
 
     context = {
         "request": request,
         "user": current_user,
         "page_data": page_data,
         "employees": page_data.items,
-        "total_employees_count": len(all_scoped_emps),
+        "total_employees_count": total_scoped_count,
         "letter_counts": dict(letter_counts),
         "current_sort": sort_mode,
         "current_letter": selected_letter if selected_letter else "ALL",
-        "current_role": role or "all",
+        "current_role": (role.strip().lower() if role and role.strip() else "all"),
+        "current_zone_id": parsed_zone_id,
+        "zones": zones,
         "current_q": q or "",
     }
 
@@ -240,6 +273,7 @@ async def create_employee_form(
 ):
     departments = db.query(Department).all()
     designations = db.query(Designation).all()
+    zones = db.query(CompanyZone).filter(CompanyZone.is_active == True).order_by(CompanyZone.name.asc()).all()
     return templates.TemplateResponse(
         request=request,
         name="employees/create_or_edit.html",
@@ -248,6 +282,7 @@ async def create_employee_form(
             "employee": None,
             "departments": departments,
             "designations": designations,
+            "zones": zones,
             "today": get_ist_today(),
         },
     )
@@ -258,9 +293,13 @@ async def create_employee(
     request: Request,
     background_tasks: BackgroundTasks,
     name: str = Form(...),
-    email: str = Form(...),
     password: str = Form(...),
     role: str = Form(...),
+    personal_email: Optional[str] = Form(None),
+    company_email: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    zone_id: Optional[int] = Form(None),
+    hr_zone_scope: Optional[str] = Form("all"),
     department_id: Optional[int] = Form(None),
     designation_id: Optional[int] = Form(None),
     joining_date: Optional[str] = Form(None),
@@ -293,6 +332,8 @@ async def create_employee(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_hr_admin),
 ):
+    from urllib.parse import quote_plus
+
     # Privilege Escalation Defense
     if role in ["super_admin", "admin"] and current_user.role != "super_admin":
         raise HTTPException(
@@ -304,6 +345,47 @@ async def create_employee(
             status_code=403,
             detail="HR can only create Manager, Employee, or Intern accounts."
         )
+
+    # Resolve and validate emails
+    clean_personal = (personal_email or email or "").strip().lower()
+    clean_company = company_email.strip().lower() if company_email and company_email.strip() else None
+
+    if not clean_personal:
+        return RedirectResponse(
+            url=f"/employees/create?error={quote_plus('Personal email address is required.')}",
+            status_code=302
+        )
+
+    # Check collision for personal email
+    existing_personal = db.query(Employee).filter(
+        or_(
+            Employee.personal_email == clean_personal,
+            Employee.company_email == clean_personal,
+            Employee.email == clean_personal,
+        )
+    ).first()
+    if existing_personal:
+        return RedirectResponse(
+            url=f"/employees/create?error={quote_plus(f'Email «{clean_personal}» is already registered to another account.')}",
+            status_code=302
+        )
+
+    # Check collision for company email (if provided)
+    if clean_company:
+        existing_company = db.query(Employee).filter(
+            or_(
+                Employee.personal_email == clean_company,
+                Employee.company_email == clean_company,
+                Employee.email == clean_company,
+            )
+        ).first()
+        if existing_company:
+            return RedirectResponse(
+                url=f"/employees/create?error={quote_plus(f'Company work email «{clean_company}» is already registered.')}",
+                status_code=302
+            )
+
+    canonical_email = clean_company if clean_company else clean_personal
 
     hashed_password = get_password_hash(password)
     resolved_dept_id, resolved_desig_id = resolve_dept_and_desig(
@@ -319,8 +401,12 @@ async def create_employee(
 
     # 1. Create Core Employee
     emp = Employee(
-        name=name,
-        email=email,
+        name=name.strip(),
+        email=canonical_email,
+        personal_email=clean_personal,
+        company_email=clean_company,
+        zone_id=zone_id,
+        hr_zone_scope=hr_zone_scope or "all",
         hashed_password=hashed_password,
         role=role,
         department_id=resolved_dept_id,
@@ -421,7 +507,8 @@ async def create_employee(
 @router.get("/export-excel")
 async def export_employees(
     q: Optional[str] = None,
-    dept_id: Optional[int] = None,
+    dept_id: Optional[Union[int, str]] = None,
+    zone_id: Optional[Union[int, str]] = None,
     role: Optional[str] = None,
     status: Optional[str] = "all",
     letter: Optional[str] = None,
@@ -431,11 +518,21 @@ async def export_employees(
     """Exports workforce roster to a styled Excel spreadsheet matching active filters."""
     query = db.query(Employee)
 
+    parsed_zone_id: Optional[int] = None
+    if zone_id is not None and str(zone_id).strip() and str(zone_id).strip().isdigit():
+        parsed_zone_id = int(str(zone_id).strip())
+
+    parsed_dept_id: Optional[int] = None
+    if dept_id is not None and str(dept_id).strip() and str(dept_id).strip().isdigit():
+        parsed_dept_id = int(str(dept_id).strip())
+
     if current_user.role != "super_admin":
         query = query.filter(Employee.role != "super_admin")
 
     if current_user.role == "manager":
         query = query.filter(Employee.department_id == current_user.department_id)
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all") == "zone_only" and current_user.zone_id:
+        query = query.filter(Employee.zone_id == current_user.zone_id)
 
     if q and q.strip():
         search_raw = q.strip()
@@ -459,11 +556,18 @@ async def export_employees(
                          or_(*id_conditions)
                      )
 
-    if dept_id and dept_id > 0:
-        query = query.filter(Employee.department_id == dept_id)
+    if parsed_dept_id and parsed_dept_id > 0:
+        query = query.filter(Employee.department_id == parsed_dept_id)
 
-    if role and role.strip() and role.lower() != "all":
-        query = query.filter(Employee.role == role.strip().lower())
+    if parsed_zone_id and parsed_zone_id > 0:
+        query = query.filter(Employee.zone_id == parsed_zone_id)
+
+    if role and role.strip() and role.strip().lower() != "all":
+        r = role.strip().lower()
+        if r in ["hr", "hr_admin"]:
+            query = query.filter(Employee.role.in_(["hr", "hr_admin"]))
+        else:
+            query = query.filter(func.lower(Employee.role) == r)
 
     if status and status.strip() and status.lower() != "all":
         if status.lower() == "active":
@@ -528,7 +632,7 @@ async def view_employee(
         raw_logs = (
             db.query(Attendance)
             .filter(Attendance.employee_id == emp_id)
-            .order_by(Attendance.date.desc(), Attendance.check_in.asc())
+            .order_by(Attendance.date.desc(), Attendance.check_in.desc(), Attendance.id.desc())
             .all()
         )
         grouped = defaultdict(list)
@@ -569,23 +673,27 @@ async def view_employee(
             secs = int(total_seconds % 60)
             total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
 
-            latest_dist = group_logs[0].check_in_distance_m if group_logs[0].check_in_distance_m is not None else group_logs[-1].check_out_distance_m
-            latest_in_range = group_logs[0].check_in_in_range if group_logs[0].check_in_in_range is not None else group_logs[-1].check_out_in_range
+            # Latest punch session is at index 0 due to check_in.desc()
+            latest_log = group_logs[0]
+            latest_dist = latest_log.check_in_distance_m if latest_log.check_in_distance_m is not None else latest_log.check_out_distance_m
+            latest_in_range = latest_log.check_in_in_range if latest_log.check_in_in_range is not None else latest_log.check_out_in_range
             is_exempt = bool(employee and employee.profile and employee.profile.is_geofence_exempt)
+            loc_name = latest_log.check_in_location_name or latest_log.check_out_location_name
 
             attendance_data.append({
-                "id": group_logs[0].id,
+                "id": latest_log.id,
                 "date": date,
                 "sessions": ", ".join(sessions),
                 "total_active": f"{total_active_str} (Missed)" if is_missed else total_active_str,
                 "is_overridden": is_overridden,
                 "override_reason": override_reason,
                 "is_missed": is_missed,
-                "check_in": group_logs[0].check_in,
-                "check_out": group_logs[-1].check_out,
+                "check_in": latest_log.check_in,
+                "check_out": latest_log.check_out,
                 "distance_m": latest_dist,
                 "in_range": latest_in_range,
                 "is_exempt": is_exempt,
+                "location_name": loc_name,
             })
         
     # 3. Fetch Document & KYC checklist
@@ -646,6 +754,7 @@ async def edit_employee_form(
         
     departments = db.query(Department).all()
     designations = db.query(Designation).all()
+    zones = db.query(CompanyZone).filter(CompanyZone.is_active == True).order_by(CompanyZone.name.asc()).all()
     return templates.TemplateResponse(
         request=request,
         name="employees/create_or_edit.html",
@@ -654,6 +763,7 @@ async def edit_employee_form(
             "employee": employee,
             "departments": departments,
             "designations": designations,
+            "zones": zones,
             "today": get_ist_today(),
         },
     )
@@ -664,7 +774,11 @@ async def edit_employee(
     emp_id: int,
     request: Request,
     name: str = Form(...),
-    email: str = Form(...),
+    personal_email: Optional[str] = Form(None),
+    company_email: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    zone_id: Optional[int] = Form(None),
+    hr_zone_scope: Optional[str] = Form("all"),
     role: str = Form(None),
     department_id: Optional[int] = Form(None),
     designation_id: Optional[int] = Form(None),
@@ -698,6 +812,8 @@ async def edit_employee(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
+    from urllib.parse import quote_plus
+
     if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and current_user.id != emp_id:
         raise HTTPException(status_code=403, detail="Operation not permitted")
         
@@ -715,17 +831,46 @@ async def edit_employee(
     if role in ["super_admin", "admin"] and current_user.role != "super_admin":
         raise HTTPException(status_code=403, detail="Only Super Admin can assign the Admin or Super Admin role.")
 
-    # Check for email collision with other accounts
-    clean_email = email.strip().lower()
-    existing_email = db.query(Employee).filter(Employee.email == clean_email, Employee.id != emp_id).first()
-    if existing_email:
-        return RedirectResponse(
-            url=f"/employees/{emp_id}/edit?error=Email+already+in+use+by+another+account.",
-            status_code=302
-        )
+    # Resolve emails
+    clean_personal = (personal_email or email or employee.personal_email or employee.email or "").strip().lower()
+    clean_company = company_email.strip().lower() if company_email and company_email.strip() else None
 
+    # Check for email collisions with other accounts
+    if clean_personal:
+        existing_personal = db.query(Employee).filter(
+            or_(
+                Employee.personal_email == clean_personal,
+                Employee.company_email == clean_personal,
+                Employee.email == clean_personal,
+            ),
+            Employee.id != emp_id
+        ).first()
+        if existing_personal:
+            return RedirectResponse(
+                url=f"/employees/{emp_id}/edit?error={quote_plus(f'Personal email «{clean_personal}» is already in use by another account.')}",
+                status_code=302
+            )
+
+    if clean_company:
+        existing_company = db.query(Employee).filter(
+            or_(
+                Employee.personal_email == clean_company,
+                Employee.company_email == clean_company,
+                Employee.email == clean_company,
+            ),
+            Employee.id != emp_id
+        ).first()
+        if existing_company:
+            return RedirectResponse(
+                url=f"/employees/{emp_id}/edit?error={quote_plus(f'Company work email «{clean_company}» is already in use by another account.')}",
+                status_code=302
+            )
+
+    canonical_email = clean_company if clean_company else clean_personal
     employee.name = name.strip()
-    employee.email = clean_email
+    employee.personal_email = clean_personal
+    employee.company_email = clean_company
+    employee.email = canonical_email
     
     # Only Admins / HRs can modify role, department, designation, joining_date, and salary components
     if current_user.role in ["super_admin", "admin", "hr", "hr_admin"]:
@@ -738,6 +883,13 @@ async def edit_employee(
         )
         employee.department_id = resolved_dept_id
         employee.designation_id = resolved_desig_id
+        employee.zone_id = zone_id
+
+        # HR Zone Scoping permissions
+        if current_user.role in ["super_admin", "admin"]:
+            employee.hr_zone_scope = hr_zone_scope or "all"
+        elif current_user.role in ["hr", "hr_admin"] and hr_zone_scope and employee.role not in ["super_admin", "admin"]:
+            employee.hr_zone_scope = hr_zone_scope
         
         # Joining Date update
         if joining_date and joining_date.strip():

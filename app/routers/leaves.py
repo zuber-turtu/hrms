@@ -91,7 +91,11 @@ def can_user_approve_request(current_user: Employee, target_employee: Employee) 
 
     # HR can approve Managers, Employees, Interns (cannot approve Admins or peer HRs)
     if c_role in ["hr", "hr_admin"]:
-        return t_role in ["manager", "employee", "intern"]
+        if t_role not in ["manager", "employee", "intern"]:
+            return False
+        if getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+            return target_employee.zone_id == current_user.zone_id
+        return True
 
     # Manager can approve departmental Employees and Interns
     if c_role == "manager":
@@ -456,31 +460,42 @@ async def leaves_dashboard(
                 .all()
             )
         elif current_user.role in ["hr", "hr_admin"]:
-            # HR sees all pending requests from Managers, Employees, Interns
-            team_members = db.query(Employee).filter(
+            # HR sees pending requests from Managers, Employees, Interns (scoped by zone if zone_only)
+            hr_zone_restricted = (
+                getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only"
+                and current_user.zone_id is not None
+            )
+            tm_query = db.query(Employee).filter(
                 Employee.is_active == True,
                 Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
-            ).all()
-            pending_leaves = (
+            )
+            if hr_zone_restricted:
+                tm_query = tm_query.filter(Employee.zone_id == current_user.zone_id)
+            team_members = tm_query.all()
+
+            pl_query = (
                 db.query(LeaveApplication)
                 .join(Employee, LeaveApplication.employee_id == Employee.id)
                 .filter(
                     LeaveApplication.status == "pending",
                     Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
                 )
-                .order_by(LeaveApplication.created_at.asc())
-                .all()
             )
-            pending_wfh = (
+            if hr_zone_restricted:
+                pl_query = pl_query.filter(Employee.zone_id == current_user.zone_id)
+            pending_leaves = pl_query.order_by(LeaveApplication.created_at.asc()).all()
+
+            pw_query = (
                 db.query(WfhRequest)
                 .join(Employee, WfhRequest.employee_id == Employee.id)
                 .filter(
                     WfhRequest.status == "pending",
                     Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
                 )
-                .order_by(WfhRequest.created_at.asc())
-                .all()
             )
+            if hr_zone_restricted:
+                pw_query = pw_query.filter(Employee.zone_id == current_user.zone_id)
+            pending_wfh = pw_query.order_by(WfhRequest.created_at.asc()).all()
         elif current_user.role == "manager":
             # Subordinates in same department
             team_query = (
@@ -533,6 +548,29 @@ async def leaves_dashboard(
                 db.query(LeaveApplication)
                 .filter(
                     LeaveApplication.employee_id.in_(team_emp_ids),
+                    LeaveApplication.status == "approved",
+                    LeaveApplication.start_date <= today,
+                    LeaveApplication.end_date >= today,
+                )
+                .all()
+            )
+        elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+            active_today_wfh = (
+                db.query(WfhRequest)
+                .join(Employee, WfhRequest.employee_id == Employee.id)
+                .filter(
+                    Employee.zone_id == current_user.zone_id,
+                    WfhRequest.status == "approved",
+                    WfhRequest.start_date <= today,
+                    WfhRequest.end_date >= today,
+                )
+                .all()
+            )
+            active_today_leaves = (
+                db.query(LeaveApplication)
+                .join(Employee, LeaveApplication.employee_id == Employee.id)
+                .filter(
+                    Employee.zone_id == current_user.zone_id,
                     LeaveApplication.status == "approved",
                     LeaveApplication.start_date <= today,
                     LeaveApplication.end_date >= today,
@@ -1097,6 +1135,9 @@ async def allocate_wfh(
                 or target_emp.role in ["super_admin", "admin", "hr", "hr_admin"]
             ):
                 raise HTTPException(status_code=403, detail="Not authorized to allocate WFH for this employee.")
+        elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+            if target_emp.zone_id != current_user.zone_id:
+                raise HTTPException(status_code=403, detail="Not authorized to allocate WFH for an employee outside your assigned zone.")
         target_employees = [target_emp]
 
     elif target_type == "department":
@@ -1104,15 +1145,23 @@ async def allocate_wfh(
             return flash_redirect(url="/leaves?tab=approvals", message="Please select a department.", category="error")
         if current_user.role == "manager" and department_id != current_user.department_id:
             raise HTTPException(status_code=403, detail="Managers can only allocate WFH to their assigned department.")
-        target_employees = db.query(Employee).filter(
+        dept_q = db.query(Employee).filter(
             Employee.department_id == department_id,
             Employee.is_active == True,
-        ).all()
+        )
+        if current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+            dept_q = dept_q.filter(Employee.zone_id == current_user.zone_id)
+        target_employees = dept_q.all()
 
     else:  # "all"
         if current_user.role == "manager":
             target_employees = db.query(Employee).filter(
                 Employee.department_id == current_user.department_id,
+                Employee.is_active == True,
+            ).all()
+        elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+            target_employees = db.query(Employee).filter(
+                Employee.zone_id == current_user.zone_id,
                 Employee.is_active == True,
             ).all()
         else:
@@ -2001,6 +2050,16 @@ async def export_leaves_ledger(
                     )
                 )
             )
+        elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+            query = query.filter(
+                or_(
+                    WfhRequest.employee_id == current_user.id,
+                    and_(
+                        Employee.zone_id == current_user.zone_id,
+                        Employee.role.notin_(["super_admin", "admin"])
+                    )
+                )
+            )
 
         if sel_year:
             query = query.filter(extract("year", WfhRequest.start_date) == sel_year)
@@ -2019,6 +2078,16 @@ async def export_leaves_ledger(
                     and_(
                         Employee.department_id == current_user.department_id,
                         Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
+                    )
+                )
+            )
+        elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+            query = query.filter(
+                or_(
+                    LeaveApplication.employee_id == current_user.id,
+                    and_(
+                        Employee.zone_id == current_user.zone_id,
+                        Employee.role.notin_(["super_admin", "admin"])
                     )
                 )
             )
@@ -2055,6 +2124,8 @@ async def export_leave_balances_spreadsheet(
 
     if current_user.role == "manager":
         query = query.filter(Employee.department_id == current_user.department_id)
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+        query = query.filter(Employee.zone_id == current_user.zone_id)
     elif dept_id and dept_id > 0:
         query = query.filter(Employee.department_id == dept_id)
 

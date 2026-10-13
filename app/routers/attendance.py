@@ -55,6 +55,11 @@ async def attendance_log(
                 Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
             )
         )
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+        query = (
+            query.join(Employee, Attendance.employee_id == Employee.id)
+            .filter(Employee.role != "super_admin", Employee.zone_id == current_user.zone_id)
+        )
     else:
         query = (
             query.join(Employee, Attendance.employee_id == Employee.id)
@@ -65,7 +70,7 @@ async def attendance_log(
     if date and date.strip():
         query = query.filter(Attendance.date == date.strip())
 
-    raw_logs = query.order_by(Attendance.date.desc(), Attendance.check_in.asc()).all()
+    raw_logs = query.order_by(Attendance.date.desc(), Attendance.check_in.desc(), Attendance.id.desc()).all()
 
     # Group raw logs by (date, employee_id)
     grouped = defaultdict(list)
@@ -113,14 +118,15 @@ async def attendance_log(
         secs = int(total_seconds % 60)
         total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
         
-        latest_dist = group_logs[0].check_in_distance_m if group_logs[0].check_in_distance_m is not None else group_logs[-1].check_out_distance_m
-        latest_in_range = group_logs[0].check_in_in_range if group_logs[0].check_in_in_range is not None else group_logs[-1].check_out_in_range
+        latest_log = group_logs[0]
+        latest_dist = latest_log.check_in_distance_m if latest_log.check_in_distance_m is not None else latest_log.check_out_distance_m
+        latest_in_range = latest_log.check_in_in_range if latest_log.check_in_in_range is not None else latest_log.check_out_in_range
         is_exempt = bool(employee and employee.profile and employee.profile.is_geofence_exempt)
-        work_mode = group_logs[0].work_mode or ("wfh" if group_logs[0].wfh_request_id else "office")
-        loc_name = group_logs[0].check_in_location_name or group_logs[-1].check_out_location_name or ("Office" if latest_in_range else "Outside Perimeter")
+        work_mode = latest_log.work_mode or ("wfh" if latest_log.wfh_request_id else "office")
+        loc_name = latest_log.check_in_location_name or latest_log.check_out_location_name or ("Office" if latest_in_range else "Outside Perimeter")
 
         item = {
-            "id": group_logs[0].id,  # primary ID for override actions
+            "id": latest_log.id,  # primary ID for override actions (latest punch session)
             "date": log_date,
             "employee": employee,
             "sessions": ", ".join(sessions),
@@ -128,8 +134,8 @@ async def attendance_log(
             "is_overridden": is_overridden,
             "override_reason": override_reason,
             "is_missed": is_missed,
-            "check_in": group_logs[0].check_in,
-            "check_out": group_logs[-1].check_out,
+            "check_in": latest_log.check_in,
+            "check_out": latest_log.check_out,
             "distance_m": latest_dist,
             "in_range": latest_in_range,
             "is_exempt": is_exempt,
@@ -232,11 +238,12 @@ async def check_in(
         active_wfh = get_active_wfh_request(db, current_user.id, today)
         mode = "wfh" if active_wfh else ("office" if not geo_res.is_exempt else "remote")
         wfh_id = active_wfh.id if active_wfh else None
+        now_time = get_ist_now()
 
         log = Attendance(
             employee_id=current_user.id,
             date=today,
-            check_in=get_ist_now(),
+            check_in=now_time,
             check_in_lat=lat,
             check_in_lon=lon,
             check_in_distance_m=geo_res.distance_meters,
@@ -247,13 +254,34 @@ async def check_in(
         )
         db.add(log)
         db.commit()
+        db.refresh(log)
+
+        # Audit Log Entry
+        loc_str = f" at {geo_res.location_name}" if geo_res.location_name else ""
+        audit = AuditLog(
+            actor_id=current_user.id,
+            actor_email=current_user.email,
+            action="ATTENDANCE_CHECK_IN",
+            entity="Attendance",
+            entity_id=log.id,
+            new_value=f"Check-In at {now_time.strftime('%I:%M %p')}{loc_str} ({mode.upper()})",
+        )
+        db.add(audit)
+        db.commit()
 
     if request.headers.get("HX-Request"):
         update_attendance_request_state(db, current_user, request)
+        headers = {
+            "HX-Trigger": json.dumps({
+                "refreshAttendanceLogs": True,
+                "showSuccessToast": {"message": "Checked in successfully! Attendance ledger updated."}
+            })
+        }
         return templates.TemplateResponse(
             request,
             "attendance/partials/_topbar_widget.html",
-            {"user": current_user}
+            {"user": current_user},
+            headers=headers
         )
 
     safe_target = get_safe_redirect(request, default="/dashboard")
@@ -306,7 +334,8 @@ async def check_out(
     ).order_by(Attendance.check_in.desc()).first()
 
     if log:
-        log.check_out = get_ist_now()
+        now_time = get_ist_now()
+        log.check_out = now_time
         log.check_out_lat = lat
         log.check_out_lon = lon
         log.check_out_distance_m = geo_res.distance_meters
@@ -316,12 +345,36 @@ async def check_out(
             log.override_reason = "Lunch Break"
         db.commit()
 
+        # Audit Log Entry
+        loc_str = f" at {geo_res.location_name}" if geo_res.location_name else ""
+        diff_mins = int((now_time - log.check_in).total_seconds() // 60) if log.check_in else 0
+        hrs = diff_mins // 60
+        mins = diff_mins % 60
+        audit = AuditLog(
+            actor_id=current_user.id,
+            actor_email=current_user.email,
+            action="ATTENDANCE_CHECK_OUT",
+            entity="Attendance",
+            entity_id=log.id,
+            old_value=f"Check-In: {log.check_in.strftime('%I:%M %p') if log.check_in else 'N/A'}",
+            new_value=f"Check-Out at {now_time.strftime('%I:%M %p')}{loc_str} (Duration: {hrs}h {mins}m)",
+        )
+        db.add(audit)
+        db.commit()
+
     if request.headers.get("HX-Request"):
         update_attendance_request_state(db, current_user, request)
+        headers = {
+            "HX-Trigger": json.dumps({
+                "refreshAttendanceLogs": True,
+                "showSuccessToast": {"message": "Checked out successfully! Attendance ledger updated."}
+            })
+        }
         return templates.TemplateResponse(
             request,
             "attendance/partials/_topbar_widget.html",
-            {"user": current_user}
+            {"user": current_user},
+            headers=headers
         )
 
     safe_target = get_safe_redirect(request, default="/dashboard")
@@ -352,6 +405,12 @@ async def override_attendance(
             raise HTTPException(
                 status_code=403,
                 detail="Operation not permitted: Managers can only adjust attendance for subordinates in their department."
+            )
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+        if log.employee.zone_id != current_user.zone_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Operation not permitted: HR is restricted to their assigned operating zone."
             )
 
     old_val = f"In: {log.check_in}, Out: {log.check_out}"
@@ -410,6 +469,11 @@ async def export_attendance_logs_excel(
                 Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
             )
         )
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+        query = (
+            query.join(Employee, Attendance.employee_id == Employee.id)
+            .filter(Employee.role != "super_admin", Employee.zone_id == current_user.zone_id)
+        )
     else:
         query = (
             query.join(Employee, Attendance.employee_id == Employee.id)
@@ -419,7 +483,7 @@ async def export_attendance_logs_excel(
     if date and date.strip():
         query = query.filter(Attendance.date == date.strip())
 
-    raw_logs = query.order_by(Attendance.date.desc(), Attendance.check_in.asc()).all()
+    raw_logs = query.order_by(Attendance.date.desc(), Attendance.check_in.desc(), Attendance.id.desc()).all()
 
     grouped = defaultdict(list)
     for log in raw_logs:
@@ -513,6 +577,8 @@ async def export_monthly_matrix_endpoint(
     emp_query = db.query(Employee).filter(Employee.is_active == True, Employee.role != "super_admin")
     if current_user.role == "manager":
         emp_query = emp_query.filter(Employee.department_id == current_user.department_id)
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+        emp_query = emp_query.filter(Employee.zone_id == current_user.zone_id)
     elif dept_id and dept_id > 0:
         emp_query = emp_query.filter(Employee.department_id == dept_id)
 

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -21,6 +21,7 @@ async def list_audit_logs(
     actor_id: Optional[int] = Query(None, description="Filter by actor ID"),
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    response: Response = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_admin_only),
 ):
@@ -32,6 +33,10 @@ async def list_audit_logs(
         query = query.filter(AuditLog.entity == entity)
     if actor_id is not None:
         query = query.filter(AuditLog.actor_id == actor_id)
+
+    total_count = query.count()
+    if response:
+        response.headers["X-Total-Count"] = str(total_count)
 
     logs = (
         query.order_by(AuditLog.timestamp.desc())

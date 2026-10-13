@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Form, BackgroundTasks, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from datetime import datetime, timedelta
 from typing import Optional
 import secrets
@@ -44,7 +45,39 @@ async def login(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         )
 
-    user = db.query(Employee).filter(Employee.email == clean_email).first()
+    # 1. Look up by company_email first
+    user = db.query(Employee).filter(Employee.company_email == clean_email).first()
+
+    # 2. If no company_email match, check personal_email
+    if not user:
+        personal_match = db.query(Employee).filter(Employee.personal_email == clean_email).first()
+        if personal_match:
+            # STRICT POLICY: If company_email is provisioned, employee MUST log in with company email!
+            if personal_match.company_email and personal_match.company_email.strip():
+                return templates.TemplateResponse(
+                    request=request,
+                    name="auth/login.html",
+                    context={
+                        "error": "A company work email has been provisioned for your account. Please log in using your official company email."
+                    },
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            user = personal_match
+        else:
+            # Fallback for unmigrated or legacy accounts
+            legacy_match = db.query(Employee).filter(Employee.email == clean_email).first()
+            if legacy_match:
+                if legacy_match.company_email and legacy_match.company_email.strip() and clean_email != legacy_match.company_email.strip().lower():
+                    return templates.TemplateResponse(
+                        request=request,
+                        name="auth/login.html",
+                        context={
+                            "error": "A company work email has been provisioned for your account. Please log in using your official company email."
+                        },
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+                user = legacy_match
+
     if not user or not verify_password(password, user.hashed_password):
         return templates.TemplateResponse(
             request=request,
@@ -162,7 +195,18 @@ async def forgot_password(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         )
 
-    user = db.query(Employee).filter(Employee.email == clean_email, Employee.is_active == True).first()
+    user = (
+        db.query(Employee)
+        .filter(
+            or_(
+                Employee.company_email == clean_email,
+                Employee.personal_email == clean_email,
+                Employee.email == clean_email,
+            ),
+            Employee.is_active == True,
+        )
+        .first()
+    )
     
     if user:
         # Generate 32-byte cryptographically secure token (url-safe)
@@ -178,10 +222,12 @@ async def forgot_password(
         base_url = settings.APP_BASE_URL.rstrip("/") if settings.APP_BASE_URL else str(request.base_url).rstrip("/")
         reset_url = f"{base_url}/reset-password?token={token}"
 
+        dispatch_email = user.company_email.strip() if (user.company_email and user.company_email.strip()) else (user.personal_email or user.email)
+
         # Trigger background email dispatch
         background_tasks.add_task(
             send_password_reset_email,
-            to_email=user.email,
+            to_email=dispatch_email,
             recipient_name=user.name,
             reset_url=reset_url,
         )
@@ -189,11 +235,11 @@ async def forgot_password(
         # Audit log entry
         audit = AuditLog(
             actor_id=user.id,
-            actor_email=user.email,
+            actor_email=dispatch_email,
             action="PASSWORD_RESET_REQUESTED",
             entity="Employee",
             old_value=None,
-            new_value=f"Password reset requested for {user.email}. Valid for {expire_minutes}m."
+            new_value=f"Password reset requested for {dispatch_email} (searched via {clean_email}). Valid for {expire_minutes}m."
         )
         db.add(audit)
         db.commit()

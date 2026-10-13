@@ -8,24 +8,31 @@ class Employee(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
+    personal_email = Column(String, unique=True, index=True, nullable=True)
+    company_email = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=False)
     
-    # Roles: admin, hr_admin, manager, employee, intern
+    # Roles: super_admin, admin, hr, hr_admin, manager, employee, intern
     role = Column(String, default="employee", index=True)
     is_active = Column(Boolean, default=True, index=True)
     
     name = Column(String, nullable=False, index=True)
     joining_date = Column(Date, default=get_ist_today, index=True)
     
-    # Foreign Keys to Department & Designation (3NF Normalization)
+    # Foreign Keys to Department, Designation & CompanyZone
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
     designation_id = Column(Integer, ForeignKey("designations.id"), nullable=True, index=True)
+    zone_id = Column(Integer, ForeignKey("company_zones.id"), nullable=True, index=True)
     
+    # HR Scoping: 'all' (universal access across all zones) or 'zone_only' (scoped to zone_id)
+    hr_zone_scope = Column(String, default="all")
+
     # Auth & Security details
     reset_token = Column(String, nullable=True)
     reset_token_expiry = Column(DateTime, nullable=True)
 
     # Relational Mappings
+    zone = orm_relationship("CompanyZone", back_populates="employees")
     department = orm_relationship("Department", back_populates="employees")
     designation = orm_relationship("Designation", back_populates="employees")
     profile = orm_relationship("EmployeeProfile", back_populates="employee", uselist=False, cascade="all, delete-orphan")

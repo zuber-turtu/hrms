@@ -212,6 +212,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
+    {% block extra_head %}{% endblock %}
 </head>
 
 <body
@@ -387,59 +388,15 @@
                             <span class="sidebar-tooltip">Departments & Roles</span>
                         </a>
                     </li>
-                    <!-- Company Settings Accordion -->
-                    <li class="relative">
-                        <button type="button" onclick="toggleCompanySettingsSubmenu()" id="company-settings-btn" data-nav-link="/company"
-                            class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group relative cursor-pointer text-left">
-                            <div class="flex items-center min-w-0">
-                                <i data-lucide="settings-2"
-                                    class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors shrink-0"></i>
-                                <span class="sidebar-text truncate">Company Settings</span>
-                            </div>
-                            <i data-lucide="chevron-down" id="company-settings-chevron"
-                                class="w-3.5 h-3.5 text-teal-400/70 group-hover:text-white transition-transform duration-200 shrink-0 sidebar-text"></i>
+                    <!-- Company Settings -->
+                    <li>
+                        <a href="/company/profile" data-nav-link="/company"
+                            class="nav-item flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-teal-100/90 hover:bg-[#003838] hover:text-white transition-all duration-150 group relative">
+                            <i data-lucide="settings-2"
+                                class="w-4 h-4 mr-3 text-teal-400/80 group-hover:text-white transition-colors shrink-0"></i>
+                            <span class="sidebar-text truncate">Company Settings</span>
                             <span class="sidebar-tooltip">Company Settings</span>
-                        </button>
-                        
-                        <!-- Submenu Items -->
-                        <div id="company-settings-submenu" class="hidden pl-6 pr-1 pt-1 pb-0.5 space-y-0.5">
-                            <a href="/company/profile?tab=branding" data-submenu-tab="branding"
-                                onclick="if(window.location.pathname.startsWith('/company/profile')&&typeof switchSettingsTab==='function'){switchSettingsTab('branding');return false;}"
-                                class="company-sub-item flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-medium text-teal-200/80 hover:bg-[#004040] hover:text-white transition-colors group">
-                                <span class="w-1.5 h-1.5 rounded-full bg-teal-400/60 mr-2 group-hover:bg-teal-300 sub-dot shrink-0"></span>
-                                <span class="truncate">Corporate Branding</span>
-                            </a>
-                            <a href="/company/profile?tab=schedule" data-submenu-tab="schedule"
-                                onclick="if(window.location.pathname.startsWith('/company/profile')&&typeof switchSettingsTab==='function'){switchSettingsTab('schedule');return false;}"
-                                class="company-sub-item flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-medium text-teal-200/80 hover:bg-[#004040] hover:text-white transition-colors group">
-                                <span class="w-1.5 h-1.5 rounded-full bg-teal-400/60 mr-2 group-hover:bg-teal-300 sub-dot shrink-0"></span>
-                                <span class="truncate">Work Shifts & Lunch</span>
-                            </a>
-                            <a href="/company/profile?tab=payroll" data-submenu-tab="payroll"
-                                onclick="if(window.location.pathname.startsWith('/company/profile')&&typeof switchSettingsTab==='function'){switchSettingsTab('payroll');return false;}"
-                                class="company-sub-item flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-medium text-teal-200/80 hover:bg-[#004040] hover:text-white transition-colors group">
-                                <span class="w-1.5 h-1.5 rounded-full bg-teal-400/60 mr-2 group-hover:bg-teal-300 sub-dot shrink-0"></span>
-                                <span class="truncate">Payroll & Currency</span>
-                            </a>
-                            <a href="/company/profile?tab=statutory" data-submenu-tab="statutory"
-                                onclick="if(window.location.pathname.startsWith('/company/profile')&&typeof switchSettingsTab==='function'){switchSettingsTab('statutory');return false;}"
-                                class="company-sub-item flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-medium text-teal-200/80 hover:bg-[#004040] hover:text-white transition-colors group">
-                                <span class="w-1.5 h-1.5 rounded-full bg-teal-400/60 mr-2 group-hover:bg-teal-300 sub-dot shrink-0"></span>
-                                <span class="truncate">Statutory & Tax IDs</span>
-                            </a>
-                            <a href="/company/profile?tab=geofence" data-submenu-tab="geofence"
-                                onclick="if(window.location.pathname.startsWith('/company/profile')&&typeof switchSettingsTab==='function'){switchSettingsTab('geofence');return false;}"
-                                class="company-sub-item flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-medium text-teal-200/80 hover:bg-[#004040] hover:text-white transition-colors group">
-                                <span class="w-1.5 h-1.5 rounded-full bg-teal-400/60 mr-2 group-hover:bg-teal-300 sub-dot shrink-0"></span>
-                                <span class="truncate">Office Geofencing</span>
-                            </a>
-                            <a href="/company/profile?tab=permissions" data-submenu-tab="permissions"
-                                onclick="if(window.location.pathname.startsWith('/company/profile')&&typeof switchSettingsTab==='function'){switchSettingsTab('permissions');return false;}"
-                                class="company-sub-item flex items-center px-2.5 py-1.5 rounded-md text-[11px] font-medium text-teal-200/80 hover:bg-[#004040] hover:text-white transition-colors group">
-                                <span class="w-1.5 h-1.5 rounded-full bg-teal-400/60 mr-2 group-hover:bg-teal-300 sub-dot shrink-0"></span>
-                                <span class="truncate">Access & Permissions</span>
-                            </a>
-                        </div>
+                        </a>
                     </li>
                     {% if user.role in ['super_admin', 'admin'] %}
                     <li>
@@ -740,6 +697,12 @@
                         target: '#topbar-attendance-widget',
                         swap: 'innerHTML',
                         values: vals
+                    }).then(() => {
+                        // Directly refresh attendance ledger if on the attendance page
+                        const attContainer = document.getElementById('attendanceTableContainer');
+                        if (attContainer) {
+                            htmx.trigger(attContainer, 'refreshAttendanceLogs');
+                        }
                     }).finally(restoreBtn);
                 } else {
                     restoreBtn();
@@ -837,24 +800,6 @@
             document.body.classList.remove('overflow-hidden');
         }
 
-        // Company Settings Accordion Toggle
-        function toggleCompanySettingsSubmenu(forceOpen) {
-            const submenu = document.getElementById('company-settings-submenu');
-            const chevron = document.getElementById('company-settings-chevron');
-            if (!submenu) return;
-
-            const isOpen = !submenu.classList.contains('hidden');
-            const shouldOpen = forceOpen !== undefined ? forceOpen : !isOpen;
-
-            if (shouldOpen) {
-                submenu.classList.remove('hidden');
-                if (chevron) chevron.classList.add('rotate-180');
-            } else {
-                submenu.classList.add('hidden');
-                if (chevron) chevron.classList.remove('rotate-180');
-            }
-        }
-
         // Active Navigation Link Highlighting, Sidebar State Sync, and Auto-Close on Mobile Click
         document.addEventListener('DOMContentLoaded', () => {
             try {
@@ -870,8 +815,6 @@
                 }
             } catch (e) {}
             const currentPath = window.location.pathname;
-            const currentSearch = new URLSearchParams(window.location.search);
-            const currentTab = currentSearch.get('tab') || window.location.hash.replace('#', '') || 'branding';
             const navLinks = document.querySelectorAll('.nav-item');
 
             navLinks.forEach(link => {
@@ -886,37 +829,16 @@
                 if (!target) return;
 
                 const isDashboard = (target === '/dashboard' && currentPath === '/dashboard');
-                const isCompanySection = (target === '/company' && currentPath.startsWith('/company'));
-                const isExactOrChild = (target !== '/dashboard' && target !== '/company' && (currentPath === target || (target !== '/' && currentPath.startsWith(target))));
+                const isExactOrChild = (target !== '/dashboard' && (currentPath === target || (target !== '/' && currentPath.startsWith(target))));
 
-                if (isDashboard || isCompanySection || isExactOrChild) {
-                    if (isCompanySection) {
-                        link.classList.add('bg-[#003838]', 'text-white');
-                        toggleCompanySettingsSubmenu(true);
+                if (isDashboard || isExactOrChild) {
+                    link.classList.remove('text-[#E0F4F4]', 'text-teal-100/90', 'hover:bg-[#005050]', 'hover:bg-[#003838]', 'hover:text-white');
+                    link.classList.add('bg-[#008080]', 'text-white', 'shadow-md', 'shadow-[#008080]/30');
 
-                        // Highlight matching sub-item
-                        const subItems = document.querySelectorAll('.company-sub-item');
-                        subItems.forEach(sub => {
-                            const subTab = sub.getAttribute('data-submenu-tab');
-                            if (subTab === currentTab || (currentTab === 'general' && subTab === 'branding')) {
-                                sub.classList.remove('text-teal-200/80', 'hover:bg-[#004040]');
-                                sub.classList.add('bg-[#005050]', 'text-white', 'font-semibold', 'shadow-xs');
-                                const dot = sub.querySelector('.sub-dot');
-                                if (dot) {
-                                    dot.classList.remove('bg-teal-400/60');
-                                    dot.classList.add('bg-teal-300', 'ring-2', 'ring-teal-400/40');
-                                }
-                            }
-                        });
-                    } else {
-                        link.classList.remove('text-[#E0F4F4]', 'hover:bg-[#005050]', 'hover:text-white');
-                        link.classList.add('bg-[#008080]', 'text-white', 'shadow-md', 'shadow-[#008080]/30');
-
-                        const icon = link.querySelector('i');
-                        if (icon) {
-                            icon.classList.remove('text-[#B3E3E3]');
-                            icon.classList.add('text-white');
-                        }
+                    const icon = link.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('text-[#B3E3E3]', 'text-teal-400/80');
+                        icon.classList.add('text-white');
                     }
                 }
             });

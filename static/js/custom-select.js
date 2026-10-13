@@ -218,6 +218,11 @@
             select.dispatchEvent(new Event('input', { bubbles: true }));
             select.dispatchEvent(new Event('change', { bubbles: true }));
 
+            // Explicitly notify HTMX if present
+            if (window.htmx && typeof window.htmx.trigger === 'function') {
+                window.htmx.trigger(select, 'change');
+            }
+
             // Trigger onchange if specified directly on the element
             if (typeof select.onchange === 'function') {
                 select.onchange();

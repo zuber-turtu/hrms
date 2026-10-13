@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import datetime
@@ -9,7 +9,7 @@ from app.models.leave import LeaveType, LeaveBalance, LeaveApplication, WfhReque
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.utils.timezone import get_ist_today, get_ist_now
-from app.routers.leaves import ensure_employee_leave_balances, calculate_leave_days, is_leave_type_applicable, auto_lapse_pending_requests
+from app.routers.leaves import ensure_employee_leave_balances, calculate_leave_days, is_leave_type_applicable, auto_lapse_pending_requests, can_user_approve_request
 from app.schemas.leave import (
     LeaveTypeOut,
     LeaveBalanceOut,
@@ -194,6 +194,9 @@ async def api_apply_leave(
 async def api_get_leave_applications(
     status_filter: Optional[str] = Query(None, alias="status"),
     employee_id: Optional[int] = None,
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    response: Response = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -210,6 +213,13 @@ async def api_get_leave_applications(
         )
         if employee_id:
             query = query.filter(LeaveApplication.employee_id == employee_id)
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+        query = query.join(Employee, LeaveApplication.employee_id == Employee.id).filter(
+            Employee.zone_id == current_user.zone_id,
+            Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"]),
+        )
+        if employee_id:
+            query = query.filter(LeaveApplication.employee_id == employee_id)
     else:
         if employee_id:
             query = query.filter(LeaveApplication.employee_id == employee_id)
@@ -217,7 +227,11 @@ async def api_get_leave_applications(
     if status_filter and status_filter.strip() != "all":
         query = query.filter(LeaveApplication.status == status_filter.strip())
 
-    apps = query.order_by(LeaveApplication.created_at.desc()).all()
+    total_count = query.count()
+    if response:
+        response.headers["X-Total-Count"] = str(total_count)
+
+    apps = query.order_by(LeaveApplication.created_at.desc()).offset(offset).limit(limit).all()
     results = []
     for a in apps:
         results.append(
@@ -264,13 +278,11 @@ async def api_review_leave(
             auto_lapse_pending_requests(db)
         raise HTTPException(status_code=400, detail="This application has already been processed or has lapsed")
 
-    if current_user.role == "manager":
-        if (
-            not current_user.department_id
-            or app.employee.department_id != current_user.department_id
-            or app.employee.role in ["super_admin", "admin", "hr", "hr_admin"]
-        ):
-            raise HTTPException(status_code=403, detail="Not authorized to review this application")
+    if not can_user_approve_request(current_user, app.employee):
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to review this application under corporate hierarchy / zonal policy.",
+        )
 
     year = app.start_date.year
     balance = (

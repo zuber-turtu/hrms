@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from collections import defaultdict
 import datetime
+import calendar
 
 from app.database import get_db
 from app.models.employee import Employee
@@ -106,11 +107,12 @@ async def api_check_in(
         active_wfh = get_active_wfh_request(db, current_user.id, today)
         mode = "wfh" if active_wfh else ("office" if not geo_res.is_exempt else "remote")
         wfh_id = active_wfh.id if active_wfh else None
+        now_time = get_ist_now()
 
         log = Attendance(
             employee_id=current_user.id,
             date=today,
-            check_in=get_ist_now(),
+            check_in=now_time,
             check_in_lat=lat,
             check_in_lon=lon,
             check_in_distance_m=geo_res.distance_meters,
@@ -120,6 +122,20 @@ async def api_check_in(
             wfh_request_id=wfh_id,
         )
         db.add(log)
+        db.commit()
+        db.refresh(log)
+
+        # Audit Log Entry
+        loc_str = f" at {geo_res.location_name}" if geo_res.location_name else ""
+        audit = AuditLog(
+            actor_id=current_user.id,
+            actor_email=current_user.email,
+            action="ATTENDANCE_CHECK_IN",
+            entity="Attendance",
+            entity_id=log.id,
+            new_value=f"Check-In via API at {now_time.strftime('%I:%M %p')}{loc_str} ({mode.upper()})",
+        )
+        db.add(audit)
         db.commit()
 
     return await api_get_attendance_status(db, current_user)
@@ -162,12 +178,30 @@ async def api_check_out(
     )
 
     if log:
-        log.check_out = get_ist_now()
+        now_time = get_ist_now()
+        log.check_out = now_time
         log.check_out_lat = lat
         log.check_out_lon = lon
         log.check_out_distance_m = geo_res.distance_meters
         log.check_out_in_range = geo_res.in_range
         log.check_out_location_name = geo_res.location_name
+        db.commit()
+
+        # Audit Log Entry
+        loc_str = f" at {geo_res.location_name}" if geo_res.location_name else ""
+        diff_mins = int((now_time - log.check_in).total_seconds() // 60) if log.check_in else 0
+        hrs = diff_mins // 60
+        mins = diff_mins % 60
+        audit = AuditLog(
+            actor_id=current_user.id,
+            actor_email=current_user.email,
+            action="ATTENDANCE_CHECK_OUT",
+            entity="Attendance",
+            entity_id=log.id,
+            old_value=f"Check-In: {log.check_in.strftime('%I:%M %p') if log.check_in else 'N/A'}",
+            new_value=f"Check-Out via API at {now_time.strftime('%I:%M %p')}{loc_str} (Duration: {hrs}h {mins}m)",
+        )
+        db.add(audit)
         db.commit()
 
     return await api_get_attendance_status(db, current_user)
@@ -180,6 +214,9 @@ async def api_get_attendance_logs(
     employee_id: Optional[int] = None,
     month: Optional[int] = None,
     year: Optional[int] = None,
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    response: Response = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -197,6 +234,13 @@ async def api_get_attendance_logs(
         )
         if employee_id:
             query = query.filter(Attendance.employee_id == employee_id)
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+        query = query.join(Employee, Attendance.employee_id == Employee.id).filter(
+            Employee.role != "super_admin",
+            Employee.zone_id == current_user.zone_id,
+        )
+        if employee_id:
+            query = query.filter(Attendance.employee_id == employee_id)
     else:
         query = query.join(Employee, Attendance.employee_id == Employee.id).filter(
             Employee.role != "super_admin"
@@ -204,14 +248,19 @@ async def api_get_attendance_logs(
         if employee_id:
             query = query.filter(Attendance.employee_id == employee_id)
 
-    raw_logs = query.order_by(Attendance.date.desc(), Attendance.check_in.asc()).all()
+    # SQL-level date filtering
+    if year and month:
+        _, last_day = calendar.monthrange(year, month)
+        start_date = datetime.date(year, month, 1)
+        end_date = datetime.date(year, month, last_day)
+        query = query.filter(Attendance.date >= start_date, Attendance.date <= end_date)
+    elif year:
+        query = query.filter(Attendance.date >= datetime.date(year, 1, 1), Attendance.date <= datetime.date(year, 12, 31))
+
+    raw_logs = query.order_by(Attendance.date.desc(), Attendance.check_in.desc(), Attendance.id.desc()).all()
 
     grouped = defaultdict(list)
     for log in raw_logs:
-        if month and log.date.month != month:
-            continue
-        if year and log.date.year != year:
-            continue
         grouped[(log.date, log.employee_id)].append(log)
 
     logs_data = []
@@ -297,7 +346,11 @@ async def api_get_attendance_logs(
             )
         )
 
-    return logs_data
+    total_count = len(logs_data)
+    if response:
+        response.headers["X-Total-Count"] = str(total_count)
+
+    return logs_data[offset : offset + limit]
 
 
 @router.post("/{log_id}/override")
@@ -327,6 +380,12 @@ async def api_override_attendance(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Operation not permitted: Managers can only adjust attendance for subordinates in their department.",
+            )
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+        if log.employee.zone_id != current_user.zone_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Operation not permitted: HR is restricted to their assigned operating zone.",
             )
 
     old_val = f"In: {log.check_in}, Out: {log.check_out}"

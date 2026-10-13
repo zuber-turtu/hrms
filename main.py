@@ -8,6 +8,7 @@ import datetime
 from app.database import engine, Base, SessionLocal
 from app.models import (
     Company,
+    CompanyZone,
     Employee,
     Department,
     Designation,
@@ -99,6 +100,10 @@ def ensure_schema_columns(db_engine):
             "employees": {
                 "department_id": "INTEGER",
                 "designation_id": "INTEGER",
+                "zone_id": "INTEGER",
+                "hr_zone_scope": "VARCHAR(50) DEFAULT 'all'",
+                "personal_email": "VARCHAR(255)",
+                "company_email": "VARCHAR(255)",
                 "reset_token": "VARCHAR(255)",
                 "reset_token_expiry": "TIMESTAMP",
                 "is_active": "BOOLEAN DEFAULT TRUE",

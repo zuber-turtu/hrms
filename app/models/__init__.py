@@ -1,5 +1,5 @@
 from app.database import Base
-from app.models.company import Company
+from app.models.company import Company, OfficeLocation, CompanyZone
 from app.models.department import Department, Designation
 from app.models.employee import (
     Employee,

@@ -107,8 +107,9 @@
                     hx-get="/employees"
                     hx-trigger="keyup changed delay:300ms, search"
                     hx-target="#employeesTableContainer"
-                    hx-include="#roleFilter, #sortSelector"
+                    hx-include="#roleFilter, #zoneFilter, #sortSelector, #employeeLetterInput"
                     hx-push-url="true"
+                    oninput="document.getElementById('clearSearchBtn')?.classList.toggle('hidden', !this.value)"
                     placeholder="Search name, email, role, or ID (#0001)..."
                     class="w-full pl-9 pr-9 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
                 <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="{% if not current_q %}hidden{% endif %} absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
@@ -116,7 +117,27 @@
                 </button>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Zone Filter -->
+                {% if zones %}
+                <div class="flex-1 sm:flex-initial flex items-center space-x-1.5">
+                    <label for="zoneFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 hidden xs:inline">Zone:</label>
+                    <select id="zoneFilter" name="zone_id"
+                        data-custom-select="true"
+                        hx-get="/employees"
+                        hx-trigger="change"
+                        hx-target="#employeesTableContainer"
+                        hx-include="#employeeSearch, #roleFilter, #sortSelector, #employeeLetterInput"
+                        hx-push-url="true"
+                        class="custom-select w-full sm:w-36">
+                        <option value="">All Zones</option>
+                        {% for z in zones %}
+                        <option value="{{ z.id }}" data-badge="{{ z.code }}" {% if current_zone_id == z.id %}selected{% endif %}>{{ z.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
                 <!-- Role Filter -->
                 <div class="flex-1 sm:flex-initial flex items-center space-x-1.5">
                     <label for="roleFilter" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 hidden xs:inline">Role:</label>
@@ -125,9 +146,9 @@
                         hx-get="/employees"
                         hx-trigger="change"
                         hx-target="#employeesTableContainer"
-                        hx-include="#employeeSearch, #sortSelector"
+                        hx-include="#employeeSearch, #zoneFilter, #sortSelector, #employeeLetterInput"
                         hx-push-url="true"
-                        class="custom-select w-full sm:w-44">
+                        class="custom-select w-full sm:w-36">
                         <option value="all" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
                         <option value="super_admin" {% if current_role == 'super_admin' %}selected{% endif %}>Super Admin</option>
                         <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Admin</option>
@@ -146,9 +167,9 @@
                         hx-get="/employees"
                         hx-trigger="change"
                         hx-target="#employeesTableContainer"
-                        hx-include="#employeeSearch, #roleFilter"
+                        hx-include="#employeeSearch, #roleFilter, #zoneFilter, #employeeLetterInput"
                         hx-push-url="true"
-                        class="custom-select w-full sm:w-44">
+                        class="custom-select w-full sm:w-36">
                         <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
                         <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
                         <option value="dept_asc" {% if current_sort == 'dept_asc' %}selected{% endif %}>Department</option>
@@ -165,7 +186,7 @@
                 <a href="javascript:void(0)"
                     hx-get="/employees?letter=ALL"
                     hx-target="#employeesTableContainer"
-                    hx-include="#roleFilter, #sortSelector"
+                    hx-include="#employeeSearch, #roleFilter, #zoneFilter, #sortSelector"
                     hx-push-url="true"
                     onclick="selectLetterBtn(this)"
                     id="letter-btn-ALL" 
@@ -181,7 +202,7 @@
                 <a href="javascript:void(0)"
                     hx-get="/employees?letter={{ char }}"
                     hx-target="#employeesTableContainer"
-                    hx-include="#roleFilter, #sortSelector"
+                    hx-include="#employeeSearch, #roleFilter, #zoneFilter, #sortSelector"
                     hx-push-url="true"
                     onclick="selectLetterBtn(this)"
                     id="letter-btn-{{ char }}"
@@ -576,10 +597,11 @@
     function exportFilteredEmployees() {
         const q = encodeURIComponent(document.getElementById('employeeSearch')?.value || '');
         const role = encodeURIComponent(document.getElementById('roleFilter')?.value || 'all');
+        const zoneId = encodeURIComponent(document.getElementById('zoneFilter')?.value || '');
         const sort = encodeURIComponent(document.getElementById('sortSelector')?.value || 'name_asc');
         const letterInput = document.getElementById('employeeLetterInput');
         const letter = encodeURIComponent(letterInput ? letterInput.value : 'ALL');
-        window.location.href = `/employees/export-excel?q=${q}&role=${role}&letter=${letter}&sort=${sort}`;
+        window.location.href = `/employees/export-excel?q=${q}&role=${role}&zone_id=${zoneId}&letter=${letter}&sort=${sort}`;
     }
 
     document.addEventListener('DOMContentLoaded', function() {

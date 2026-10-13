@@ -67,6 +67,9 @@ async def list_payslips(
     year: Optional[int] = Query(None, ge=2000, le=2100),
     employee_id: Optional[int] = Query(None),
     status_filter: Optional[str] = Query(None, alias="status"),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    response: Response = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -78,7 +81,6 @@ async def list_payslips(
     elif employee_id is not None:
         query = query.filter(Payslip.employee_id == employee_id)
 
-
     if month is not None:
         query = query.filter(Payslip.month == month)
     if year is not None:
@@ -86,7 +88,11 @@ async def list_payslips(
     if status_filter:
         query = query.filter(Payslip.status == status_filter)
 
-    records = query.order_by(Payslip.year.desc(), Payslip.month.desc()).all()
+    total_count = query.count()
+    if response:
+        response.headers["X-Total-Count"] = str(total_count)
+
+    records = query.order_by(Payslip.year.desc(), Payslip.month.desc(), Payslip.id.desc()).offset(offset).limit(limit).all()
     return [_format_payslip_out(p) for p in records]
 
 

@@ -85,12 +85,30 @@
                     </select>
                 </div>
 
-                <!-- Email -->
+                <!-- Personal Email (Required) -->
                 <div>
-                    <label for="email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email Address <span class="text-rose-500">*</span></label>
-                    <input type="email" name="email" id="email" value="{{ employee.email if employee else '' }}" required placeholder="name@company.com"
+                    <label for="personal_email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                        Personal Email Address <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="email" name="personal_email" id="personal_email" 
+                        value="{{ employee.personal_email or employee.email if employee else '' }}" required placeholder="e.g. employee@personal.com"
                         class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                    <p class="text-[11px] text-slate-500 mt-1">Default for login, credentials, and correspondence if work email is not yet issued.</p>
                 </div>
+
+                <!-- Company Work Email (Optional) -->
+                <div>
+                    <label for="company_email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                        Company Work Email <span class="text-slate-400 font-normal lowercase">(optional)</span>
+                    </label>
+                    <input type="email" name="company_email" id="company_email" 
+                        value="{{ employee.company_email if employee else '' }}" placeholder="e.g. employee@company.com"
+                        class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                    <p class="text-[11px] text-teal-700 mt-1">Once added, employee MUST use this email to log in (personal email login will be deactivated).</p>
+                </div>
+
+                <!-- Hidden fallback for legacy scripts -->
+                <input type="hidden" name="email" id="email" value="{{ employee.email if employee else '' }}">
 
                 <!-- Phone Number -->
                 <div>
@@ -230,6 +248,29 @@
                     </select>
                 </div>
 
+                <!-- Operating Zone Dropdown -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="zone_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Operating Zone</label>
+                        {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+                        <a href="/company/profile?tab=zones" target="_blank" class="text-[11px] font-medium text-teal-700 hover:underline inline-flex items-center" title="Manage Operating Zones">
+                            <i data-lucide="external-link" class="w-3 h-3 mr-0.5"></i> Manage
+                        </a>
+                        {% endif %}
+                    </div>
+                    <select name="zone_id" id="zone_id"
+                        data-custom-select="true"
+                        {% if user.role not in ['super_admin', 'admin', 'hr', 'hr_admin'] %}disabled{% endif %}
+                        class="custom-select w-full">
+                        <option value="">-- Unassigned / Universal --</option>
+                        {% for z in zones %}
+                        <option value="{{ z.id }}" data-badge="{{ z.code }}" {% if employee and employee.zone_id == z.id %}selected{% endif %}>
+                            {{ z.name }} ({{ z.code }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <!-- Joining Date -->
                 <div>
                     <label for="joining_date" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
@@ -252,6 +293,42 @@
                     <label for="experience" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Prior Experience</label>
                     <input type="text" name="experience" id="experience" value="{{ employee.experience if employee else '' }}" placeholder="e.g. 5 Years"
                         class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
+                </div>
+            </div>
+
+            <!-- HR Zonal Access Scope (Only applicable for HR role) -->
+            <div id="hr_zone_scope_container" class="mt-4 pt-4 border-t border-slate-100 bg-teal-50/50 rounded-xl p-4 border border-teal-100 {% if not employee or employee.role not in ['hr', 'hr_admin'] %}hidden{% endif %}">
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center shrink-0 mt-0.5">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-bold text-slate-900">HR Administrative Zone Scope</span>
+                            <span class="px-1.5 py-0.5 text-[10px] font-semibold bg-teal-100 text-teal-800 rounded">Access Policy</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Configure whether this HR staff member has multi-zone oversight across all company locations or is restricted strictly to their assigned zone.</p>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                            <label class="flex items-start space-x-2.5 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer hover:border-teal-500 transition-colors">
+                                <input type="radio" name="hr_zone_scope" value="all" class="mt-0.5 text-teal-600 focus:ring-teal-500"
+                                    {% if not employee or (employee and employee.hr_zone_scope != 'zone_only') %}checked{% endif %}>
+                                <div>
+                                    <span class="text-xs font-bold text-slate-800 block">All Zones (Global HR Access)</span>
+                                    <span class="text-[11px] text-slate-500 block">Can view, manage, and approve staff across all company zones.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start space-x-2.5 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer hover:border-teal-500 transition-colors">
+                                <input type="radio" name="hr_zone_scope" value="zone_only" class="mt-0.5 text-teal-600 focus:ring-teal-500"
+                                    {% if employee and employee.hr_zone_scope == 'zone_only' %}checked{% endif %}>
+                                <div>
+                                    <span class="text-xs font-bold text-slate-800 block">Particular Zone Only (Restricted)</span>
+                                    <span class="text-[11px] text-slate-500 block">Strictly restricted to staff and records in their assigned Operating Zone.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -494,6 +571,19 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         filterDesignations();
+
+        const roleSelect = document.getElementById('role');
+        const hrScopeBox = document.getElementById('hr_zone_scope_container');
+        if (roleSelect && hrScopeBox) {
+            roleSelect.addEventListener('change', () => {
+                const val = roleSelect.value;
+                if (val === 'hr' || val === 'hr_admin') {
+                    hrScopeBox.classList.remove('hidden');
+                } else {
+                    hrScopeBox.classList.add('hidden');
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

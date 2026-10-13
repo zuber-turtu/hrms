@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, BackgroundTasks, Request, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import cast, String, or_
 from typing import List, Optional
@@ -90,6 +90,7 @@ async def api_list_employees(
     department_id: Optional[int] = None,
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    response: Response = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_managers),
 ):
@@ -145,6 +146,10 @@ async def api_list_employees(
 
     if role and role.strip() and role.strip() != "all":
         query = query.filter(Employee.role == role.strip())
+
+    total_count = query.count()
+    if response:
+        response.headers["X-Total-Count"] = str(total_count)
 
     employees = query.order_by(Employee.id.asc()).offset(offset).limit(limit).all()
     return [_format_employee_out(emp) for emp in employees]

@@ -67,9 +67,13 @@ class SalaryStructureOut(SalaryStructureBase):
 
 class EmployeeCreate(BaseModel):
     name: str
-    email: str
+    email: Optional[str] = None
+    personal_email: Optional[str] = None
+    company_email: Optional[str] = None
     password: str
     role: Optional[str] = "employee"
+    zone_id: Optional[int] = None
+    hr_zone_scope: Optional[str] = "all_zones"
     department_id: Optional[int] = None
     designation_id: Optional[int] = None
     department_name: Optional[str] = None
@@ -115,7 +119,11 @@ class EmployeeCreate(BaseModel):
 class EmployeeUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
+    personal_email: Optional[str] = None
+    company_email: Optional[str] = None
     role: Optional[str] = None
+    zone_id: Optional[int] = None
+    hr_zone_scope: Optional[str] = None
     department_id: Optional[int] = None
     designation_id: Optional[int] = None
     department_name: Optional[str] = None
@@ -163,7 +171,11 @@ class EmployeeOut(BaseModel):
     id: int
     name: str
     email: str
+    personal_email: Optional[str] = None
+    company_email: Optional[str] = None
     role: str
+    zone_id: Optional[int] = None
+    hr_zone_scope: Optional[str] = "all_zones"
     department_id: Optional[int] = None
     designation_id: Optional[int] = None
     department_name: Optional[str] = None

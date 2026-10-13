@@ -33,8 +33,17 @@ async def dashboard(
     stats = {}
     recent_attendances = []
     if current_user.role in ['super_admin', 'admin', 'hr', 'hr_admin']:
-        stats['total_employees'] = db.query(Employee).filter(Employee.is_active == True, Employee.role != 'super_admin').count()
-        stats['present_today'] = (
+        hr_zone_restricted = (
+            current_user.role in ['hr', 'hr_admin']
+            and getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only"
+            and current_user.zone_id is not None
+        )
+        emp_q = db.query(Employee).filter(Employee.is_active == True, Employee.role != 'super_admin')
+        if hr_zone_restricted:
+            emp_q = emp_q.filter(Employee.zone_id == current_user.zone_id)
+        stats['total_employees'] = emp_q.count()
+
+        att_q = (
             db.query(Attendance)
             .join(Employee, Attendance.employee_id == Employee.id)
             .filter(
@@ -42,22 +51,32 @@ async def dashboard(
                 Attendance.date == today,
                 Attendance.check_in.isnot(None)
             )
-            .count()
         )
-        stats['pending_docs'] = db.query(EmployeeDocument).filter(
-            EmployeeDocument.status == 'pending'
-        ).count()
+        if hr_zone_restricted:
+            att_q = att_q.filter(Employee.zone_id == current_user.zone_id)
+        stats['present_today'] = att_q.count()
+
+        doc_q = db.query(EmployeeDocument).filter(EmployeeDocument.status == 'pending')
+        if hr_zone_restricted:
+            doc_q = doc_q.join(Employee, EmployeeDocument.employee_id == Employee.id).filter(Employee.zone_id == current_user.zone_id)
+        stats['pending_docs'] = doc_q.count()
+
         stats['draft_payslips'] = db.query(Payslip).filter(
             Payslip.status == 'draft'
         ).count()
-        recent_attendances = (
+
+        rec_att_q = (
             db.query(Attendance)
             .join(Employee, Attendance.employee_id == Employee.id)
             .filter(
                 Employee.role != 'super_admin',
                 Attendance.date == today
             )
-            .order_by(Attendance.check_in.desc())
+        )
+        if hr_zone_restricted:
+            rec_att_q = rec_att_q.filter(Employee.zone_id == current_user.zone_id)
+        recent_attendances = (
+            rec_att_q.order_by(Attendance.check_in.desc())
             .limit(5)
             .all()
         )

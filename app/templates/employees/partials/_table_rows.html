@@ -35,21 +35,33 @@
                                     </a>
                                     <span class="text-[11px] text-slate-500 block truncate">
                                         <span class="font-mono text-slate-400 font-semibold mr-1">{{ format_emp_code(emp) }}</span>• {{ emp.email }}
+                                        {% if emp.company_email and emp.personal_email %}
+                                        <span class="text-[10px] text-teal-700 font-medium ml-0.5">(Work)</span>
+                                        {% endif %}
                                     </span>
                                 </div>
                             </div>
                         </td>
 
-                        <!-- Role Badge -->
-                        <td class="w-36 px-5 py-3.5 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border
-                                {% if emp.role == 'admin' %} bg-rose-50 text-rose-800 border-rose-200
-                                {% elif emp.role == 'hr_admin' %} bg-teal-50 text-teal-800 border-teal-200
-                                {% elif emp.role == 'manager' %} bg-amber-50 text-amber-800 border-amber-200
-                                {% elif emp.role == 'intern' %} bg-sky-50 text-sky-800 border-sky-200
-                                {% else %} bg-emerald-50 text-emerald-800 border-emerald-200 {% endif %}">
-                                {{ emp.role.replace('_', ' ') | title }}
-                            </span>
+                        <!-- Role & Zone Badge -->
+                        <td class="w-40 px-5 py-3.5 whitespace-nowrap">
+                            <div class="space-y-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border
+                                    {% if emp.role == 'admin' %} bg-rose-50 text-rose-800 border-rose-200
+                                    {% elif emp.role in ['hr', 'hr_admin'] %} bg-teal-50 text-teal-800 border-teal-200
+                                    {% elif emp.role == 'manager' %} bg-amber-50 text-amber-800 border-amber-200
+                                    {% elif emp.role == 'intern' %} bg-sky-50 text-sky-800 border-sky-200
+                                    {% else %} bg-emerald-50 text-emerald-800 border-emerald-200 {% endif %}">
+                                    {{ emp.role.replace('_', ' ') | title }}
+                                </span>
+                                {% if emp.zone %}
+                                <div class="flex items-center">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200" title="{{ emp.zone.name }}">
+                                        <i data-lucide="globe" class="w-2.5 h-2.5 mr-1 text-teal-600"></i>{{ emp.zone.code }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
                         </td>
 
                         <!-- Department & Designation -->
@@ -100,11 +112,16 @@
     <input type="hidden" id="employeeLetterInput" name="letter" value="{{ current_letter if current_letter is not none else 'ALL' }}">
 
     <!-- Universal Pagination Footer Partial -->
-    {% set include_inputs = "#employeeSearch, #roleFilter, #sortSelector, #employeeLetterInput" %}
+    {% set include_inputs = "#employeeSearch, #roleFilter, #zoneFilter, #sortSelector, #employeeLetterInput" %}
     {% set target_id = "#employeesTableContainer" %}
     {% set url_path = "/employees" %}
     {% set entity_label = "staff" %}
     {% include "partials/_pagination.html" %}
+
+    <!-- Out-of-band update for staff count badge in top toolbar -->
+    <span id="emp-count-badge" hx-swap-oob="true" class="px-2 py-0.5 rounded-md text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200">
+        {{ page_data.total if page_data else employees|length }}
+    </span>
 </div>
 <script>
     if (typeof lucide !== 'undefined') {

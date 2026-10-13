@@ -49,13 +49,19 @@ async def create_department(
     current_user: Employee = Depends(allow_hr_admin),
 ):
     clean_name = name.strip()
-    existing = db.query(Department).filter(Department.name == clean_name).first()
-    if existing:
-        return flash_redirect(url="/departments", message="Department already exists", category="error")
+    clean_code = code.strip().upper() if code and code.strip() else clean_name[:4].upper()
+
+    existing_name = db.query(Department).filter(Department.name == clean_name).first()
+    if existing_name:
+        return flash_redirect(url="/departments", message="Department with this name already exists", category="error")
+
+    existing_code = db.query(Department).filter(Department.code == clean_code).first()
+    if existing_code:
+        return flash_redirect(url="/departments", message=f"Department code '{clean_code}' is already assigned to '{existing_code.name}'", category="error")
 
     dept = Department(
         name=clean_name,
-        code=code.strip().upper() if code and code.strip() else clean_name[:4].upper(),
+        code=clean_code,
         description=description.strip() if description else None,
     )
     db.add(dept)
@@ -91,9 +97,20 @@ async def edit_department(
     if not dept:
         raise HTTPException(status_code=404, detail="Department not found")
 
+    clean_name = name.strip()
+    clean_code = code.strip().upper() if code and code.strip() else clean_name[:4].upper()
+
+    existing_name = db.query(Department).filter(Department.name == clean_name, Department.id != dept_id).first()
+    if existing_name:
+        return flash_redirect(url="/departments", message="Another department with this name already exists", category="error")
+
+    existing_code = db.query(Department).filter(Department.code == clean_code, Department.id != dept_id).first()
+    if existing_code:
+        return flash_redirect(url="/departments", message=f"Department code '{clean_code}' is already assigned to '{existing_code.name}'", category="error")
+
     old_name = dept.name
-    dept.name = name.strip()
-    dept.code = code.strip().upper() if code and code.strip() else dept.name[:4].upper()
+    dept.name = clean_name
+    dept.code = clean_code
     dept.description = description.strip() if description else None
 
     # Record Audit Log

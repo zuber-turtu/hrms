@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime
+from sqlalchemy.orm import relationship as orm_relationship
 from app.database import Base
+from app.utils.timezone import get_ist_now
 
 class Company(Base):
     __tablename__ = "company"
@@ -60,4 +62,19 @@ class OfficeLocation(Base):
     radius_meters = Column(Integer, default=200)  # Perimeter radius in meters
     is_primary = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+
+
+class CompanyZone(Base):
+    __tablename__ = "company_zones"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True, index=True)
+    code = Column(String, nullable=False, unique=True, index=True)
+    description = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=get_ist_now)
+
+    # Relational Mappings
+    employees = orm_relationship("Employee", back_populates="zone")
+
 

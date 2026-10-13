@@ -39,7 +39,30 @@ async def api_login(
     clean_email = payload.email.strip().lower()
     login_rate_limiter.check(request, identifier=clean_email)
 
-    user = db.query(Employee).filter(Employee.email == clean_email).first()
+    # 1. Look up by company_email first
+    user = db.query(Employee).filter(Employee.company_email == clean_email).first()
+
+    # 2. If no company_email match, check personal_email
+    if not user:
+        personal_match = db.query(Employee).filter(Employee.personal_email == clean_email).first()
+        if personal_match:
+            # STRICT POLICY: If company_email is provisioned, employee MUST log in with company email!
+            if personal_match.company_email and personal_match.company_email.strip():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="A company work email has been provisioned for your account. Please log in using your official company email.",
+                )
+            user = personal_match
+        else:
+            # Fallback for unmigrated or legacy accounts
+            legacy_match = db.query(Employee).filter(Employee.email == clean_email).first()
+            if legacy_match:
+                if legacy_match.company_email and legacy_match.company_email.strip() and clean_email != legacy_match.company_email.strip().lower():
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="A company work email has been provisioned for your account. Please log in using your official company email.",
+                    )
+                user = legacy_match
 
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(
