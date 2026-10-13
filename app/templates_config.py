@@ -134,6 +134,7 @@ def format_emp_code(emp_or_id, company_or_prefix=None) -> str:
 
 
 from app.utils.flash import extract_flash_messages
+from app.utils.permissions import can_manage_employee, can_assign_role, get_role_rank
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -144,4 +145,8 @@ templates.env.globals["app_year"] = settings.APP_COPYRIGHT_YEAR or get_ist_today
 templates.env.globals["get_today"] = get_ist_today
 templates.env.globals["format_emp_code"] = format_emp_code
 templates.env.globals["get_flash_messages"] = extract_flash_messages
+templates.env.globals["can_manage_employee"] = can_manage_employee
+templates.env.globals["can_assign_role"] = can_assign_role
+templates.env.globals["get_role_rank"] = get_role_rank
 templates.env.filters["format_emp_code"] = format_emp_code
+

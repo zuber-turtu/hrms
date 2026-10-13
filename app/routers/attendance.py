@@ -19,6 +19,7 @@ from app.services.excel_exporter import export_attendance_excel, export_attendan
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
 from app.utils.attendance import update_attendance_request_state
+from app.utils.permissions import assert_can_manage_employee, can_manage_employee
 
 from app.templates_config import templates
 
@@ -394,6 +395,15 @@ async def override_attendance(
     log = db.query(Attendance).filter(Attendance.id == log_id).first()
     if not log:
         raise HTTPException(status_code=404, detail="Attendance record not found")
+
+    if current_user.id == log.employee_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Operation not permitted: You cannot adjust your own attendance record."
+        )
+
+    # Hierarchical Privilege Enforcement: lower role cannot override attendance for equal or higher role
+    assert_can_manage_employee(current_user, log.employee, "override attendance for")
 
     # Scope verification: Managers can only override records of subordinates in their own department
     if current_user.role == "manager":

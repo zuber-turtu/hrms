@@ -34,6 +34,14 @@ from app.services.email_service import (
     send_admin_password_reset_email,
     send_welcome_credentials_email,
 )
+from app.utils.permissions import (
+    can_manage_employee,
+    can_assign_role,
+    assert_can_manage_employee,
+    assert_can_assign_role,
+    get_role_rank,
+)
+
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
@@ -168,6 +176,9 @@ async def api_create_employee(
     Onboard a new employee with optional profile details and salary structure (Admin / HR Admin only).
     """
     clean_email = payload.email.strip().lower()
+    target_role = (payload.role or "employee").strip().lower()
+    assert_can_assign_role(current_user, target_role)
+
     existing = db.query(Employee).filter(Employee.email == clean_email).first()
     if existing:
         raise HTTPException(
@@ -342,11 +353,22 @@ async def api_update_employee(
             status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
         )
 
-    is_admin = current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False)
-    if current_user.id != emp_id and not is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted"
-        )
+    if current_user.id == emp_id:
+        if payload.role and payload.role.strip().lower() != employee.role.strip().lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Operation not permitted: You cannot change your own role.",
+            )
+        if payload.is_active is not None and payload.is_active != employee.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Operation not permitted: You cannot change your own active status.",
+            )
+    else:
+        # Modifying another employee's account
+        assert_can_manage_employee(current_user, employee, "modify")
+        if payload.role and payload.role.strip().lower() != employee.role.strip().lower():
+            assert_can_assign_role(current_user, payload.role.strip().lower())
 
     if payload.email:
         clean_email = payload.email.strip().lower()
@@ -366,10 +388,13 @@ async def api_update_employee(
     if payload.name:
         employee.name = payload.name.strip()
 
-    # Admin restricted updates
-    if is_admin:
+    # Administrative and hierarchical management updates
+    can_manage = current_user.id != emp_id and can_manage_employee(current_user, employee)
+    if can_manage:
         if payload.role:
-            if payload.role != employee.role:
+            clean_role = payload.role.strip().lower()
+            if clean_role != employee.role:
+                assert_can_assign_role(current_user, clean_role)
                 audit = AuditLog(
                     actor_id=current_user.id,
                     actor_email=current_user.email,
@@ -377,10 +402,11 @@ async def api_update_employee(
                     entity="Employee",
                     entity_id=emp_id,
                     old_value=employee.role,
-                    new_value=payload.role,
+                    new_value=clean_role,
                 )
                 db.add(audit)
-                employee.role = payload.role
+                employee.role = clean_role
+
 
         if payload.joining_date is not None:
             employee.joining_date = payload.joining_date
@@ -498,10 +524,12 @@ async def api_upload_employee_avatar(
         )
 
     is_admin = current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False)
-    if current_user.id != emp_id and not is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted"
-        )
+    if current_user.id != emp_id:
+        if not is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted"
+            )
+        assert_can_manage_employee(current_user, employee, "update avatar for")
 
     # Format and Size validation
     filename = upload.filename or "avatar.jpg"
@@ -554,7 +582,7 @@ async def api_admin_reset_password(
     current_user: Employee = Depends(allow_hr_admin),
 ):
     """
-    Administrative password reset. Only super-admins can reset credentials for admin accounts.
+    Administrative password reset. A lower role cannot reset credentials for equal or higher roles.
     """
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
     if not employee:
@@ -562,17 +590,9 @@ async def api_admin_reset_password(
             status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
         )
 
-    # Privilege Escalation Protection
-    if employee.role == "super_admin" and current_user.role != "super_admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Operation not permitted: Cannot reset credentials for a Super Admin account.",
-        )
-    if employee.role == "admin" and current_user.role != "super_admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Operation not permitted: Only Super Admin can reset credentials for an Administrator account.",
-        )
+    # Hierarchical Privilege Protection: Lower role cannot reset credentials for equal or higher roles
+    assert_can_manage_employee(current_user, employee, "reset credentials for")
+
 
     if len(payload.new_password) < 6:
         raise HTTPException(

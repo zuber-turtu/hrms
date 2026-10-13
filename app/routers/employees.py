@@ -34,6 +34,14 @@ from app.services.email_service import (
     send_welcome_credentials_email,
     send_password_reset_email,
 )
+from app.utils.permissions import (
+    can_manage_employee,
+    can_assign_role,
+    assert_can_manage_employee,
+    assert_can_assign_role,
+    get_role_rank,
+)
+
 
 router = APIRouter(prefix="/employees")
 
@@ -334,17 +342,8 @@ async def create_employee(
 ):
     from urllib.parse import quote_plus
 
-    # Privilege Escalation Defense
-    if role in ["super_admin", "admin"] and current_user.role != "super_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Only Super Admin can create Admin or Super Admin accounts."
-        )
-    if current_user.role in ["hr", "hr_admin"] and role not in ["manager", "employee", "intern"]:
-        raise HTTPException(
-            status_code=403,
-            detail="HR can only create Manager, Employee, or Intern accounts."
-        )
+    # Hierarchical Privilege Escalation Defense: lower role cannot create/assign equal or higher role
+    assert_can_assign_role(current_user, role)
 
     # Resolve and validate emails
     clean_personal = (personal_email or email or "").strip().lower()
@@ -745,12 +744,15 @@ async def edit_employee_form(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
-    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and current_user.id != emp_id:
-        raise HTTPException(status_code=403, detail="Operation not permitted")
-        
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+
+    if current_user.id != emp_id:
+        if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
+            raise HTTPException(status_code=403, detail="Operation not permitted")
+        assert_can_manage_employee(current_user, employee, "edit")
+
         
     departments = db.query(Department).all()
     designations = db.query(Designation).all()
@@ -814,22 +816,23 @@ async def edit_employee(
 ):
     from urllib.parse import quote_plus
 
-    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and current_user.id != emp_id:
-        raise HTTPException(status_code=403, detail="Operation not permitted")
-        
     employee = db.query(Employee).filter(Employee.id == emp_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    # Protection & Privilege Escalation Guards
-    if employee.role == "super_admin" and current_user.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Cannot modify a Super Admin account.")
+    clean_role = role.strip().lower() if role and role.strip() else None
 
-    if employee.role == "admin" and current_user.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Only Super Admin can edit an Administrator account.")
+    # Hierarchical Protection: Self-edit vs Administrative edit
+    if current_user.id == emp_id:
+        if clean_role and clean_role != employee.role.strip().lower():
+            raise HTTPException(status_code=403, detail="Operation not permitted: You cannot change your own role.")
+    else:
+        if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
+            raise HTTPException(status_code=403, detail="Operation not permitted")
+        assert_can_manage_employee(current_user, employee, "modify")
+        if clean_role and clean_role != employee.role.strip().lower():
+            assert_can_assign_role(current_user, clean_role)
 
-    if role in ["super_admin", "admin"] and current_user.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Only Super Admin can assign the Admin or Super Admin role.")
 
     # Resolve emails
     clean_personal = (personal_email or email or employee.personal_email or employee.email or "").strip().lower()
@@ -872,11 +875,12 @@ async def edit_employee(
     employee.company_email = clean_company
     employee.email = canonical_email
     
-    # Only Admins / HRs can modify role, department, designation, joining_date, and salary components
-    if current_user.role in ["super_admin", "admin", "hr", "hr_admin"]:
+    # Only administrative actors who have hierarchical authority over this target can modify role, department, designation, joining_date, and salary components
+    if current_user.id != emp_id and can_manage_employee(current_user, employee):
         old_role = employee.role
-        if role:
-            employee.role = role
+        if clean_role and clean_role != employee.role:
+            assert_can_assign_role(current_user, clean_role)
+            employee.role = clean_role
             
         resolved_dept_id, resolved_desig_id = resolve_dept_and_desig(
             db, department_id, designation_id, department, designation
@@ -1168,17 +1172,8 @@ async def admin_reset_password(
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    # Privilege Escalation Defense: Only a Super Admin can reset credentials for an Administrator account
-    if employee.role == "super_admin" and current_user.role != "super_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Operation not permitted: Cannot reset credentials for a Super Admin account."
-        )
-    if employee.role == "admin" and current_user.role != "super_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Operation not permitted: Only Super Admin can reset credentials for an Administrator account."
-        )
+    # Hierarchical Privilege Enforcement: Lower role cannot reset credentials for equal or higher roles
+    assert_can_manage_employee(current_user, employee, "reset credentials for")
 
     base_url = settings.APP_BASE_URL.rstrip("/") if settings.APP_BASE_URL else str(request.base_url).rstrip("/")
     safe_target = get_safe_redirect(request, default=f"/employees/{emp_id}/view")

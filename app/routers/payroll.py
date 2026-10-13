@@ -12,6 +12,7 @@ from app.models.company import Company
 from app.models.audit import AuditLog
 from app.utils.timezone import get_ist_today
 from app.dependencies import require_auth, RoleChecker
+from app.utils.permissions import can_manage_employee
 
 from app.services.payroll_calculator import (
     generate_draft_payslip,
@@ -144,6 +145,9 @@ async def generate_draft(
 
     if target_emp.role == "super_admin":
         return flash_redirect(url="/payroll", message="Super Admin is an executive officer and exempt from payroll generation.", category="error")
+
+    if not can_manage_employee(current_user, target_emp):
+        return flash_redirect(url="/payroll", message="Operation not permitted: You cannot generate payroll for an account of higher or equal role.", category="error")
 
     # Check if already exists
     existing = db.query(Payslip).filter(
@@ -318,6 +322,11 @@ async def edit_payslip_form(
     current_user: Employee = Depends(allow_hr_admin),
 ):
     payslip = db.query(Payslip).filter(Payslip.id == payslip_id).first()
+    if not payslip:
+        return flash_redirect(url="/payroll", message="Payslip record not found", category="error")
+    if not can_manage_employee(current_user, payslip.employee):
+        return flash_redirect(url="/payroll", message="Operation not permitted: You cannot edit payslip for an account of higher or equal role.", category="error")
+
     return templates.TemplateResponse(
         request, "payroll/edit_payslip.html", {"user": current_user, "payslip": payslip}
     )
@@ -342,6 +351,11 @@ async def update_payslip(
     current_user: Employee = Depends(allow_hr_admin),
 ):
     payslip = db.query(Payslip).filter(Payslip.id == payslip_id).first()
+    if not payslip:
+        return flash_redirect(url="/payroll", message="Payslip record not found", category="error")
+    if not can_manage_employee(current_user, payslip.employee):
+        return flash_redirect(url="/payroll", message="Operation not permitted: You cannot modify payslip for an account of higher or equal role.", category="error")
+
     if payslip:
         old_val = f"Date: {payslip.generated_on}, Basic: {payslip.basic}, Days: {payslip.days_worked}/{payslip.payable_days}, Net: {payslip.net_salary}, Status: {payslip.status}"
 

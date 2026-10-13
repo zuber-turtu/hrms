@@ -12,7 +12,15 @@ from app.models.company import Company, OfficeLocation, CompanyZone
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
 from app.templates_config import templates
-from app.utils.permissions import AVAILABLE_PERMISSIONS, get_company_permissions
+from app.utils.permissions import (
+    AVAILABLE_PERMISSIONS,
+    get_company_permissions,
+    can_manage_employee,
+    can_assign_role,
+    assert_can_manage_employee,
+    assert_can_assign_role,
+    get_role_rank,
+)
 from app.utils.geofence import get_active_office_locations, get_or_create_company
 
 router = APIRouter(prefix="/company")
@@ -95,7 +103,7 @@ async def update_company_profile(
     geofence_enabled: Optional[bool] = Form(False),
     geofence_strict_mode: Optional[bool] = Form(False),
     db: Session = Depends(get_db),
-    current_user: Employee = Depends(allow_hr_admin),
+    current_user: Employee = Depends(allow_admin_only),
 ):
     company = db.query(Company).first()
     if not company:
@@ -274,15 +282,14 @@ async def assign_employee_role(
     if not target_employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    # Protection & Privilege Escalation Guards
-    if target_employee.role == "super_admin" and current_user.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Cannot modify a Super Admin account.")
+    if current_user.id == target_employee.id:
+        raise HTTPException(status_code=403, detail="Operation not permitted: You cannot change your own role.")
 
-    if role_clean in ["super_admin", "admin"] and current_user.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Only Super Admin can assign the Admin or Super Admin role.")
-
-    if current_user.role in ["hr", "hr_admin"] and role_clean not in ["manager", "employee", "intern"]:
-        raise HTTPException(status_code=403, detail="HR can only assign Manager, Employee, or Intern roles.")
+    # Hierarchical Privilege Enforcement:
+    # 1. Lower role cannot modify/change role of equal or higher role
+    # 2. Lower role cannot assign/promote anyone to equal or higher role
+    assert_can_manage_employee(current_user, target_employee, "change the role of")
+    assert_can_assign_role(current_user, role_clean)
 
     old_role = target_employee.role
     target_employee.role = role_clean
@@ -314,17 +321,18 @@ async def assign_employee_role(
         dept = target_employee.department.name if hasattr(target_employee.department, "name") else (str(target_employee.department) if target_employee.department else "Unassigned")
         desig = target_employee.designation.name if hasattr(target_employee.designation, "name") else (str(target_employee.designation) if target_employee.designation else "Staff")
         
-        all_opts = [
-            ("employee", "Employee"),
+        system_roles = [
             ("intern", "Intern"),
+            ("employee", "Employee"),
             ("manager", "Manager"),
             ("hr", "HR"),
+            ("admin", "Admin"),
+            ("super_admin", "Super Admin"),
         ]
-        if current_user.role == "super_admin":
-            all_opts.append(("admin", "Admin"))
-            all_opts.append(("super_admin", "Super Admin"))
-        elif current_user.role == "admin" and role_clean == "admin":
-            all_opts.append(("admin", "Admin"))
+        all_opts = [
+            (r_val, r_label) for r_val, r_label in system_roles
+            if can_assign_role(current_user, r_val) or r_val == role_clean
+        ]
 
         options = []
         for r_val, r_label in all_opts:
@@ -448,7 +456,7 @@ async def create_office_location(
     radius_meters: int = Form(200),
     is_primary: bool = Form(False),
     db: Session = Depends(get_db),
-    current_user: Employee = Depends(allow_hr_admin),
+    current_user: Employee = Depends(allow_admin_only),
 ):
     clean_name = name.strip()
     if not clean_name:
@@ -515,7 +523,7 @@ async def edit_office_location(
     is_primary: bool = Form(False),
     is_active: bool = Form(True),
     db: Session = Depends(get_db),
-    current_user: Employee = Depends(allow_hr_admin),
+    current_user: Employee = Depends(allow_admin_only),
 ):
     loc = db.query(OfficeLocation).filter(OfficeLocation.id == loc_id).first()
     if not loc:
@@ -563,7 +571,7 @@ async def delete_office_location(
     loc_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Employee = Depends(allow_hr_admin),
+    current_user: Employee = Depends(allow_admin_only),
 ):
     loc = db.query(OfficeLocation).filter(OfficeLocation.id == loc_id).first()
     if not loc:
@@ -609,7 +617,7 @@ async def set_primary_location(
     loc_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Employee = Depends(allow_hr_admin),
+    current_user: Employee = Depends(allow_admin_only),
 ):
     loc = db.query(OfficeLocation).filter(OfficeLocation.id == loc_id).first()
     if not loc:

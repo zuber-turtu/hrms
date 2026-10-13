@@ -14,6 +14,8 @@ from app.services.pdf_generator import generate_payslip_pdf
 from app.services.formatters import get_payslip_pdf_filename, get_month_name
 from app.config import settings
 from app.utils.timezone import get_ist_today
+from app.utils.permissions import can_manage_employee
+
 
 
 def calculate_pro_rata(amount: float, days_worked: float, payable_days: int) -> float:
@@ -138,6 +140,8 @@ def bulk_generate_payslips(
     errors = []
 
     for emp in employees:
+        if actor and not can_manage_employee(actor, emp):
+            continue
         try:
             existing = db.query(Payslip).filter(
                 Payslip.employee_id == emp.id,

@@ -17,6 +17,7 @@ from app.dependencies import require_auth, RoleChecker
 from app.services.storage import get_storage_provider
 from app.utils.timezone import get_ist_now
 from app.utils.flash import flash_redirect
+from app.utils.permissions import assert_can_manage_employee, can_manage_employee
 from app.services.excel_exporter import export_kyc_compliance_excel
 
 from app.templates_config import templates
@@ -549,6 +550,11 @@ async def verify_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    if current_user.id == document.employee_id:
+        raise HTTPException(status_code=403, detail="Operation not permitted: You cannot verify your own documents.")
+
+    assert_can_manage_employee(current_user, document.employee, "verify documents for")
+
     if status_choice not in ["verified", "rejected", "pending"]:
         raise HTTPException(status_code=400, detail="Invalid verification status")
 
@@ -586,6 +592,10 @@ async def delete_document(
     is_self = current_user.id == document.employee_id
     if not is_self and not is_hr:
         raise HTTPException(status_code=403, detail="Operation not permitted")
+
+    if not is_self:
+        assert_can_manage_employee(current_user, document.employee, "delete documents of")
+
 
     emp_id = document.employee_id
     storage = get_storage_provider()

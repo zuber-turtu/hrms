@@ -183,3 +183,142 @@ def has_role_permission(company: Optional[Company], role: str, perm_key: str) ->
     lookup_role = "hr" if role == "hr_admin" else role
     matrix = get_company_permissions(company)
     return bool(matrix.get(lookup_role, {}).get(perm_key, False) or matrix.get(role, {}).get(perm_key, False))
+
+
+# =========================================================================
+# HIERARCHICAL ROLE-BASED ACCESS CONTROL (HRBAC) ENGINE
+# Strict Hierarchy: Super Admin (100) > Admin (80) > HR Admin (60) > HR (50) > Manager (40) > Employee (20) > Intern (10)
+# Rule: A lower role cannot modify, manage, promote, delete, or alter any higher or peer role.
+# =========================================================================
+
+ROLE_HIERARCHY: Dict[str, int] = {
+    "super_admin": 100,
+    "admin": 80,
+    "hr_admin": 60,
+    "hr": 50,
+    "manager": 40,
+    "employee": 20,
+    "intern": 10,
+}
+
+
+def get_role_rank(role: Optional[str]) -> int:
+    """Returns the numeric hierarchy rank of a given role string."""
+    if not role:
+        return 0
+    return ROLE_HIERARCHY.get(str(role).strip().lower(), 0)
+
+
+def can_manage_employee(actor: Optional[Any], target: Optional[Any]) -> bool:
+    """
+    Evaluates whether the actor has strictly higher hierarchical authority than the target employee.
+    Rules:
+    - Super Admin can manage anyone.
+    - If actor or target is None, returns False.
+    - If target is a super_admin, non-super_admins CANNOT manage them under any circumstances.
+    - If actor.id == target.id, returns False (self-administration is handled separately to prevent self-role elevation).
+    - Actor's rank MUST be strictly greater than target's rank: actor_rank > target_rank.
+    """
+    if not actor or not target:
+        return False
+
+    is_super = getattr(actor, "role", "") == "super_admin" or getattr(actor, "is_super_admin", False)
+    if is_super:
+        return True
+
+    if getattr(target, "role", "") == "super_admin":
+        return False
+
+    actor_id = getattr(actor, "id", None)
+    target_id = getattr(target, "id", None)
+    if actor_id is not None and target_id is not None and actor_id == target_id:
+        return False
+
+    actor_rank = get_role_rank(getattr(actor, "role", None))
+    target_rank = get_role_rank(getattr(target, "role", None))
+
+    return actor_rank > target_rank
+
+
+def can_assign_role(actor: Optional[Any], desired_role: Optional[str]) -> bool:
+    """
+    Validates whether the actor can grant/assign the desired role to another user.
+    Rules:
+    - Super Admin can assign any valid role.
+    - An actor can ONLY assign roles strictly lower than their own rank.
+      (e.g., Admin cannot assign Admin or Super Admin; HR cannot assign HR, Admin, or Super Admin).
+    """
+    if not actor or not desired_role:
+        return False
+
+    is_super = getattr(actor, "role", "") == "super_admin" or getattr(actor, "is_super_admin", False)
+    if is_super:
+        return True
+
+    actor_rank = get_role_rank(getattr(actor, "role", None))
+    desired_rank = get_role_rank(desired_role)
+
+    return actor_rank > desired_rank
+
+
+def assert_can_manage_employee(actor: Optional[Any], target: Optional[Any], action_name: str = "modify") -> None:
+    """
+    Raises HTTP 403 Forbidden if actor does not have hierarchical authority over target.
+    """
+    from fastapi import HTTPException, status
+
+    if not actor or not target:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Operation not permitted: Cannot {action_name} target account."
+        )
+
+    is_super = getattr(actor, "role", "") == "super_admin" or getattr(actor, "is_super_admin", False)
+    if is_super:
+        return
+
+    if getattr(target, "role", "") == "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Operation not permitted: Cannot {action_name} a Super Admin account."
+        )
+
+    actor_rank = get_role_rank(getattr(actor, "role", None))
+    target_rank = get_role_rank(getattr(target, "role", None))
+
+    if actor_rank <= target_rank:
+        actor_role_name = (getattr(actor, "role", "") or "User").replace("_", " ").title()
+        target_role_name = (getattr(target, "role", "") or "Account").replace("_", " ").title()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Operation not permitted: A {actor_role_name} cannot {action_name} a {target_role_name} account."
+        )
+
+
+def assert_can_assign_role(actor: Optional[Any], desired_role: Optional[str]) -> None:
+    """
+    Raises HTTP 403 Forbidden if actor cannot assign desired_role.
+    """
+    from fastapi import HTTPException, status
+
+    if not actor or not desired_role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operation not permitted: Invalid role assignment."
+        )
+
+    is_super = getattr(actor, "role", "") == "super_admin" or getattr(actor, "is_super_admin", False)
+    if is_super:
+        return
+
+    actor_rank = get_role_rank(getattr(actor, "role", None))
+    desired_rank = get_role_rank(desired_role)
+
+    if desired_rank >= actor_rank:
+        actor_role_name = (getattr(actor, "role", "") or "User").replace("_", " ").title()
+        desired_role_name = desired_role.replace("_", " ").title()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Operation not permitted: A {actor_role_name} cannot assign or promote an account to {desired_role_name}."
+        )
+

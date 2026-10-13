@@ -1430,6 +1430,7 @@
                                         {% endif %}
                                     </td>
                                     <td class="py-3 px-4 text-right">
+                                        {% if can_manage_employee(user, emp) and user.id != emp.id %}
                                         <form action="/company/assign-role" method="POST" hx-post="/company/assign-role"
                                             hx-target="#role-row-{{ emp.id }}" hx-swap="outerHTML"
                                             class="inline-flex items-center justify-end">
@@ -1437,16 +1438,18 @@
                                             <select name="role" onchange="this.form.requestSubmit()"
                                                 data-custom-select="true"
                                                 class="custom-select min-w-[130px]">
-                                                <option value="employee" {% if emp.role=='employee' %}selected{% endif %}>Employee</option>
-                                                <option value="intern" {% if emp.role=='intern' %}selected{% endif %}>Intern</option>
-                                                <option value="manager" {% if emp.role=='manager' %}selected{% endif %}>Manager</option>
-                                                <option value="hr" {% if emp.role in ['hr', 'hr_admin' ] %}selected{% endif %}>HR</option>
-                                                <option value="admin" {% if emp.role=='admin' %}selected{% endif %}>Admin</option>
-                                                {% if user.role == 'super_admin' %}
-                                                <option value="super_admin" {% if emp.role=='super_admin' %}selected{% endif %}>Super Admin</option>
-                                                {% endif %}
+                                                {% for r_code, r_label in [('intern', 'Intern'), ('employee', 'Employee'), ('manager', 'Manager'), ('hr', 'HR'), ('admin', 'Admin'), ('super_admin', 'Super Admin')] %}
+                                                    {% if can_assign_role(user, r_code) or emp.role == r_code %}
+                                                    <option value="{{ r_code }}" {% if emp.role == r_code or (r_code == 'hr' and emp.role in ['hr', 'hr_admin']) %}selected{% endif %}>{{ r_label }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
                                             </select>
                                         </form>
+                                        {% else %}
+                                        <span class="inline-flex items-center text-xs text-slate-400 font-medium px-2 py-1 bg-slate-50 border border-slate-200 rounded-md">
+                                            <i data-lucide="lock" class="w-3 h-3 mr-1 text-slate-400"></i> Locked
+                                        </span>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
