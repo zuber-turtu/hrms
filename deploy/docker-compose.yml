@@ -13,14 +13,34 @@ services:
       - HOST=0.0.0.0
       - PORT=8000
       - DATABASE_URL=mysql+pymysql://hrms_user:hrms_secure_pass@hrms-mysql:3306/hrms_db
+      - REDIS_URL=redis://hrms-redis:6379/0
+      - CACHE_ENABLED=true
     ports:
       - "8000:8000"
     depends_on:
       hrms-mysql:
         condition: service_healthy
+      hrms-redis:
+        condition: service_healthy
     volumes:
       - hrms_uploads:/app/static/uploads
       - hrms_logs:/app/logs
+
+  # High-Concurrency In-Memory Store & Cache-Aside Layer: Redis 7
+  hrms-redis:
+    image: redis:7-alpine
+    container_name: turtu-hrms-redis
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - hrms_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   # Primary Database: MySQL 8.0 (InnoDB utf8mb4)
   hrms-mysql:
@@ -45,5 +65,6 @@ services:
 
 volumes:
   hrms_mysql_data:
+  hrms_redis_data:
   hrms_uploads:
   hrms_logs:

@@ -93,9 +93,10 @@ A dynamic, full-featured, enterprise-grade **Human Resource Management System (H
 | Layer | Technology |
 |---|---|
 | **Backend Framework** | [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10+) |
-| **ASGI Server** | [Uvicorn](https://www.uvicorn.org/) with Hot Reload |
-| **ORM & Database Layer** | [SQLAlchemy 2.0](https://www.sqlalchemy.org/) with Connection Pooling |
-| **Database Engines** | SQLite, MySQL / MariaDB (`pymysql`), PostgreSQL / Supabase (`psycopg2`) |
+| **ASGI Server & Process Manager** | [Uvicorn](https://www.uvicorn.org/) & [Gunicorn](https://gunicorn.org/) (`(2 * CPU Cores) + 1` workers) |
+| **ORM & Database Layer** | [SQLAlchemy 2.0](https://www.sqlalchemy.org/) (Sync & Asyncio Engines) |
+| **Database Engines** | MySQL / MariaDB (`pymysql` / `aiomysql`), PostgreSQL (`psycopg2` / `asyncpg`), SQLite |
+| **In-Memory Cache & Speed Layer** | [Redis 7](https://redis.io/) (`redis.asyncio` with Cache-Aside pattern, 5-min TTL) |
 | **Template Engine** | [Jinja2](https://jinja.palletsprojects.com/) |
 | **Styling & Icons** | [Tailwind CSS](https://tailwindcss.com/), [FontAwesome](https://fontawesome.com/), Custom Vanilla CSS |
 | **Authentication** | JWT (JSON Web Tokens) via `python-jose` stored in secure HTTP-only cookies |
@@ -109,56 +110,33 @@ A dynamic, full-featured, enterprise-grade **Human Resource Management System (H
 
 ```text
 hrms/
-├── app/
+├── app/                          # Core HRMS Web Application
 │   ├── config.py                 # Pydantic / dotenv global settings
 │   ├── database.py               # Multi-engine SQLAlchemy session manager
 │   ├── dependencies.py           # Auth guards, token extractors & RBAC
 │   ├── templates_config.py       # Custom Jinja filters & global helpers
 │   ├── models/                   # SQLAlchemy declarative models
-│   │   ├── company.py            # Company settings & branding
-│   │   ├── employee.py           # Employee profile, bank, emergency contacts
-│   │   ├── department.py         # Departments & designations
-│   │   ├── attendance.py         # Daily logs, GPS checks & WFH requests
-│   │   ├── leave.py              # Leave types, balances & applications
-│   │   ├── payroll.py            # Salary structures & monthly payslips
-│   │   ├── document.py           # Document types & uploaded files
-│   │   └── audit.py              # Administrative action audit trail
 │   ├── schemas/                  # Pydantic request & response schemas
-│   ├── routers/                  # Server-rendered HTML routers
-│   │   ├── auth.py               # Login, logout, password resets
-│   │   ├── dashboard.py          # Role-based dashboard views
-│   │   ├── company.py            # Company settings & profile
-│   │   ├── employees.py          # Employee directory & profile management
-│   │   ├── departments.py        # Departments, roles & staff rosters
-│   │   ├── attendance.py         # Clock-in/out, logs & overrides
-│   │   ├── leaves.py             # Leave applications & approvals
-│   │   ├── payroll.py            # Salary calculation & payslip editor
-│   │   ├── documents.py          # Document verification & downloads
-│   │   ├── audit.py              # Audit log viewer
-│   │   └── api/v1/               # Headless REST API endpoints
-│   ├── services/                 # Business logic services
-│   │   ├── payroll_calculator.py # Pro-rata salary computations
-│   │   ├── pdf_generator.py      # ReportLab PDF payslip engine
-│   │   └── storage/              # Storage backends (Local, Supabase, GDrive, S3)
+│   ├── routers/                  # Server-rendered HTML routers & /api/v1/ endpoints
+│   ├── services/                 # Business logic services (payroll, PDF, storage)
 │   └── templates/                # Jinja2 HTML templates
-│       ├── base.html             # Master layout with collapsible sidebar
-│       ├── auth/                 # Login & password recovery pages
-│       ├── dashboard/            # Admin & employee dashboards
-│       ├── company/              # Company profile & settings
-│       ├── employees/            # Employee list, dossiers & edit forms
-│       ├── departments/          # Department cards & staff modals
-│       ├── attendance/           # Clock widget & calendar logs
-│       ├── leaves/               # Leave portal & management
-│       ├── payroll/              # Payroll list, editor & payslip views
-│       └── documents/            # Document vault & upload forms
-├── static/
-│   ├── css/styles.css            # Custom CSS & animation rules
-│   ├── js/                       # Client-side scripts
-│   └── uploads/                  # Local storage directory
-├── .env.example                  # Environment configuration template
-├── requirements.txt              # Project dependencies
-├── main.py                       # FastAPI application entrypoint & lifespan
-└── README.md                     # Project documentation
+├── async_api/                    # High-Concurrency Async Cluster (1,000+ users, 50-100 RPS)
+│   ├── config.py                 # Pydantic-settings managing async DB & Redis connection pool
+│   ├── database.py               # Swappable asyncpg / aiomysql engine with bulletproof pooling
+│   ├── cache.py                  # High-concurrency redis.asyncio Cache-Aside pattern (300s TTL)
+│   ├── models.py                 # Async models with strict composite column indexing
+│   ├── schemas.py                # Pydantic v2 schemas
+│   ├── main.py                   # High-speed async API with microsecond /health probes
+│   └── gunicorn_conf.py          # Production Gunicorn cluster config: (2 * Cores) + 1
+├── deploy/                       # Enterprise Deployment Configurations
+│   ├── Dockerfile                # Production multi-stage Dockerfile
+│   ├── docker-compose.yml        # Multi-container stack (App + MySQL 8.0 + Redis 7)
+│   ├── nginx.conf                # High-concurrency reverse proxy & SSL config
+│   ├── hrms.service              # Systemd background service unit
+│   └── start_production.sh       # Production cluster startup script
+├── gunicorn_conf.py              # Root Gunicorn configuration
+├── requirements.txt              # Production Python dependencies
+└── main.py                       # Root HRMS application entrypoint
 ```
 
 ---

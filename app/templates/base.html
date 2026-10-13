@@ -882,6 +882,21 @@
             }
             updateTimer();
         });
+
+        // Universal Wheel Scroll Forwarder for Horizontally-Scrollable Tables & Ribbons
+        // Resolves Chromium/Edge issue where hovering over .overflow-x-auto containers traps vertical wheel events
+        document.addEventListener('wheel', function (e) {
+            const xAuto = e.target.closest('.overflow-x-auto');
+            if (xAuto && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                // Forward vertical scrolling to the main viewport if the horizontal element has no vertical overflow of its own
+                if (xAuto.scrollHeight <= xAuto.clientHeight + 2) {
+                    const scroller = xAuto.closest('.overflow-y-auto') || document.querySelector('main > .overflow-y-auto');
+                    if (scroller) {
+                        scroller.scrollTop += e.deltaY;
+                    }
+                }
+            }
+        }, { passive: true });
     </script>
     <!-- HRMS Universal Custom Select Engine -->
     <script src="/static/js/custom-select.js"></script>

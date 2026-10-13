@@ -30,6 +30,7 @@ Ensure your system or cloud instance meets the following minimum requirements:
 | **CPU** | 1 vCPU | 2 to 4 vCPUs |
 | **Primary Database** | **MySQL 8.0+ / MariaDB 10.6+ (Recommended)** | Managed MySQL 8.0 / AWS RDS MySQL |
 | **Alternative DBs** | PostgreSQL 14+ / Supabase or SQLite 3 (Dev only) | PostgreSQL 16 / Supabase Pooler |
+| **In-Memory Cache** | **Redis 7+ (Cache-Aside Layer)** | Redis 7+ Alpine / AWS ElastiCache |
 | **Web Server** | Uvicorn (Dev) | Nginx + Gunicorn (Uvicorn Worker Cluster) |
 
 ---
@@ -318,9 +319,36 @@ DATABASE_URL=sqlite:///./hrms.db
 
 ---
 
+### Option D: Redis In-Memory Cache Setup (Required for High-Concurrency Cache-Aside Layer)
+
+#### 1. Install Redis Server
+```bash
+sudo apt install -y redis-server
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
+```
+
+#### 2. Configure Memory Limits (`/etc/redis/redis.conf`)
+Ensure Redis never exhausts host RAM:
+```ini
+maxmemory 256mb
+maxmemory-policy allkeys-lru
+```
+Restart Redis:
+```bash
+sudo systemctl restart redis-server
+```
+Verify connectivity:
+```bash
+redis-cli ping
+# Output: PONG
+```
+
+---
+
 ## 5. Docker & Containerized Deployment
 
-We provide a production `docker-compose.yml` pre-configured with **MySQL 8.0** and **Gunicorn multi-worker web app**.
+We provide a production `docker-compose.yml` pre-configured with **MySQL 8.0**, **Redis 7**, and **Gunicorn multi-worker web app**.
 
 ### Step 5.1: Launch Stack
 ```bash
@@ -361,6 +389,12 @@ docker compose -f deploy/docker-compose.yml down
 | `COMPANY_NAME` | `TURTU INDIA LLP` | Organization display name. |
 | `COMPANY_CURRENCY_SYMBOL` | `₹` | Currency symbol displayed on payslips & salary tables. |
 | `COMPANY_CURRENCY_CODE` | `INR` | Currency code (`INR`, `USD`, `AED`, `EUR`, etc.). |
+| `REDIS_URL` | `redis://127.0.0.1:6379/0` | Redis async URI for Cache-Aside layer. |
+| `CACHE_TTL_SECONDS` | `300` | In-memory cache lifetime in seconds (5 minutes). |
+| `CACHE_ENABLED` | `true` | Enable/disable Cache-Aside caching layer. |
+| `DB_POOL_SIZE` | `30` | Baseline persistent database connection pool handles. |
+| `DB_MAX_OVERFLOW` | `15` | Burst headroom database handles under traffic spikes. |
+| `DB_POOL_RECYCLE` | `1800` | Connection handle recycling lifetime (30 minutes). |
 
 ---
 
@@ -467,6 +501,31 @@ sudo tail -f /var/log/nginx/error.log
 
 ---
 
+## 10. High-Performance Asynchronous API Cluster Deployment
+
+For peak enterprise workloads (1,000+ active concurrent users, 50–100 requests/sec, <100ms latency targets), run the dedicated asynchronous cluster in `async_api/`:
+
+### Run via Gunicorn Worker Cluster
+```bash
+# Workers formula: (2 * CPU Cores) + 1 with 1,000 concurrent handles per worker
+gunicorn -c async_api/gunicorn_conf.py async_api.main:app
+```
+
+### Ultra-Fast Load Balancer Probes:
+- **Liveness Probe (<0.5ms, zero I/O):**
+  ```bash
+  curl http://127.0.0.1:8000/health
+  # Response: {"status":"alive","timestamp_utc":"..."}
+  ```
+- **Deep Readiness Probe (DB & Redis ping):**
+  ```bash
+  curl http://127.0.0.1:8000/health/ready
+  # Response: {"status":"ready","database_latency_ms":2.1,"redis_latency_ms":0.8,"components":{...}}
+  ```
+
+---
+
 ## 🤝 Support & Enterprise Architecture
 
 For questions or customized enterprise workflows, refer to the [PROJECT_SPEC.md](PROJECT_SPEC.md) or submit an issue in the repository.
+
