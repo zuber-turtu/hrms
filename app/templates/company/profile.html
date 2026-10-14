@@ -1415,7 +1415,10 @@
                                         {% elif emp.role == 'admin' %}
                                         <span
                                             class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Admin</span>
-                                        {% elif emp.role in ['hr', 'hr_admin'] %}
+                                        {% elif emp.role == 'hr_admin' %}
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">HR Admin</span>
+                                        {% elif emp.role == 'hr' %}
                                         <span
                                             class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">HR</span>
                                         {% elif emp.role == 'manager' %}
@@ -1438,9 +1441,9 @@
                                             <select name="role" onchange="this.form.requestSubmit()"
                                                 data-custom-select="true"
                                                 class="custom-select min-w-[130px]">
-                                                {% for r_code, r_label in [('intern', 'Intern'), ('employee', 'Employee'), ('manager', 'Manager'), ('hr', 'HR'), ('admin', 'Admin'), ('super_admin', 'Super Admin')] %}
+                                                {% for r_code, r_label in [('intern', 'Intern'), ('employee', 'Employee'), ('manager', 'Manager'), ('hr', 'HR'), ('hr_admin', 'HR Admin'), ('admin', 'Admin'), ('super_admin', 'Super Admin')] %}
                                                     {% if can_assign_role(user, r_code) or emp.role == r_code %}
-                                                    <option value="{{ r_code }}" {% if emp.role == r_code or (r_code == 'hr' and emp.role in ['hr', 'hr_admin']) %}selected{% endif %}>{{ r_label }}</option>
+                                                    <option value="{{ r_code }}" {% if emp.role == r_code %}selected{% endif %}>{{ r_label }}</option>
                                                     {% endif %}
                                                 {% endfor %}
                                             </select>

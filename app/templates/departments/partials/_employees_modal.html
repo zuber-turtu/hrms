@@ -90,8 +90,8 @@
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200">
                             {{ format_emp_code(emp, company) }}
                         </span>
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider {% if emp.role == 'admin' %}bg-rose-50 text-rose-700 border border-rose-200{% elif emp.role == 'hr_admin' %}bg-amber-50 text-amber-700 border border-amber-200{% elif emp.role == 'manager' %}bg-purple-50 text-purple-700 border border-purple-200{% else %}bg-slate-100 text-slate-700 border border-slate-200{% endif %}">
-                            {{ emp.role.replace('_', ' ') }}
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider {% if emp.role == 'super_admin' %}bg-purple-50 text-purple-700 border border-purple-200{% elif emp.role == 'admin' %}bg-rose-50 text-rose-700 border border-rose-200{% elif emp.role == 'hr_admin' %}bg-amber-50 text-amber-700 border border-amber-200{% elif emp.role == 'hr' %}bg-teal-50 text-teal-700 border border-teal-200{% elif emp.role == 'manager' %}bg-blue-50 text-blue-700 border border-blue-200{% elif emp.role == 'intern' %}bg-sky-50 text-sky-700 border border-sky-200{% else %}bg-slate-100 text-slate-700 border border-slate-200{% endif %}">
+                            {% if emp.role == 'hr' %}HR{% elif emp.role == 'hr_admin' %}HR Admin{% elif emp.role == 'super_admin' %}Super Admin{% else %}{{ emp.role.replace('_', ' ') }}{% endif %}
                         </span>
                     </div>
 

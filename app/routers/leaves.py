@@ -85,12 +85,20 @@ def can_user_approve_request(current_user: Employee, target_employee: Employee) 
     if t_role == "super_admin":
         return False
 
-    # Admin can approve HR, Managers, Employees, Interns (cannot approve other Admins)
+    # Admin can approve HR Admin, HR, Managers, Employees, Interns (cannot approve other Admins)
     if c_role == "admin":
-        return t_role in ["hr", "hr_admin", "manager", "employee", "intern"]
+        return t_role in ["hr_admin", "hr", "manager", "employee", "intern"]
 
-    # HR can approve Managers, Employees, Interns (cannot approve Admins or peer HRs)
-    if c_role in ["hr", "hr_admin"]:
+    # HR Admin can approve HR, Managers, Employees, Interns (cannot approve other HR Admins or Admins)
+    if c_role == "hr_admin":
+        if t_role not in ["hr", "manager", "employee", "intern"]:
+            return False
+        if getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
+            return target_employee.zone_id == current_user.zone_id
+        return True
+
+    # HR can approve Managers, Employees, Interns (cannot approve Admins, HR Admins, or peer HRs)
+    if c_role == "hr":
         if t_role not in ["manager", "employee", "intern"]:
             return False
         if getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only" and current_user.zone_id:
@@ -460,14 +468,15 @@ async def leaves_dashboard(
                 .all()
             )
         elif current_user.role in ["hr", "hr_admin"]:
-            # HR sees pending requests from Managers, Employees, Interns (scoped by zone if zone_only)
+            # HR sees pending requests from subordinates (HR Admin also sees HR; scoped by zone if zone_only)
             hr_zone_restricted = (
                 getattr(current_user, "hr_zone_scope", "all_zones") == "zone_only"
                 and current_user.zone_id is not None
             )
+            excluded_roles = ["super_admin", "admin", "hr_admin"] if current_user.role == "hr_admin" else ["super_admin", "admin", "hr", "hr_admin"]
             tm_query = db.query(Employee).filter(
                 Employee.is_active == True,
-                Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
+                Employee.role.notin_(excluded_roles)
             )
             if hr_zone_restricted:
                 tm_query = tm_query.filter(Employee.zone_id == current_user.zone_id)
@@ -478,7 +487,7 @@ async def leaves_dashboard(
                 .join(Employee, LeaveApplication.employee_id == Employee.id)
                 .filter(
                     LeaveApplication.status == "pending",
-                    Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
+                    Employee.role.notin_(excluded_roles)
                 )
             )
             if hr_zone_restricted:
@@ -490,7 +499,7 @@ async def leaves_dashboard(
                 .join(Employee, WfhRequest.employee_id == Employee.id)
                 .filter(
                     WfhRequest.status == "pending",
-                    Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"])
+                    Employee.role.notin_(excluded_roles)
                 )
             )
             if hr_zone_restricted:

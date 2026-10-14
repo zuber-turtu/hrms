@@ -57,8 +57,15 @@
                 <!-- Info Column -->
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2 mb-1">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-800 border border-teal-200/70 capitalize">
-                            {{ employee.role.replace('_', ' ') }}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold border
+                            {% if employee.role == 'super_admin' %}bg-purple-50 text-purple-800 border-purple-200
+                            {% elif employee.role == 'admin' %}bg-rose-50 text-rose-800 border-rose-200
+                            {% elif employee.role == 'hr_admin' %}bg-amber-50 text-amber-800 border-amber-200
+                            {% elif employee.role == 'hr' %}bg-teal-50 text-teal-800 border-teal-200
+                            {% elif employee.role == 'manager' %}bg-blue-50 text-blue-800 border-blue-200
+                            {% elif employee.role == 'intern' %}bg-sky-50 text-sky-800 border-sky-200
+                            {% else %}bg-slate-100 text-slate-700 border-slate-200{% endif %}">
+                            {% if employee.role == 'hr' %}HR{% elif employee.role == 'hr_admin' %}HR Admin{% elif employee.role == 'super_admin' %}Super Admin{% else %}{{ employee.role.replace('_', ' ') | title }}{% endif %}
                         </span>
                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/70">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Active

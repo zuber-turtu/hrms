@@ -152,7 +152,8 @@
                         <option value="all" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
                         <option value="super_admin" {% if current_role == 'super_admin' %}selected{% endif %}>Super Admin</option>
                         <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Admin</option>
-                        <option value="hr" {% if current_role in ['hr', 'hr_admin'] %}selected{% endif %}>HR Admin</option>
+                        <option value="hr_admin" {% if current_role == 'hr_admin' %}selected{% endif %}>HR Admin</option>
+                        <option value="hr" {% if current_role == 'hr' %}selected{% endif %}>HR</option>
                         <option value="manager" {% if current_role == 'manager' %}selected{% endif %}>Manager</option>
                         <option value="employee" {% if current_role == 'employee' %}selected{% endif %}>Employee</option>
                         <option value="intern" {% if current_role == 'intern' %}selected{% endif %}>Intern</option>

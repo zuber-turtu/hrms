@@ -175,10 +175,10 @@ class Employee(Base):
     @property
     def hierarchy_level(self) -> int:
         levels = {
-            "super_admin": 6,
-            "admin": 5,
+            "super_admin": 7,
+            "admin": 6,
+            "hr_admin": 5,
             "hr": 4,
-            "hr_admin": 4,
             "manager": 3,
             "employee": 2,
             "intern": 1,

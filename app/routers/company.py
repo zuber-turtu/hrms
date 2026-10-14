@@ -310,8 +310,8 @@ async def assign_employee_role(
         role_badges = {
             "super_admin": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-900 border border-purple-300">👑 Super Admin</span>',
             "admin": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🛡️ Admin</span>',
+            "hr_admin": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">📋 HR Admin</span>',
             "hr": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">📋 HR</span>',
-            "hr_admin": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">📋 HR</span>',
             "manager": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">👔 Manager</span>',
             "intern": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">🌱 Intern</span>',
             "employee": '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">💼 Employee</span>',
@@ -326,6 +326,7 @@ async def assign_employee_role(
             ("employee", "Employee"),
             ("manager", "Manager"),
             ("hr", "HR"),
+            ("hr_admin", "HR Admin"),
             ("admin", "Admin"),
             ("super_admin", "Super Admin"),
         ]

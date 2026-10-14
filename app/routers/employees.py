@@ -203,10 +203,7 @@ async def list_employees(
     # Role filter
     if role and role.strip() and role.strip() != "all":
         r = role.strip().lower()
-        if r in ["hr", "hr_admin"]:
-            query = query.filter(Employee.role.in_(["hr", "hr_admin"]))
-        else:
-            query = query.filter(func.lower(Employee.role) == r)
+        query = query.filter(func.lower(Employee.role) == r)
 
     # Zone filter
     if parsed_zone_id:

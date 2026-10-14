@@ -234,9 +234,9 @@
                         data-custom-select="true"
                         {% if employee and (user.id == employee.id or not can_manage_employee(user, employee)) %}disabled{% endif %}
                         class="custom-select w-full">
-                        {% for r_code, r_badge in [('intern', 'Intern'), ('employee', 'Employee'), ('manager', 'Manager'), ('hr', 'HR'), ('admin', 'Admin'), ('super_admin', 'Super Admin')] %}
-                            {% if can_assign_role(user, r_code) or (employee and (employee.role == r_code or (r_code == 'hr' and employee.role in ['hr', 'hr_admin']))) %}
-                            <option value="{{ r_code }}" data-badge="{{ r_badge }}" {% if employee and (employee.role == r_code or (r_code == 'hr' and employee.role in ['hr', 'hr_admin'])) %}selected{% endif %}>{{ r_badge }}</option>
+                        {% for r_code, r_badge in [('intern', 'Intern'), ('employee', 'Employee'), ('manager', 'Manager'), ('hr', 'HR'), ('hr_admin', 'HR Admin'), ('admin', 'Admin'), ('super_admin', 'Super Admin')] %}
+                            {% if can_assign_role(user, r_code) or (employee and employee.role == r_code) %}
+                            <option value="{{ r_code }}" data-badge="{{ r_badge }}" {% if employee and employee.role == r_code %}selected{% endif %}>{{ r_badge }}</option>
                             {% endif %}
                         {% endfor %}
                     </select>
