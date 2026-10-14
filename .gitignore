@@ -145,6 +145,8 @@ static/uploads/avatars/*
 !static/uploads/avatars/.gitkeep
 static/uploads/documents/*
 !static/uploads/documents/.gitkeep
+storage/private_documents/*
+!storage/private_documents/.gitkeep
 
 # Scratch Scripts & Temporary Files
 scratch/

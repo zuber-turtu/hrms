@@ -405,9 +405,13 @@ async def view_payslip(
     if not payslip:
         raise HTTPException(status_code=404, detail="Payslip not found")
 
-    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
-        if payslip.employee_id != current_user.id or payslip.status == "draft":
-            raise HTTPException(status_code=403, detail="Unauthorized to view this payslip (still in draft review)")
+    if current_user.id != payslip.employee_id:
+        if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
+            raise HTTPException(status_code=403, detail="Unauthorized to view this payslip")
+        if not can_manage_employee(current_user, payslip.employee) and current_user.role not in ["super_admin", "admin"]:
+            raise HTTPException(status_code=403, detail="Unauthorized to view payslip of higher or equal corporate tier")
+    elif payslip.status == "draft":
+        raise HTTPException(status_code=403, detail="Unauthorized to view this payslip (still in draft review)")
 
     company = db.query(Company).first()
     currency = company.currency_symbol if company and company.currency_symbol else "$"
@@ -444,9 +448,13 @@ async def download_payslip_pdf(
     if not payslip:
         return Response(status_code=404)
 
-    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
-        if payslip.employee_id != current_user.id or payslip.status == "draft":
+    if current_user.id != payslip.employee_id:
+        if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
             return Response(status_code=403)
+        if not can_manage_employee(current_user, payslip.employee) and current_user.role not in ["super_admin", "admin"]:
+            return Response(status_code=403)
+    elif payslip.status == "draft":
+        return Response(status_code=403)
 
     company = db.query(Company).first()
     pdf_buffer = generate_payslip_pdf(payslip, company, payslip.employee)

@@ -80,7 +80,7 @@ async def api_login(
         )
 
     access_token = create_access_token(
-        data={"sub": user.email, "role": user.role, "user_id": user.id},
+        data={"sub": user.email, "role": user.role, "user_id": user.id, "ver": user.token_version or 1},
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
@@ -134,6 +134,7 @@ async def api_change_password(
         )
 
     current_user.hashed_password = get_password_hash(payload.new_password)
+    current_user.token_version = (current_user.token_version or 1) + 1
     audit = AuditLog(
         actor_id=current_user.id,
         actor_email=current_user.email,

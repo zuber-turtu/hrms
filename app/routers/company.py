@@ -1,4 +1,5 @@
 import json
+import html
 import httpx
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -345,25 +346,33 @@ async def assign_employee_role(
         prefix = company.employee_id_prefix.strip() if (company and company.employee_id_prefix) else ""
         emp_code = f"{prefix.upper()}-{target_employee.id:04d}" if prefix else f"#{target_employee.id:04d}"
 
+        safe_name = html.escape(str(target_employee.name or ""))
+        safe_email = html.escape(str(target_employee.email or ""))
+        safe_dept = html.escape(str(dept or ""))
+        safe_desig = html.escape(str(desig or ""))
+        safe_emp_code = html.escape(str(emp_code or ""))
+        safe_initials = html.escape(str(initials or ""))
+        safe_role_clean = html.escape(str(role_clean or ""))
+
         row_html = f'''
-        <tr class="hover:bg-slate-50/60 transition-colors role-assign-row bg-emerald-50/40" id="role-row-{target_employee.id}" data-name="{target_employee.name.lower()}" data-dept="{dept.lower()}" data-role="{role_clean}" data-email="{target_employee.email.lower()}">
+        <tr class="hover:bg-slate-50/60 transition-colors role-assign-row bg-emerald-50/40" id="role-row-{target_employee.id}" data-name="{safe_name.lower()}" data-dept="{safe_dept.lower()}" data-role="{safe_role_clean}" data-email="{safe_email.lower()}">
             <td class="py-3 px-4">
                 <div class="flex items-center space-x-2.5">
                     <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-xs border border-slate-200 shrink-0">
-                        {initials}
+                        {safe_initials}
                     </div>
                     <div>
                         <div class="font-bold text-slate-900 flex items-center space-x-1.5">
-                            <span>{target_employee.name}</span>
+                            <span>{safe_name}</span>
                             <span class="inline-flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded animate-pulse">✓ Updated</span>
                         </div>
-                        <div class="text-[11px] text-slate-400">{target_employee.email} &bull; <span class="font-mono text-slate-500">{emp_code}</span></div>
+                        <div class="text-[11px] text-slate-400">{safe_email} &bull; <span class="font-mono text-slate-500">{safe_emp_code}</span></div>
                     </div>
                 </div>
             </td>
             <td class="py-3 px-3">
-                <div class="text-slate-800 font-semibold">{dept}</div>
-                <div class="text-[11px] text-slate-400">{desig}</div>
+                <div class="text-slate-800 font-semibold">{safe_dept}</div>
+                <div class="text-[11px] text-slate-400">{safe_desig}</div>
             </td>
             <td class="py-3 px-3">
                 {badge_html}
@@ -405,7 +414,7 @@ async def search_address(
 
     query = q.strip()
     headers = {
-        "User-Agent": "TurtuHRMS-App/1.0 (contact@turtu.in; HRMS Geofencing)",
+        "User-Agent": "CompanyHRMS-App/1.0 (contact@Company.in; HRMS Geofencing)",
         "Accept-Language": "en",
     }
     params = {

@@ -96,6 +96,10 @@ async def attendance_log(
                 override_reason = log.override_reason
                 
             start = log.check_in
+            if not start and not log.check_out:
+                sessions.append("No Punch")
+                continue
+
             if log.check_out:
                 end = log.check_out
                 out_str = log.check_out.strftime('%I:%M %p')
@@ -108,10 +112,11 @@ async def attendance_log(
                     end = now_ist
                     out_str = "Active"
             
-            diff = (end - start).total_seconds()
-            total_seconds += max(0, diff)
+            if start and end:
+                diff = (end - start).total_seconds()
+                total_seconds += max(0, diff)
             
-            in_str = log.check_in.strftime('%I:%M %p')
+            in_str = log.check_in.strftime('%I:%M %p') if log.check_in else "--"
             sessions.append(f"{in_str} - {out_str}")
             
         hrs = int(total_seconds // 3600)
@@ -515,6 +520,9 @@ async def export_attendance_logs_excel(
                 override_reason = log.override_reason
 
             start = log.check_in
+            if not start and not log.check_out:
+                continue
+
             if log.check_out:
                 end = log.check_out
             else:
@@ -523,15 +531,19 @@ async def export_attendance_logs_excel(
                 else:
                     end = now_ist
 
-            diff = (end - start).total_seconds()
-            total_seconds += max(0, diff)
+            if start and end:
+                diff = (end - start).total_seconds()
+                total_seconds += max(0, diff)
 
         hrs = int(total_seconds // 3600)
         mins = int((total_seconds % 3600) // 60)
         hours_str = f"{hrs}h {mins}m"
 
         in_time_str = group_logs[0].check_in.strftime('%I:%M %p') if group_logs[0].check_in else "—"
-        out_time_str = group_logs[-1].check_out.strftime('%I:%M %p') if group_logs[-1].check_out else ("Active" if log_date == today else "Missed")
+        if not group_logs[0].check_in and not group_logs[-1].check_out:
+            out_time_str = "—"
+        else:
+            out_time_str = group_logs[-1].check_out.strftime('%I:%M %p') if group_logs[-1].check_out else ("Active" if log_date == today else "Missed")
 
         work_mode = group_logs[0].work_mode or ("wfh" if group_logs[0].wfh_request_id else "office")
         if work_mode == "wfh":

@@ -89,7 +89,7 @@ async def login(
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": user.email, "ver": user.token_version or 1}, expires_delta=access_token_expires
     )
 
     response = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
@@ -152,7 +152,14 @@ async def change_password(
         )
 
     current_user.hashed_password = get_password_hash(new_password)
+    current_user.token_version = (current_user.token_version or 1) + 1
     db.commit()
+
+    # Re-issue active session cookie for current user with new token version
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_token = create_access_token(
+        data={"sub": current_user.email, "ver": current_user.token_version}, expires_delta=access_token_expires
+    )
 
     # Dispatch security notification email
     timestamp_str = get_ist_now().strftime("%Y-%m-%d %I:%M %p IST")
@@ -163,11 +170,21 @@ async def change_password(
         changed_at=timestamp_str,
     )
     
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request, 
         "auth/change_password.html", 
-        {"user": current_user, "success": "Password changed successfully. A security confirmation email has been sent."}
+        {"user": current_user, "success": "Password changed successfully. All previous active sessions have been invalidated."}
     )
+    response.set_cookie(
+        key=settings.COOKIE_NAME,
+        value=new_token,
+        httponly=True,
+        samesite=settings.COOKIE_SAMESITE,
+        secure=settings.COOKIE_SECURE,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return response
 
 
 @router.get("/forgot-password", response_class=HTMLResponse)
@@ -324,8 +341,9 @@ async def reset_password(
             }
         )
 
-    # Set new password & invalidate token immediately
+    # Set new password, invalidate reset token, and increment token_version to invalidate all prior active sessions
     user.hashed_password = get_password_hash(new_password)
+    user.token_version = (user.token_version or 1) + 1
     user.reset_token = None
     user.reset_token_expiry = None
     

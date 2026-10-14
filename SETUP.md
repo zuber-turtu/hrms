@@ -2,6 +2,8 @@
 
 Welcome to **Turtu HRMS**, an enterprise-grade Personnel, Payroll, Attendance, and Document Management platform built with FastAPI, SQLAlchemy 2.0, MySQL / PostgreSQL / SQLite, Jinja2, HTMX, and Tailwind CSS.
 
+> 🌟 **Looking for the dedicated MySQL 8.0 + AWS S3 live production guide?** See the step-by-step **[End-to-End Production Guide (PRODUCTION_SETUP.md)](PRODUCTION_SETUP.md)**.
+
 This guide provides step-by-step instructions for:
 - [1. Prerequisites](#1-prerequisites)
 - [2. Local Development Setup (Windows / macOS / Linux)](#2-local-development-setup)
@@ -400,35 +402,106 @@ docker compose -f deploy/docker-compose.yml down
 
 ## 7. Pluggable Cloud Storage Setup
 
-To ensure documents and payslips persist safely even if the server is rebuilt, choose a cloud storage provider in `.env`:
+To ensure employee KYC documents, profile photos, and generated payslips persist safely across server restarts, container rebuilds, and auto-scaling events, choose one of the pluggable cloud storage engines:
 
-### Option 1: AWS S3 / MinIO
-```ini
-STORAGE_PROVIDER=s3
-S3_BUCKET_NAME=hrms-production-vault
-S3_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-S3_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-S3_REGION_NAME=ap-south-1
-```
+### Option 1: AWS S3 (Enterprise Standard)
+The AWS S3 engine uses `boto3` to store private documents under secure object keys and generate time-limited presigned URLs on demand.
 
-### Option 2: Cloudflare R2 (Zero Egress Fees)
-```ini
-STORAGE_PROVIDER=cloudflare
-S3_BUCKET_NAME=hrms-storage
-S3_ACCESS_KEY_ID=your_r2_access_key_id
-S3_SECRET_ACCESS_KEY=your_r2_secret_access_key
-S3_ENDPOINT_URL=https://<account_id>.r2.cloudflarestorage.com
-S3_PUBLIC_URL_PREFIX=https://cdn.yourcompany.com
-S3_REGION_NAME=auto
-```
+1. **Create an S3 Bucket in AWS Console**:
+   - Bucket Name: e.g. `your-company-hrms-vault`
+   - Region: e.g. `ap-south-1` (Asia Pacific / Mumbai)
+   - **Block all public access**: Keep **ENABLED (ON)**. All private employee KYC documents are streamed via authenticated endpoints or time-limited presigned URLs.
+2. **Create IAM User with Minimal Policy**:
+   Attach the following IAM policy to your service user:
+   ```json
+   {
+       "Version": "2012-10-17",
+       "Statement": [
+           {
+               "Effect": "Allow",
+               "Action": [
+                   "s3:PutObject",
+                   "s3:GetObject",
+                   "s3:DeleteObject"
+               ],
+               "Resource": "arn:aws:s3:::your-company-hrms-vault/*"
+           }
+       ]
+   }
+   ```
+3. **Configure `.env`**:
+   ```ini
+   STORAGE_PROVIDER=s3
+   S3_BUCKET_NAME=your-company-hrms-vault
+   S3_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+   S3_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+   S3_REGION_NAME=ap-south-1
+   ```
+
+---
+
+### Option 2: Cloudflare R2 (S3-Compatible, 10 GB Free, Zero Egress Fees)
+Cloudflare R2 provides an S3-compatible API with zero data transfer fees, making it an excellent cost-effective alternative to AWS.
+
+1. In Cloudflare Dashboard, navigate to **R2** → **Create Bucket** (e.g. `hrms-storage`).
+2. Go to **Manage R2 API Tokens** → **Create API Token** with `Object Read & Write` permissions.
+3. Note your **Account ID**, **Access Key ID**, and **Secret Access Key**.
+4. Configure `.env`:
+   ```ini
+   STORAGE_PROVIDER=cloudflare
+   S3_BUCKET_NAME=hrms-storage
+   S3_ACCESS_KEY_ID=your_r2_access_key_id
+   S3_SECRET_ACCESS_KEY=your_r2_secret_access_key
+   S3_ENDPOINT_URL=https://<your_cloudflare_account_id>.r2.cloudflarestorage.com
+   S3_PUBLIC_URL_PREFIX=https://pub-<your_bucket_id>.r2.dev
+   S3_REGION_NAME=auto
+   ```
+
+---
 
 ### Option 3: Supabase Storage
+Supabase provides built-in object storage with PostgreSQL Row-Level Security integration.
+
+1. In your Supabase project dashboard, open the **Storage** section.
+2. Create two buckets:
+   - `hrms-avatars`: Set to **Public** (for employee avatars and company branding).
+   - `hrms-documents`: Set to **Private** (for sensitive KYC and payroll documents).
+3. Copy your **Project URL** and **Service Role Key** (under Project Settings → API).
+4. Configure `.env`:
+   ```ini
+   STORAGE_PROVIDER=supabase
+   SUPABASE_URL=https://<your-project-ref>.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
+   SUPABASE_BUCKET_AVATARS=hrms-avatars
+   SUPABASE_BUCKET_DOCS=hrms-documents
+   ```
+
+---
+
+### Option 4: Google Drive (15 GB Free Storage)
+Ideal for small teams or internal non-profit deployments wanting to store documents directly into a shared Google Drive folder.
+
+1. Create a Google Cloud Project and enable the **Google Drive API**.
+2. Create a **Service Account** and download the credentials JSON file (`service_account.json`).
+3. In Google Drive, create a folder (e.g. `HRMS Vault`) and share it with the service account email (`your-sa@project.iam.gserviceaccount.com`) as an **Editor**.
+4. Configure `.env`:
+   ```ini
+   STORAGE_PROVIDER=gdrive
+   GDRIVE_SERVICE_ACCOUNT_FILE=service_account.json
+   GDRIVE_FOLDER_ID=your_google_drive_folder_id_from_url
+   ```
+
+---
+
+### Option 5: Local Server Storage (Development Only)
+Files are stored locally on the server filesystem:
+- Confidential KYC files: `storage/private_documents/` (protected from static web exposure)
+- Public avatars: `static/uploads/avatars/`
+
 ```ini
-STORAGE_PROVIDER=supabase
-SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
-SUPABASE_BUCKET_NAME=hrms-storage
+STORAGE_PROVIDER=local
 ```
+> ⚠️ **Ephemeral Storage Warning**: If deploying on Docker or container platforms (Render, Railway, Fly.io, Heroku), local disk storage is wiped on each redeploy. Use S3, Cloudflare R2, or Supabase in production.
 
 ---
 

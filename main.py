@@ -107,6 +107,7 @@ def ensure_schema_columns(db_engine):
                 "reset_token": "VARCHAR(255)",
                 "reset_token_expiry": "TIMESTAMP",
                 "is_active": "BOOLEAN DEFAULT TRUE",
+                "token_version": "INTEGER DEFAULT 1",
                 "role": "VARCHAR(50) DEFAULT 'employee'",
                 "joining_date": "DATE",
             },

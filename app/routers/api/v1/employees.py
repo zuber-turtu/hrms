@@ -601,6 +601,7 @@ async def api_admin_reset_password(
         )
 
     employee.hashed_password = get_password_hash(payload.new_password)
+    employee.token_version = (employee.token_version or 1) + 1
     audit = AuditLog(
         actor_id=current_user.id,
         actor_email=current_user.email,

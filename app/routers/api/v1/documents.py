@@ -20,6 +20,7 @@ from app.schemas.document import (
 from app.dependencies import require_auth, RoleChecker
 from app.services.storage import get_storage_provider
 from app.utils.timezone import get_ist_now
+from app.utils.permissions import assert_can_manage_employee
 
 router = APIRouter(prefix="/documents", tags=["Documents & KYC"])
 
@@ -342,6 +343,16 @@ async def api_verify_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    # Block self-verification
+    if current_user.id == document.employee_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operation not permitted: You cannot verify or review your own documents.",
+        )
+
+    # Hierarchical Protection: lower role cannot verify documents of equal or higher role
+    assert_can_manage_employee(current_user, document.employee, "verify documents for")
+
     if payload.status not in ["verified", "rejected", "pending"]:
         raise HTTPException(status_code=400, detail="Invalid status")
 
@@ -370,6 +381,10 @@ async def api_delete_document(
     is_self = current_user.id == document.employee_id
     if not is_self and not is_hr:
         raise HTTPException(status_code=403, detail="Operation not permitted")
+
+    # Hierarchical Protection: if not self, actor must have strictly higher authority
+    if not is_self:
+        assert_can_manage_employee(current_user, document.employee, "delete document for")
 
     storage = get_storage_provider()
     try:

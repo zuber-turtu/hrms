@@ -10,6 +10,7 @@ from app.models.employee import Employee
 from app.models.attendance import Attendance
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
+from app.utils.permissions import assert_can_manage_employee
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.geofence import validate_punch_geofence, get_active_wfh_request
 from app.config import settings
@@ -207,6 +208,8 @@ async def api_check_out(
     return await api_get_attendance_status(db, current_user)
 
 
+@router.get("", response_model=List[AttendanceLogItem])
+@router.get("/", response_model=List[AttendanceLogItem])
 @router.get("/logs", response_model=List[AttendanceLogItem])
 async def api_get_attendance_logs(
     q: Optional[str] = None,
@@ -284,6 +287,10 @@ async def api_get_attendance_logs(
                 override_reason = log.override_reason
 
             start = log.check_in
+            if not start and not log.check_out:
+                sessions.append("No Punch")
+                continue
+
             if log.check_out:
                 end = log.check_out
                 out_str = log.check_out.strftime("%I:%M %p")
@@ -296,9 +303,11 @@ async def api_get_attendance_logs(
                     end = now_ist
                     out_str = "Active"
 
-            diff = (end - start).total_seconds()
-            total_seconds += max(0.0, diff)
-            in_str = log.check_in.strftime("%I:%M %p")
+            if start and end:
+                diff = (end - start).total_seconds()
+                total_seconds += max(0.0, diff)
+
+            in_str = log.check_in.strftime("%I:%M %p") if log.check_in else "--"
             sessions.append(f"{in_str} - {out_str}")
 
         hrs = int(total_seconds // 3600)
@@ -369,6 +378,16 @@ async def api_override_attendance(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Attendance record not found",
         )
+
+    # Block self-overrides
+    if current_user.id == log.employee_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operation not permitted: You cannot override your own attendance.",
+        )
+
+    # Hierarchical Protection: lower role cannot override attendance of equal or higher role
+    assert_can_manage_employee(current_user, log.employee, "override attendance for")
 
     # Manager Department Scoping
     if current_user.role == "manager":

@@ -28,6 +28,7 @@ class Employee(Base):
     hr_zone_scope = Column(String, default="all")
 
     # Auth & Security details
+    token_version = Column(Integer, default=1, nullable=False)
     reset_token = Column(String, nullable=True)
     reset_token_expiry = Column(DateTime, nullable=True)
 

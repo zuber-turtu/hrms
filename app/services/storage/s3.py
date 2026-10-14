@@ -46,6 +46,22 @@ class S3StorageProvider(BaseStorageProvider):
         )
         return self._client
 
+    def _extract_key(self, file_identifier: str) -> str:
+        """Extracts S3 object key from raw keys, s3:// URIs, or full HTTPS URLs."""
+        if not file_identifier:
+            return ""
+        if file_identifier.startswith("s3://"):
+            return file_identifier.replace("s3://", "", 1).lstrip("/")
+        if "amazonaws.com/" in file_identifier:
+            return file_identifier.split("amazonaws.com/", 1)[1].lstrip("/")
+        if self.public_url_prefix and file_identifier.startswith(self.public_url_prefix):
+            return file_identifier[len(self.public_url_prefix):].lstrip("/")
+        if file_identifier.startswith("http://") or file_identifier.startswith("https://"):
+            from urllib.parse import urlparse
+            path = urlparse(file_identifier).path
+            return path.lstrip("/")
+        return file_identifier.lstrip("/")
+
     def upload_file(
         self,
         file_bytes: bytes,
@@ -68,6 +84,10 @@ class S3StorageProvider(BaseStorageProvider):
             ContentType=content_type,
         )
 
+        # Private documents use secure s3:// URI to prevent unintended public exposure
+        if folder == "documents":
+            return f"s3://{object_key}", object_key
+
         if self.public_url_prefix:
             prefix = self.public_url_prefix.rstrip("/")
             public_url = f"{prefix}/{object_key}"
@@ -83,7 +103,8 @@ class S3StorageProvider(BaseStorageProvider):
             return False
         try:
             client = self._get_client()
-            client.delete_object(Bucket=self.bucket_name, Key=file_identifier)
+            key = self._extract_key(file_identifier)
+            client.delete_object(Bucket=self.bucket_name, Key=key)
             return True
         except Exception:
             return False
@@ -93,7 +114,8 @@ class S3StorageProvider(BaseStorageProvider):
             return None
         try:
             client = self._get_client()
-            res = client.get_object(Bucket=self.bucket_name, Key=file_identifier)
+            key = self._extract_key(file_identifier)
+            res = client.get_object(Bucket=self.bucket_name, Key=key)
             return res["Body"].read()
         except Exception:
             return None
@@ -105,9 +127,10 @@ class S3StorageProvider(BaseStorageProvider):
             return None
         try:
             client = self._get_client()
+            key = self._extract_key(file_identifier)
             return client.generate_presigned_url(
                 "get_object",
-                Params={"Bucket": self.bucket_name, "Key": file_identifier},
+                Params={"Bucket": self.bucket_name, "Key": key},
                 ExpiresIn=expires_in_seconds,
             )
         except Exception:
@@ -118,7 +141,8 @@ class S3StorageProvider(BaseStorageProvider):
             return False
         try:
             client = self._get_client()
-            client.head_object(Bucket=self.bucket_name, Key=file_identifier)
+            key = self._extract_key(file_identifier)
+            client.head_object(Bucket=self.bucket_name, Key=key)
             return True
         except Exception:
             return False

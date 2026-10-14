@@ -27,7 +27,11 @@ class Settings:
     # Session cookie settings
     COOKIE_NAME: str = "access_token"
     COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax")
-    COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() in ("true", "1", "yes")
+    COOKIE_SECURE: bool = (
+        True
+        if IS_PRODUCTION
+        else os.getenv("COOKIE_SECURE", "false").lower() in ("true", "1", "yes")
+    )
 
     # Pluggable Storage settings (local | gdrive | supabase | cloudflare | s3)
     STORAGE_PROVIDER: str = os.getenv("STORAGE_PROVIDER", "local")

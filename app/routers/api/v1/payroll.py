@@ -9,6 +9,7 @@ from app.models.payroll import Payslip
 from app.models.company import Company
 from app.models.audit import AuditLog
 from app.dependencies import require_auth, RoleChecker
+from app.utils.permissions import assert_can_manage_employee, can_manage_employee
 from app.services.payroll_calculator import (
     generate_draft_payslip,
     bulk_generate_payslips,
@@ -139,6 +140,9 @@ async def create_draft_payslip(
             detail=f"Employee with ID {req.employee_id} not found"
         )
 
+    # Hierarchical Protection: lower role cannot generate payslip for equal or higher role
+    assert_can_manage_employee(current_user, employee, "generate draft payslip for")
+
     # Check if payslip already exists for this month/year
     existing = db.query(Payslip).filter(
         Payslip.employee_id == req.employee_id,
@@ -268,13 +272,22 @@ async def get_payslip(
             detail=f"Payslip with ID {payslip_id} not found"
         )
 
-    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
-        if payslip.employee_id != current_user.id or payslip.status == "draft":
+    if current_user.id != payslip.employee_id:
+        if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Unauthorized to access this payslip (in draft review)"
+                detail="Unauthorized to access this payslip"
             )
-
+        if not can_manage_employee(current_user, payslip.employee) and current_user.role not in ["super_admin", "admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorized to view payslip of higher or equal corporate tier"
+            )
+    elif payslip.status == "draft":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized to access this payslip (in draft review)"
+        )
 
     return _format_payslip_out(payslip)
 
@@ -292,6 +305,9 @@ async def update_payslip(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Payslip with ID {payslip_id} not found"
         )
+
+    # Hierarchical Protection: lower role cannot edit payslip of equal or higher role
+    assert_can_manage_employee(current_user, payslip.employee, "edit payslip for")
 
     old_val = (
         f"Date: {payslip.generated_on}, Basic: {payslip.basic}, Days: {payslip.days_worked}/{payslip.payable_days}, "
@@ -362,12 +378,22 @@ async def download_payslip_pdf(
             detail=f"Payslip with ID {payslip_id} not found"
         )
 
-    if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
-        if payslip.employee_id != current_user.id or payslip.status == "draft":
+    if current_user.id != payslip.employee_id:
+        if current_user.role not in ["super_admin", "admin", "hr", "hr_admin"] and not getattr(current_user, "is_super_admin", False):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Unauthorized to download this payslip (in draft review)"
+                detail="Unauthorized to download this payslip"
             )
+        if not can_manage_employee(current_user, payslip.employee) and current_user.role not in ["super_admin", "admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorized to download payslip of higher or equal corporate tier"
+            )
+    elif payslip.status == "draft":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized to download this payslip (in draft review)"
+        )
 
 
     company = db.query(Company).first()

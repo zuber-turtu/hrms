@@ -8,12 +8,14 @@
 
 A dynamic, full-featured, enterprise-grade **Human Resource Management System (HRMS)** built with **FastAPI**, **SQLAlchemy 2.0**, **Jinja2**, and **Tailwind CSS**. Designed for modern organizations, featuring multi-database support (SQLite, MySQL, PostgreSQL), pluggable multi-cloud storage, GPS geofencing attendance, dynamic payroll calculation, PDF payslip generation, multi-tier leave workflows, and granular role-based access control.
 
-> 📖 **Looking for deployment instructions?** See the full **[Complete Setup & Deployment Guide (SETUP.md)](SETUP.md)** for production Linux/Gunicorn/Nginx, Docker, and local development walkthroughs.
+> 📖 **Deploying to Production with MySQL & AWS S3?** See the step-by-step **[End-to-End Production Deployment Guide (PRODUCTION_SETUP.md)](PRODUCTION_SETUP.md)**.
+> 📚 For local development and general overview, see the **[General Setup Guide (SETUP.md)](SETUP.md)**.
 
 ---
 
 ## 📑 Table of Contents
-- [Setup & Deployment Guide (SETUP.md)](SETUP.md)
+- [🚀 MySQL + AWS S3 Production Guide (PRODUCTION_SETUP.md)](PRODUCTION_SETUP.md)
+- [General Setup & Deployment Guide (SETUP.md)](SETUP.md)
 - [Key Features](#-key-features)
 - [Tech Stack](#-tech-stack)
 - [Directory Structure](#-directory-structure)
@@ -49,11 +51,14 @@ A dynamic, full-featured, enterprise-grade **Human Resource Management System (H
 ### 👥 3. Comprehensive Employee Management
 - **Full Employee Dossier**: Personal details, department, designation, joining date, qualifications, experience, and contact details.
 - **Financial & Statutory Data**: Bank account details (Account number, IFSC, Bank name) and national IDs (Aadhaar, PAN, UAN).
-- **Role-Based Access Control (RBAC)**: 4 pre-configured authorization tiers:
-  - `admin` — Full platform control, company profile, audit logs, and employee role promotion.
-  - `hr_admin` — Employee onboarding, department configuration, payroll editing, and leave approvals.
-  - `manager` — Team attendance monitoring, leave approvals, and WFH management.
-  - `employee` — Self-service dashboard, attendance clocking, leave requests, and payslip viewing.
+- **Hierarchical Role-Based Access Control (HRBAC)**: 7 strictly enforced authorization tiers:
+  - `super_admin` (Level 100) — System owner with full infrastructure control & company profile management.
+  - `admin` (Level 80) — Company administrator with audit log inspection & employee role management.
+  - `hr_admin` (Level 60) — Senior HR administration, payroll processing & team management.
+  - `hr` (Level 50) — Operational HR, employee onboarding, dossier maintenance, leave reviews & KYC verification.
+  - `manager` (Level 40) — Department head, subordinate attendance tracking & leave approvals.
+  - `employee` (Level 20) — Full-time employee self-service portal (attendance clock-in, leave applications, payslip downloads).
+  - `intern` (Level 10) — Intern self-service portal.
 
 ### 🗂️ 4. Departments & Job Designations
 - **Department Hierarchy**: Color-coded department cards with unique short codes.
@@ -71,15 +76,15 @@ A dynamic, full-featured, enterprise-grade **Human Resource Management System (H
 - **Interactive Payslip Editor**: Allows HR admins to edit earnings, apply one-time bonuses or deductions, and customize date ranges prior to locking.
 - **PDF Generation**: High-fidelity, print-ready PDF salary slips with corporate logo, signature stamp, and breakdown tables powered by **ReportLab**.
 
-### 📁 7. Multi-Cloud Document Vault
-- **Document Categories**: KYC, academic certificates, experience letters, and company contracts with max size & extension restrictions.
+### 📁 7. Multi-Cloud Document Vault & Isolated Storage
+- **Security & Privacy**: Confidential employee KYC documents (Aadhaar, PAN, offer letters) are strictly isolated in private storage (`storage/private_documents/` or private cloud buckets) and streamed only via authenticated endpoints or time-limited presigned URLs.
 - **Verification Pipeline**: Admin document verification, approval, rejection with feedback, and download audit.
 - **5 Pluggable Storage Backends**:
-  1. `local` — Local disk storage (`static/uploads/`).
-  2. `supabase` — Supabase Cloud Storage.
-  3. `gdrive` — Google Drive via Service Account.
-  4. `cloudflare` — Cloudflare R2 (S3-compatible, zero egress fees).
-  5. `s3` — AWS S3 or MinIO.
+  1. `local` — Local filesystem (KYC files in `storage/private_documents/`, avatars in `static/uploads/avatars/`).
+  2. `s3` — AWS S3 (Native `boto3` engine with private object storage & 15-minute presigned URLs).
+  3. `cloudflare` — Cloudflare R2 (S3-compatible, zero egress fees).
+  4. `supabase` — Supabase Cloud Storage (Public avatar bucket + private KYC documents bucket).
+  5. `gdrive` — Google Drive via Service Account.
 
 ### 🎨 8. Modern UI/UX Experience
 - Glassmorphism & sleek dark/light accent design system.
@@ -236,15 +241,46 @@ DATABASE_URL=sqlite:///./hrms.db
 
 ## ☁️ Multi-Cloud Storage Setup
 
-Configure the `STORAGE_PROVIDER` setting in `.env` to select your document vault storage engine:
+Configure the `STORAGE_PROVIDER` setting in `.env` to select your document vault storage engine. The system automatically handles public avatars vs. private encrypted KYC documents:
 
-| Provider | Setting | Required Credentials |
-|---|---|---|
-| **Local Disk** | `STORAGE_PROVIDER=local` | None (saved to `static/uploads/`) |
-| **Supabase Storage** | `STORAGE_PROVIDER=supabase` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET_NAME` |
-| **Google Drive** | `STORAGE_PROVIDER=gdrive` | `GDRIVE_SERVICE_ACCOUNT_FILE`, `GDRIVE_FOLDER_ID` |
-| **Cloudflare R2** | `STORAGE_PROVIDER=cloudflare` | `S3_BUCKET_NAME`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT_URL` |
-| **AWS S3 / MinIO** | `STORAGE_PROVIDER=s3` | `S3_BUCKET_NAME`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION_NAME` |
+| Provider | Setting | Key Environment Variables | Best For |
+|---|---|---|---|
+| **AWS S3** | `STORAGE_PROVIDER=s3` | `S3_BUCKET_NAME`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION_NAME` | Enterprise AWS deployments & compliance |
+| **Cloudflare R2** | `STORAGE_PROVIDER=cloudflare` | `S3_BUCKET_NAME`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT_URL` | Zero egress fee high-bandwidth deployments |
+| **Supabase Storage** | `STORAGE_PROVIDER=supabase` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET_AVATARS`, `SUPABASE_BUCKET_DOCS` | Managed Supabase & PostgreSQL stacks |
+| **Google Drive** | `STORAGE_PROVIDER=gdrive` | `GDRIVE_SERVICE_ACCOUNT_FILE`, `GDRIVE_FOLDER_ID` | Small business / Google Workspace teams |
+| **Local Disk** | `STORAGE_PROVIDER=local` | None (`storage/private_documents/` & `static/uploads/`) | Local offline development |
+
+#### Quick Storage Configuration Examples:
+
+**AWS S3:**
+```ini
+STORAGE_PROVIDER=s3
+S3_BUCKET_NAME=your-production-hrms-vault
+S3_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+S3_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+S3_REGION_NAME=ap-south-1
+```
+
+**Cloudflare R2 (S3-Compatible):**
+```ini
+STORAGE_PROVIDER=cloudflare
+S3_BUCKET_NAME=hrms-storage
+S3_ACCESS_KEY_ID=your_r2_access_key_id
+S3_SECRET_ACCESS_KEY=your_r2_secret_access_key
+S3_ENDPOINT_URL=https://<account_id>.r2.cloudflarestorage.com
+S3_PUBLIC_URL_PREFIX=https://cdn.yourcompany.com
+S3_REGION_NAME=auto
+```
+
+**Supabase Storage:**
+```ini
+STORAGE_PROVIDER=supabase
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
+SUPABASE_BUCKET_AVATARS=hrms-avatars
+SUPABASE_BUCKET_DOCS=hrms-documents
+```
 
 ---
 

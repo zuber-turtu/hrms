@@ -648,6 +648,10 @@ async def view_employee(
                     is_overridden = True
                     override_reason = log.override_reason
                 start = log.check_in
+                if not start and not log.check_out:
+                    sessions.append("No Punch")
+                    continue
+
                 if log.check_out:
                     end = log.check_out
                     out_str = log.check_out.strftime('%I:%M %p')
@@ -659,9 +663,12 @@ async def view_employee(
                     else:
                         end = now_ist
                         out_str = "Active"
-                diff = (end - start).total_seconds()
-                total_seconds += max(0, diff)
-                in_str = log.check_in.strftime('%I:%M %p')
+
+                if start and end:
+                    diff = (end - start).total_seconds()
+                    total_seconds += max(0, diff)
+
+                in_str = log.check_in.strftime('%I:%M %p') if log.check_in else "--"
                 sessions.append(f"{in_str} - {out_str}")
                 
             hrs = int(total_seconds // 3600)
@@ -1214,6 +1221,7 @@ async def admin_reset_password(
         raise HTTPException(status_code=400, detail="New password must be at least 6 characters long.")
 
     employee.hashed_password = get_password_hash(new_password)
+    employee.token_version = (employee.token_version or 1) + 1
     employee.reset_token = None
     employee.reset_token_expiry = None
     

@@ -60,6 +60,13 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
         return None
         
     user = db.query(Employee).filter(Employee.email == email).first()
+    if not user:
+        return None
+        
+    token_ver = payload.get("ver")
+    if token_ver is not None and token_ver != (user.token_version or 1):
+        return None
+
     return user
 
 
