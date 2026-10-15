@@ -16,6 +16,7 @@ from app.templates_config import templates
 from app.utils.permissions import (
     AVAILABLE_PERMISSIONS,
     get_company_permissions,
+    has_role_permission,
     can_manage_employee,
     can_assign_role,
     assert_can_manage_employee,
@@ -29,12 +30,29 @@ router = APIRouter(prefix="/company")
 allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 allow_admin_only = RoleChecker(["super_admin", "admin"])
 
+def require_company_settings_access(
+    current_user: Employee = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> Employee:
+    if current_user.role in ["super_admin", "admin", "hr", "hr_admin"] or getattr(current_user, "is_super_admin", False):
+        return current_user
+    company = db.query(Company).first()
+    if has_role_permission(company, current_user.role, "company_settings"):
+        return current_user
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Operation not permitted: You do not have permission to view or manage company settings."
+    )
 
+
+@router.get("", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 @router.get("/profile", response_class=HTMLResponse)
+@router.get("/settings", response_class=HTMLResponse)
 async def company_profile(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Employee = Depends(allow_hr_admin),
+    current_user: Employee = Depends(require_company_settings_access),
 ):
     company = get_or_create_company(db)
 
@@ -76,7 +94,10 @@ async def company_profile(
     )
 
 
+@router.post("", response_class=HTMLResponse)
+@router.post("/", response_class=HTMLResponse)
 @router.post("/profile")
+@router.post("/settings")
 async def update_company_profile(
     request: Request,
     section: Optional[str] = Form(None),

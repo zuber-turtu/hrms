@@ -306,16 +306,44 @@ PASSWORD_RESET_TOKEN_EXPIRE_MINUTES=30
 
 ---
 
-## 🔑 Default Admin Credentials
+## 🔑 Super Administrator Credentials & Access
 
-Upon initial launch, the system automatically initializes a default super-administrator account:
+Upon initial launch or deployment, the system automatically initializes/elevates a default **Super Administrator** account:
 
 - **Login URL**: [http://localhost:8000/auth/login](http://localhost:8000/auth/login)
 - **Email**: `admin@hrms.local`
 - **Password**: `Admin@123`
+- **Role**: `super_admin` *(Tier 100 — Universal system authority)*
+
+### How to Get / Promote a Super Admin in Production
+
+If you already deployed and your account was created with the lower `admin` role, or you want to grant `super_admin` to your personal/company email, choose any of the 3 easy methods:
+
+#### Method 1: Using the CLI Tool (Recommended)
+SSH into your production server and run:
+```bash
+# In your app directory (/var/www/hrms)
+python promote_super_admin.py your_email@company.com
+```
+*If no user exists with that email, it will prompt you to create a new Super Admin account on the spot.*
+
+#### Method 2: Configure `.env` on Deployment
+Set your desired super admin credentials in `.env`:
+```env
+DEFAULT_SUPER_ADMIN_EMAIL=admin@hrms.local
+DEFAULT_SUPER_ADMIN_PASSWORD=YourSecurePassword123
+DEFAULT_SUPER_ADMIN_NAME="Super Admin"
+```
+On application restart (`sudo systemctl reload hrms`), the server will automatically elevate this user to `super_admin`.
+
+#### Method 3: Direct MySQL Query
+Run directly inside MySQL on your live database:
+```sql
+UPDATE employees SET role = 'super_admin' WHERE email = 'admin@hrms.local';
+```
 
 > [!IMPORTANT]
-> Change the default admin password immediately upon first login for production deployments.
+> Change the default super admin password immediately upon first login for production deployments.
 
 ---
 

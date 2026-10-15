@@ -2,6 +2,164 @@
 
 {% block header_title %}Leave Types & Statutory Policies — Admin Configuration{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Active Field Focus Glow */
+    .modal-field-input {
+        transition: all 0.15s ease-in-out;
+    }
+    .modal-field-input:focus {
+        border-color: #008080 !important;
+        background-color: #F0FDFA !important;
+        box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.2) !important;
+        outline: none !important;
+    }
+
+    /* Gender Selection Cards */
+    .gender-radio-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.6rem 0.75rem;
+        border-radius: 0.75rem;
+        border: 2px solid #E2E8F0;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #475569;
+        background-color: #FFFFFF;
+        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        user-select: none;
+    }
+    .gender-radio-card:hover {
+        border-color: #94A3B8;
+        background-color: #F8FAFC;
+    }
+    .gender-radio-card .gender-check-icon {
+        display: none;
+    }
+    
+    /* Gender - All Staff Active */
+    .gender-card-all:has(input:checked),
+    .gender-card-all.is-selected {
+        border-color: #008080 !important;
+        background-color: #F0FDFA !important;
+        color: #004D4D !important;
+        box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.22) !important;
+    }
+    .gender-card-all:has(input:checked) .gender-check-icon,
+    .gender-card-all.is-selected .gender-check-icon {
+        display: inline-flex !important;
+    }
+
+    /* Gender - Female Active */
+    .gender-card-female:has(input:checked),
+    .gender-card-female.is-selected {
+        border-color: #DB2777 !important;
+        background-color: #FDF2F8 !important;
+        color: #831843 !important;
+        box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.22) !important;
+    }
+    .gender-card-female:has(input:checked) .gender-check-icon,
+    .gender-card-female.is-selected .gender-check-icon {
+        display: inline-flex !important;
+    }
+
+    /* Gender - Male Active */
+    .gender-card-male:has(input:checked),
+    .gender-card-male.is-selected {
+        border-color: #2563EB !important;
+        background-color: #EFF6FF !important;
+        color: #1E3A8A !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22) !important;
+    }
+    .gender-card-male:has(input:checked) .gender-check-icon,
+    .gender-card-male.is-selected .gender-check-icon {
+        display: inline-flex !important;
+    }
+
+    /* Compensation Cards (Paid / Unpaid) */
+    .comp-radio-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.6rem 0.75rem;
+        border-radius: 0.75rem;
+        border: 2px solid #E2E8F0;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #475569;
+        background-color: #FFFFFF;
+        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        user-select: none;
+    }
+    .comp-radio-card:hover {
+        border-color: #94A3B8;
+        background-color: #F8FAFC;
+    }
+    .comp-radio-card .comp-check-icon {
+        display: none;
+    }
+
+    .comp-card-paid:has(input:checked),
+    .comp-card-paid.is-selected {
+        border-color: #059669 !important;
+        background-color: #ECFDF5 !important;
+        color: #065F46 !important;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.22) !important;
+    }
+    .comp-card-paid:has(input:checked) .comp-check-icon,
+    .comp-card-paid.is-selected .comp-check-icon {
+        display: inline-flex !important;
+    }
+
+    .comp-card-unpaid:has(input:checked),
+    .comp-card-unpaid.is-selected {
+        border-color: #D97706 !important;
+        background-color: #FFFBEB !important;
+        color: #92400E !important;
+        box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.22) !important;
+    }
+    .comp-card-unpaid:has(input:checked) .comp-check-icon,
+    .comp-card-unpaid.is-selected .comp-check-icon {
+        display: inline-flex !important;
+    }
+
+    /* Color Swatch Buttons */
+    .color-swatch-btn {
+        width: 1.85rem;
+        height: 1.85rem;
+        border-radius: 0.5rem;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease-in-out;
+        position: relative;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    .color-swatch-btn:hover {
+        transform: scale(1.15);
+    }
+    .color-swatch-btn.is-active-color {
+        border-color: #FFFFFF !important;
+        box-shadow: 0 0 0 2.5px #0F172A, 0 4px 6px -1px rgba(0, 0, 0, 0.25) !important;
+        transform: scale(1.15);
+    }
+    .color-swatch-btn .swatch-check {
+        display: none;
+    }
+    .color-swatch-btn.is-active-color .swatch-check {
+        display: block !important;
+        color: #FFFFFF !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-5">
 
@@ -286,58 +444,75 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Leave Name <span class="text-rose-500">*</span></label>
-                    <input type="text" name="name" id="create_name" required placeholder="e.g. Bereavement Leave" oninput="autoSuggestCode(this.value)" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 focus:outline-none">
+                    <input type="text" name="name" id="create_name" required placeholder="e.g. Bereavement Leave" oninput="autoSuggestCode(this.value)" class="modal-field-input w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Unique Code <span class="text-rose-500">*</span></label>
-                    <input type="text" name="code" id="create_code" required placeholder="e.g. BL or BEREAVE" maxlength="20" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-mono uppercase focus:outline-none">
+                    <input type="text" name="code" id="create_code" required placeholder="e.g. BL or BEREAVE" maxlength="20" class="modal-field-input w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 font-mono uppercase focus:outline-none">
                 </div>
             </div>
 
             <!-- Description -->
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Policy Description & Guidelines</label>
-                <textarea name="description" rows="2" placeholder="Explain the eligibility criteria or documentation requirements for this leave..." class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 focus:outline-none"></textarea>
+                <textarea name="description" rows="2" placeholder="Explain the eligibility criteria or documentation requirements for this leave..." class="modal-field-input w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none"></textarea>
             </div>
 
             <!-- Default Days & Pay Nature -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Default Days / Year <span class="text-rose-500">*</span></label>
-                    <input type="number" step="0.5" min="0" max="365" name="default_days_per_year" value="12.0" required class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-mono font-bold focus:outline-none">
+                    <input type="number" step="0.5" min="0" max="365" name="default_days_per_year" value="12.0" required class="modal-field-input w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 font-mono font-bold focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Compensation Nature <span class="text-rose-500">*</span></label>
-                    <select name="is_paid" data-custom-select="true" class="custom-select w-full">
-                        <option value="on" data-badge="Paid" selected>Paid Leave (No salary deduction)</option>
-                        <option value="off" data-badge="Unpaid">Unpaid (Leave Without Pay / LWP)</option>
-                    </select>
+                    <div class="grid grid-cols-2 gap-2" id="create_is_paid_container" onchange="syncCompCards(this)">
+                        <label class="comp-radio-card comp-card-paid is-selected" onclick="syncCompCards('create_is_paid_container')">
+                            <input type="radio" name="is_paid" value="on" checked class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span>Paid Leave</span>
+                                <span class="comp-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-emerald-700"></i></span>
+                            </div>
+                        </label>
+                        <label class="comp-radio-card comp-card-unpaid" onclick="syncCompCards('create_is_paid_container')">
+                            <input type="radio" name="is_paid" value="off" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                <span>Unpaid (LWP)</span>
+                                <span class="comp-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-amber-700"></i></span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
 
             <!-- Gender Applicability -->
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Gender Eligibility Rule <span class="text-rose-500">*</span></label>
-                <div class="grid grid-cols-3 gap-2">
-                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
+                <div class="grid grid-cols-3 gap-2" id="create_gender_container" onchange="syncGenderCards(this)">
+                    <label class="gender-radio-card gender-card-all is-selected" onclick="syncGenderCards('create_gender_container')">
                         <input type="radio" name="applicable_gender" value="all" checked class="sr-only">
-                        <div class="flex items-center space-x-1">
+                        <div class="flex items-center space-x-1.5">
                             <i data-lucide="users" class="w-3.5 h-3.5 text-teal-600"></i>
                             <span>All Staff</span>
+                            <span class="gender-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-teal-700"></i></span>
                         </div>
                     </label>
-                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-pink-600 has-checked:bg-pink-50/70 has-checked:text-pink-900">
+                    <label class="gender-radio-card gender-card-female" onclick="syncGenderCards('create_gender_container')">
                         <input type="radio" name="applicable_gender" value="female" class="sr-only">
-                        <div class="flex items-center space-x-1">
+                        <div class="flex items-center space-x-1.5">
                             <i data-lucide="user" class="w-3.5 h-3.5 text-pink-600"></i>
                             <span>Female Only</span>
+                            <span class="gender-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-pink-700"></i></span>
                         </div>
                     </label>
-                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-blue-600 has-checked:bg-blue-50/70 has-checked:text-blue-900">
+                    <label class="gender-radio-card gender-card-male" onclick="syncGenderCards('create_gender_container')">
                         <input type="radio" name="applicable_gender" value="male" class="sr-only">
-                        <div class="flex items-center space-x-1">
+                        <div class="flex items-center space-x-1.5">
                             <i data-lucide="user" class="w-3.5 h-3.5 text-blue-600"></i>
                             <span>Male Only</span>
+                            <span class="gender-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-blue-700"></i></span>
                         </div>
                     </label>
                 </div>
@@ -347,16 +522,16 @@
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Color Badge Identifier</label>
                 <div class="flex items-center space-x-3">
-                    <input type="color" name="color_code" id="create_color_picker" value="#008080" class="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5">
-                    <div class="flex flex-wrap gap-1.5">
-                        <button type="button" onclick="selectColorPreset('create_color_picker', '#008080')" class="w-6 h-6 rounded-md bg-[#008080] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Teal"></button>
-                        <button type="button" onclick="selectColorPreset('create_color_picker', '#3B82F6')" class="w-6 h-6 rounded-md bg-[#3B82F6] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Blue"></button>
-                        <button type="button" onclick="selectColorPreset('create_color_picker', '#E53E3E')" class="w-6 h-6 rounded-md bg-[#E53E3E] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Red"></button>
-                        <button type="button" onclick="selectColorPreset('create_color_picker', '#8B5CF6')" class="w-6 h-6 rounded-md bg-[#8B5CF6] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Purple"></button>
-                        <button type="button" onclick="selectColorPreset('create_color_picker', '#EC4899')" class="w-6 h-6 rounded-md bg-[#EC4899] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Pink"></button>
-                        <button type="button" onclick="selectColorPreset('create_color_picker', '#10B981')" class="w-6 h-6 rounded-md bg-[#10B981] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Emerald"></button>
-                        <button type="button" onclick="selectColorPreset('create_color_picker', '#F59E0B')" class="w-6 h-6 rounded-md bg-[#F59E0B] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Amber"></button>
-                        <button type="button" onclick="selectColorPreset('create_color_picker', '#6B7280')" class="w-6 h-6 rounded-md bg-[#6B7280] border border-slate-300 hover:scale-110 transition-transform cursor-pointer" title="Gray"></button>
+                    <input type="color" name="color_code" id="create_color_picker" value="#008080" oninput="syncColorPresets('create_color_presets', this.value)" class="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5 shadow-2xs">
+                    <div class="flex flex-wrap gap-2" id="create_color_presets">
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#008080', this)" class="color-swatch-btn bg-[#008080] is-active-color" title="Teal"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#3B82F6', this)" class="color-swatch-btn bg-[#3B82F6]" title="Blue"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#E53E3E', this)" class="color-swatch-btn bg-[#E53E3E]" title="Red"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#8B5CF6', this)" class="color-swatch-btn bg-[#8B5CF6]" title="Purple"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#EC4899', this)" class="color-swatch-btn bg-[#EC4899]" title="Pink"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#10B981', this)" class="color-swatch-btn bg-[#10B981]" title="Emerald"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#F59E0B', this)" class="color-swatch-btn bg-[#F59E0B]" title="Amber"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('create_color_picker', '#6B7280', this)" class="color-swatch-btn bg-[#6B7280]" title="Gray"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
                     </div>
                 </div>
             </div>
@@ -413,58 +588,75 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Leave Name <span class="text-rose-500">*</span></label>
-                    <input type="text" name="name" id="edit_name" required class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 focus:outline-none">
+                    <input type="text" name="name" id="edit_name" required class="modal-field-input w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Unique Code <span class="text-rose-500">*</span></label>
-                    <input type="text" name="code" id="edit_code" required maxlength="20" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-mono uppercase focus:outline-none">
+                    <input type="text" name="code" id="edit_code" required maxlength="20" class="modal-field-input w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 font-mono uppercase focus:outline-none">
                 </div>
             </div>
 
             <!-- Description -->
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Policy Description & Guidelines</label>
-                <textarea name="description" id="edit_description" rows="2" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 focus:outline-none"></textarea>
+                <textarea name="description" id="edit_description" rows="2" class="modal-field-input w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none"></textarea>
             </div>
 
             <!-- Default Days & Pay Nature -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Default Days / Year <span class="text-rose-500">*</span></label>
-                    <input type="number" step="0.5" min="0" max="365" name="default_days_per_year" id="edit_default_days" required class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600 font-mono font-bold focus:outline-none">
+                    <input type="number" step="0.5" min="0" max="365" name="default_days_per_year" id="edit_default_days" required class="modal-field-input w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 font-mono font-bold focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Compensation Nature <span class="text-rose-500">*</span></label>
-                    <select name="is_paid" id="edit_is_paid" data-custom-select="true" class="custom-select w-full">
-                        <option value="on" data-badge="Paid">Paid Leave (No salary deduction)</option>
-                        <option value="off" data-badge="Unpaid">Unpaid (Leave Without Pay / LWP)</option>
-                    </select>
+                    <div class="grid grid-cols-2 gap-2" id="edit_is_paid_container" onchange="syncCompCards(this)">
+                        <label class="comp-radio-card comp-card-paid" onclick="syncCompCards('edit_is_paid_container')">
+                            <input type="radio" name="is_paid" id="edit_is_paid_on" value="on" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span>Paid Leave</span>
+                                <span class="comp-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-emerald-700"></i></span>
+                            </div>
+                        </label>
+                        <label class="comp-radio-card comp-card-unpaid" onclick="syncCompCards('edit_is_paid_container')">
+                            <input type="radio" name="is_paid" id="edit_is_paid_off" value="off" class="sr-only">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                <span>Unpaid (LWP)</span>
+                                <span class="comp-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-amber-700"></i></span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
 
             <!-- Gender Applicability -->
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Gender Eligibility Rule <span class="text-rose-500">*</span></label>
-                <div class="grid grid-cols-3 gap-2">
-                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-teal-600 has-checked:bg-teal-50/70 has-checked:text-teal-900">
+                <div class="grid grid-cols-3 gap-2" id="edit_gender_container" onchange="syncGenderCards(this)">
+                    <label class="gender-radio-card gender-card-all" onclick="syncGenderCards('edit_gender_container')">
                         <input type="radio" name="applicable_gender" id="edit_gender_all" value="all" class="sr-only">
-                        <div class="flex items-center space-x-1">
+                        <div class="flex items-center space-x-1.5">
                             <i data-lucide="users" class="w-3.5 h-3.5 text-teal-600"></i>
                             <span>All Staff</span>
+                            <span class="gender-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-teal-700"></i></span>
                         </div>
                     </label>
-                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-pink-600 has-checked:bg-pink-50/70 has-checked:text-pink-900">
+                    <label class="gender-radio-card gender-card-female" onclick="syncGenderCards('edit_gender_container')">
                         <input type="radio" name="applicable_gender" id="edit_gender_female" value="female" class="sr-only">
-                        <div class="flex items-center space-x-1">
+                        <div class="flex items-center space-x-1.5">
                             <i data-lucide="user" class="w-3.5 h-3.5 text-pink-600"></i>
                             <span>Female Only</span>
+                            <span class="gender-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-pink-700"></i></span>
                         </div>
                     </label>
-                    <label class="relative flex items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-teal-300 transition-all text-xs font-bold text-slate-700 has-checked:border-blue-600 has-checked:bg-blue-50/70 has-checked:text-blue-900">
+                    <label class="gender-radio-card gender-card-male" onclick="syncGenderCards('edit_gender_container')">
                         <input type="radio" name="applicable_gender" id="edit_gender_male" value="male" class="sr-only">
-                        <div class="flex items-center space-x-1">
+                        <div class="flex items-center space-x-1.5">
                             <i data-lucide="user" class="w-3.5 h-3.5 text-blue-600"></i>
                             <span>Male Only</span>
+                            <span class="gender-check-icon"><i data-lucide="check" class="w-3.5 h-3.5 ml-0.5 text-blue-700"></i></span>
                         </div>
                     </label>
                 </div>
@@ -474,16 +666,16 @@
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Color Badge Identifier</label>
                 <div class="flex items-center space-x-3">
-                    <input type="color" name="color_code" id="edit_color_picker" value="#008080" class="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5">
-                    <div class="flex flex-wrap gap-1.5">
-                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#008080')" class="w-6 h-6 rounded-md bg-[#008080] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
-                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#3B82F6')" class="w-6 h-6 rounded-md bg-[#3B82F6] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
-                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#E53E3E')" class="w-6 h-6 rounded-md bg-[#E53E3E] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
-                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#8B5CF6')" class="w-6 h-6 rounded-md bg-[#8B5CF6] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
-                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#EC4899')" class="w-6 h-6 rounded-md bg-[#EC4899] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
-                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#10B981')" class="w-6 h-6 rounded-md bg-[#10B981] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
-                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#F59E0B')" class="w-6 h-6 rounded-md bg-[#F59E0B] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
-                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#6B7280')" class="w-6 h-6 rounded-md bg-[#6B7280] border border-slate-300 hover:scale-110 transition-transform cursor-pointer"></button>
+                    <input type="color" name="color_code" id="edit_color_picker" value="#008080" oninput="syncColorPresets('edit_color_presets', this.value)" class="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5 shadow-2xs">
+                    <div class="flex flex-wrap gap-2" id="edit_color_presets">
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#008080', this)" class="color-swatch-btn bg-[#008080]" title="Teal"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#3B82F6', this)" class="color-swatch-btn bg-[#3B82F6]" title="Blue"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#E53E3E', this)" class="color-swatch-btn bg-[#E53E3E]" title="Red"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#8B5CF6', this)" class="color-swatch-btn bg-[#8B5CF6]" title="Purple"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#EC4899', this)" class="color-swatch-btn bg-[#EC4899]" title="Pink"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#10B981', this)" class="color-swatch-btn bg-[#10B981]" title="Emerald"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#F59E0B', this)" class="color-swatch-btn bg-[#F59E0B]" title="Amber"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
+                        <button type="button" onclick="selectColorPreset('edit_color_picker', '#6B7280', this)" class="color-swatch-btn bg-[#6B7280]" title="Gray"><i data-lucide="check" class="swatch-check w-3.5 h-3.5"></i></button>
                     </div>
                 </div>
             </div>
@@ -585,17 +777,79 @@
         this.dataset.manual = 'true';
     });
 
-    function selectColorPreset(pickerId, color) {
+    function selectColorPreset(pickerId, color, btnEl) {
         const picker = document.getElementById(pickerId);
         if (picker) {
             picker.value = color;
         }
+        const container = btnEl ? btnEl.parentElement : null;
+        if (container) {
+            container.querySelectorAll('.color-swatch-btn').forEach(btn => {
+                btn.classList.remove('is-active-color');
+            });
+        }
+        if (btnEl) {
+            btnEl.classList.add('is-active-color');
+        }
+    }
+
+    function syncColorPresets(containerId, colorHex) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const cleanHex = (colorHex || '').toLowerCase();
+        let matched = false;
+        container.querySelectorAll('.color-swatch-btn').forEach(btn => {
+            const onclick = btn.getAttribute('onclick') || '';
+            if (onclick.toLowerCase().includes(cleanHex)) {
+                btn.classList.add('is-active-color');
+                matched = true;
+            } else {
+                btn.classList.remove('is-active-color');
+            }
+        });
+    }
+
+    function syncGenderCards(containerId) {
+        const container = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
+        if (!container) return;
+        setTimeout(() => {
+            const cards = container.querySelectorAll('.gender-radio-card');
+            cards.forEach(card => {
+                const radio = card.querySelector('input[type="radio"]');
+                if (radio && radio.checked) {
+                    card.classList.add('is-selected');
+                } else {
+                    card.classList.remove('is-selected');
+                }
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }, 10);
+    }
+
+    function syncCompCards(containerId) {
+        const container = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
+        if (!container) return;
+        setTimeout(() => {
+            const cards = container.querySelectorAll('.comp-radio-card');
+            cards.forEach(card => {
+                const radio = card.querySelector('input[type="radio"]');
+                if (radio && radio.checked) {
+                    card.classList.add('is-selected');
+                } else {
+                    card.classList.remove('is-selected');
+                }
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }, 10);
     }
 
     function openCreateLeaveTypeModal() {
         const modal = document.getElementById('create-leave-type-modal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        syncGenderCards('create_gender_container');
+        syncCompCards('create_is_paid_container');
+        syncColorPresets('create_color_presets', document.getElementById('create_color_picker')?.value || '#008080');
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
@@ -614,8 +868,17 @@
         document.getElementById('edit_code').value = code;
         document.getElementById('edit_description').value = desc || '';
         document.getElementById('edit_default_days').value = defaultDays;
-        document.getElementById('edit_is_paid').value = isPaid ? 'on' : 'off';
+        
+        if (isPaid) {
+            document.getElementById('edit_is_paid_on').checked = true;
+        } else {
+            document.getElementById('edit_is_paid_off').checked = true;
+        }
+        syncCompCards('edit_is_paid_container');
+
         document.getElementById('edit_color_picker').value = colorCode || '#008080';
+        syncColorPresets('edit_color_presets', colorCode || '#008080');
+
         document.getElementById('edit_is_active').checked = isActive;
 
         if (gender === 'female') {
@@ -625,6 +888,7 @@
         } else {
             document.getElementById('edit_gender_all').checked = true;
         }
+        syncGenderCards('edit_gender_container');
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');

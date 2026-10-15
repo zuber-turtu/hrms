@@ -21,6 +21,7 @@ This document outlines all scenarios, events, and triggers where automated email
 | **11** | **Remote / WFH** | Manager/HR approves WFH request | Applicant | `Work From Home (WFH) Request APPROVED — {Company}` | [`send_wfh_status_email`](#10-work-from-home-wfh-approved) |
 | **12** | **Remote / WFH** | Manager/HR declines WFH request | Applicant | `Work From Home (WFH) Request REJECTED — {Company}` | [`send_wfh_status_email`](#11-work-from-home-wfh-rejected) |
 | **13** | **Remote / WFH** | Manager/Admin bulk-allocates WFH days | Each Targeted Employee | `Work From Home (WFH) Request ALLOCATED — {Company}` | [`send_wfh_status_email`](#12-work-from-home-wfh-allocated) |
+| **14** | **Payroll** | Admin/HR dispatches payslip (Single, Selected, or Department/Batch) | Each Targeted Employee | `Official Salary Payslip — {Month} {Year} ({Company})` | [`send_payslip_email`](#13-payroll-salary-statement--payslip-pdf-email) |
 
 ---
 
@@ -223,6 +224,33 @@ This document outlines all scenarios, events, and triggers where automated email
   * Allocated WFH dates and duration.
   * Reviewer remarks: `Allocated by {Manager/Admin Name}`.
   * Confirmation that remote punch is enabled for the assigned dates.
+
+---
+
+### 13. Payroll Salary Statement & Payslip PDF Email
+
+* **Trigger Event:** When an Administrator or HR user sends payslips to employees (available via individual payslip action, multi-select bulk toolbar, or department/workforce bulk dispatch modal).
+* **Eligibility Rule:** **Strictly Finalized or Paid payslips only.** Draft payslips are protected and excluded from dispatch.
+* **Initiated From:**
+  * Web UI (Single): `POST /payroll/{id}/send-email`
+  * Web UI (Selected Batch): `POST /payroll/bulk-send-email`
+  * Web UI (Department / Period): `POST /payroll/department-send-email`
+* **Recipient:** The employee associated with the payslip (`emp.email`).
+* **Subject:** `Official Salary Payslip — {Month Name} {Year} ({Company Name})`
+* **Sender Function:** `send_payslip_email()` in `app/services/email_service.py`
+* **Email Contents & Attachments:**
+  * Employee name and corporate greeting.
+  * Pay period (`Month Year`).
+  * **Net Payable Salary** (formatted with company currency symbol).
+  * **Disbursement Status** (`FINALIZED` or `PAID`).
+  * Payable days vs worked days.
+  * Bank account snapshot (Bank name + masked account number).
+  * **Attached Official PDF Payslip:** Vector/High-fidelity PDF statement (`Payslip_{Name}_{Month}_{Year}.pdf`) attached directly to the message.
+  * Direct action link: `APP_BASE_URL/payroll/{id}/view`.
+* **Audit & State Tracking:**
+  * Sets `payslip.emailed_at` timestamp.
+  * Creates `AuditLog` entry with action `PAYSLIP_EMAIL_SENT`.
+  * Renders `✉️ Emailed` badge on payroll table with timestamp tooltip.
 
 ---
 

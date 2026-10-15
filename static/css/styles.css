@@ -210,6 +210,11 @@ select option:checked {
   will-change: width, transform;
 }
 
+/* Floating Tooltips (Hidden by default on mobile, drawer, and standard expanded views) */
+.sidebar-tooltip {
+  display: none !important;
+}
+
 @media (min-width: 768px) {
   /* Collapsed state styling */
   #sidebar-menu.sidebar-collapsed,

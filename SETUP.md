@@ -86,9 +86,10 @@ uvicorn main:app --reload --port 8000
 ```
 Visit **[http://localhost:8000](http://localhost:8000)** in your browser.
 
-> **Default Super Admin Credentials** (automatically seeded on first start):
-> - **Email**: `admin@turtu.com`
-> - **Password**: `admin123`
+> **Default Super Admin Credentials** (automatically seeded/elevated on first start):
+> - **Email**: `admin@hrms.local`
+> - **Password**: `Admin@123`
+> - **Role**: `super_admin` (Universal System Authority)
 > *(⚠️ Make sure to change this default password in Company Settings immediately!)*
 
 ---

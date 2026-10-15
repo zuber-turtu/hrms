@@ -2,11 +2,13 @@ import smtplib
 import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 from typing import Optional
 from datetime import datetime
 
 from app.config import settings
 from app.templates_config import get_global_company
+from app.services.formatters import get_month_name, mask_account_number, get_payslip_pdf_filename
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -141,9 +143,12 @@ def send_smtp_email(
     text_content: str,
     html_content: str,
     company=None,
+    attachment_bytes: Optional[bytes] = None,
+    attachment_filename: Optional[str] = None,
+    attachment_mime_type: Optional[str] = "application/pdf",
 ) -> bool:
     """
-    Core SMTP email sender supporting Google SMTP, standard SMTP, and dev mode console logging.
+    Core SMTP email sender supporting Google SMTP, standard SMTP, file attachments, and dev mode console logging.
     """
     if not company:
         company = get_global_company()
@@ -153,16 +158,17 @@ def send_smtp_email(
     # Development / Fallback mode when SMTP credentials are not set
     if not settings.SMTP_HOST or not settings.SMTP_USER:
         separator = "=" * 70
+        att_info = f" [Attachment: {attachment_filename} ({len(attachment_bytes)} bytes)]" if (attachment_bytes and attachment_filename) else ""
         logger.info(
             f"\n{separator}\n"
-            f"[SMTP DEV MODE] Email To: {to_email}\n"
+            f"[SMTP DEV MODE] Email To: {to_email}{att_info}\n"
             f"Subject: {subject}\n"
             f"Content:\n{text_content}\n"
             f"{separator}\n"
         )
         print(
             f"\n{separator}\n"
-            f"[SMTP DEV MODE] Email To: {to_email}\n"
+            f"[SMTP DEV MODE] Email To: {to_email}{att_info}\n"
             f"Subject: {subject}\n"
             f"Content:\n{text_content}\n"
             f"{separator}\n",
@@ -173,13 +179,27 @@ def send_smtp_email(
     from_email = settings.SMTP_FROM_EMAIL or settings.SMTP_USER
     from_name = settings.SMTP_FROM_NAME or company_name
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"{from_name} <{from_email}>"
-    msg["To"] = to_email
+    if attachment_bytes and attachment_filename:
+        msg = MIMEMultipart("mixed")
+        msg["Subject"] = subject
+        msg["From"] = f"{from_name} <{from_email}>"
+        msg["To"] = to_email
 
-    msg.attach(MIMEText(text_content, "plain", "utf-8"))
-    msg.attach(MIMEText(html_content, "html", "utf-8"))
+        alt_part = MIMEMultipart("alternative")
+        alt_part.attach(MIMEText(text_content, "plain", "utf-8"))
+        alt_part.attach(MIMEText(html_content, "html", "utf-8"))
+        msg.attach(alt_part)
+
+        pdf_attachment = MIMEApplication(attachment_bytes, _subtype="pdf")
+        pdf_attachment.add_header("Content-Disposition", "attachment", filename=attachment_filename)
+        msg.attach(pdf_attachment)
+    else:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = f"{from_name} <{from_email}>"
+        msg["To"] = to_email
+        msg.attach(MIMEText(text_content, "plain", "utf-8"))
+        msg.attach(MIMEText(html_content, "html", "utf-8"))
 
     try:
         if settings.SMTP_USE_SSL:
@@ -678,4 +698,159 @@ def send_wfh_status_email(
 </html>"""
 
     return send_smtp_email(to_email, subject, text_content, html_content, company=company)
+
+
+def send_payslip_email(
+    payslip,
+    employee=None,
+    company=None,
+    portal_url: Optional[str] = None,
+    pdf_bytes: Optional[bytes] = None,
+) -> bool:
+    """
+    Sends official salary payslip notification email with attached PDF payslip.
+    Strictly intended for Finalized or Paid payslips.
+    """
+    if not employee:
+        employee = getattr(payslip, "employee", None)
+
+    if not employee or not getattr(employee, "email", None):
+        logger.warning(f"send_payslip_email: Employee or email missing for payslip ID {getattr(payslip, 'id', 'unknown')}")
+        return False
+
+    if not company:
+        company = get_global_company()
+
+    company_name = company.name if company and company.name else settings.COMPANY_NAME
+    currency = company.currency_symbol if company and company.currency_symbol else settings.COMPANY_CURRENCY_SYMBOL
+    month_name = get_month_name(payslip.month) if payslip.month else "Salary"
+    year = payslip.year or datetime.now().year
+    recipient_name = employee.name if employee and employee.name else "Employee"
+    to_email = employee.email.strip()
+
+    portal_url = portal_url or f"{settings.APP_BASE_URL.rstrip('/')}/payroll/{payslip.id}/view"
+
+    # Generate PDF attachment if not supplied
+    if pdf_bytes is None:
+        try:
+            from app.services.pdf_generator import generate_payslip_pdf
+            pdf_buf = generate_payslip_pdf(payslip, company=company, employee=employee)
+            pdf_bytes = pdf_buf.getvalue()
+        except Exception as e:
+            logger.error(f"Failed to generate payslip PDF for {to_email}: {e}")
+            pdf_bytes = None
+
+    pdf_filename = get_payslip_pdf_filename(payslip)
+
+    status_str = (payslip.status or "finalized").upper()
+    status_color = "#047857" if status_str == "PAID" else "#0f766e"
+    status_bg = "#d1fae5" if status_str == "PAID" else "#ccfbf1"
+
+    bank_disp = "Bank on File"
+    if getattr(payslip, "bank_name", None):
+        bank_disp = payslip.bank_name
+    elif employee and getattr(employee, "bank_account", None) and employee.bank_account.bank_name:
+        bank_disp = employee.bank_account.bank_name
+
+    acc_disp = "—"
+    if getattr(payslip, "account_number", None):
+        acc_disp = mask_account_number(payslip.account_number)
+    elif employee and getattr(employee, "bank_account", None) and employee.bank_account.account_number:
+        acc_disp = mask_account_number(employee.bank_account.account_number)
+
+    subject = f"Official Salary Payslip — {month_name} {year} ({company_name})"
+
+    text_content = (
+        f"Hello {recipient_name},\n\n"
+        f"Your official salary payslip for {month_name} {year} has been released by {company_name}.\n\n"
+        f"Net Payable Salary: {currency} {payslip.net_salary:,.2f}\n"
+        f"Disbursement Status: {status_str}\n"
+        f"Days Worked: {payslip.days_worked or 0} / {payslip.payable_days or 22} days\n"
+        f"Bank Account: {bank_disp} ({acc_disp})\n\n"
+        f"Your detailed PDF payslip is attached to this email.\n"
+        f"You may also view and download it directly from your employee portal:\n"
+        f"{portal_url}\n\n"
+        f"Best regards,\n"
+        f"Finance & Human Resources\n"
+        f"{company_name}"
+    )
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Payslip — {month_name} {year}</title>
+    <style>{_get_base_styles()}</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{company_name}</h1>
+            <p>Payroll & Compensation Statement</p>
+        </div>
+        <div class="content">
+            <div class="greeting">Hello {recipient_name},</div>
+            <div class="message">
+                Your official salary payslip for <strong>{month_name} {year}</strong> has been released. Please find your detailed statement attached as a PDF document.
+            </div>
+            
+            <div class="credentials-box">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 7px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Payroll Period:</td>
+                        <td style="padding: 7px 0; text-align: right; font-weight: 700; color: #115e59; font-size: 13px;">{month_name} {year}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 7px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Net Payable Salary:</td>
+                        <td style="padding: 7px 0; text-align: right; font-weight: 800; color: #047857; font-size: 15px; font-family: monospace;">{currency} {payslip.net_salary:,.2f}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 7px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Disbursement Status:</td>
+                        <td style="padding: 7px 0; text-align: right;">
+                            <span style="color: {status_color}; background: {status_bg}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">{status_str}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 7px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Days Worked:</td>
+                        <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #374151; font-size: 13px;">{payslip.days_worked or 0} / {payslip.payable_days or 22} days</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 7px 0; color: #0f766e; font-weight: 600; font-size: 13px;">Bank Account:</td>
+                        <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #374151; font-size: 12px; font-family: monospace;">{bank_disp} ({acc_disp})</td>
+                    </tr>
+                </table>
+            </div>
+
+            
+
+            <div class="button-wrapper">
+                <a href="{portal_url}" class="btn" target="_blank">View Payslip in Portal</a>
+            </div>
+
+            <div class="link-fallback">
+                If the button above doesn't work, copy and paste this URL into your browser:<br>
+                <a href="{portal_url}">{portal_url}</a>
+            </div>
+        </div>
+        <div class="footer">
+            Confidential corporate remuneration statement from {company_name}. If you notice any discrepancy or have tax/deduction questions, please reach out to your HR or Finance department.<br>
+            <div class="footer-note">
+                © {company_name} • Payroll & Finance Operations
+            </div>
+        </div>
+    </div>
+</body>
+</html>"""
+
+    return send_smtp_email(
+        to_email=to_email,
+        subject=subject,
+        text_content=text_content,
+        html_content=html_content,
+        company=company,
+        attachment_bytes=pdf_bytes,
+        attachment_filename=pdf_filename,
+    )
+
 

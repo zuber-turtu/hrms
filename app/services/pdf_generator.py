@@ -18,6 +18,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 from app.services.formatters import number_to_words, get_month_name, mask_account_number
 from app.config import settings
+from app.templates_config import format_emp_code
 
 logger = logging.getLogger(__name__)
 
@@ -112,8 +113,8 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
     company_name = company.name if company and company.name else settings.COMPANY_NAME
     company_addr = company.address if company and company.address else settings.COMPANY_ADDRESS
     currency = company.currency_symbol if company and company.currency_symbol else settings.COMPANY_CURRENCY_SYMBOL
-    month_name = get_month_name(payslip.month)
-    slip_no = f"PAY-{payslip.year}{payslip.month:02d}-{payslip.id:04d}"
+    month_name = get_month_name(payslip.month) if payslip.month else "—"
+    slip_no = f"PAY-{payslip.year or 2026}{(payslip.month or 1):02d}-{(payslip.id or 0):04d}"
     
     if hasattr(payslip.generated_on, 'strftime') and payslip.generated_on:
         date_str = payslip.generated_on.strftime('%b %d, %Y')
@@ -123,7 +124,7 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
         date_str = "—"
 
     emp_name = employee.name if employee and hasattr(employee, 'name') and employee.name else "Employee"
-    emp_id_val = f"{employee.id:04d}" if employee and hasattr(employee, 'id') and employee.id else "0001"
+    emp_id_val = format_emp_code(employee, company) if employee else "EMP-0001"
     
     dept_name = "—"
     if employee and hasattr(employee, 'department') and employee.department:
@@ -136,13 +137,21 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
     emp_bank = "—"
     emp_acc = "—"
     emp_ifsc = "—"
-    if employee and hasattr(employee, 'bank_account') and employee.bank_account:
-        if employee.bank_account.bank_name:
-            emp_bank = employee.bank_account.bank_name
-        if employee.bank_account.account_number:
-            emp_acc = mask_account_number(employee.bank_account.account_number)
-        if employee.bank_account.ifsc_code:
-            emp_ifsc = employee.bank_account.ifsc_code
+    if payslip and getattr(payslip, 'bank_name', None):
+        emp_bank = payslip.bank_name
+    elif employee and hasattr(employee, 'bank_account') and employee.bank_account and employee.bank_account.bank_name:
+        emp_bank = employee.bank_account.bank_name
+
+    raw_acc = getattr(payslip, 'account_number', None)
+    if not raw_acc and employee and hasattr(employee, 'bank_account') and employee.bank_account:
+        raw_acc = employee.bank_account.account_number
+    if raw_acc:
+        emp_acc = mask_account_number(raw_acc)
+
+    if payslip and getattr(payslip, 'ifsc_code', None):
+        emp_ifsc = payslip.ifsc_code
+    elif employee and hasattr(employee, 'bank_account') and employee.bank_account and employee.bank_account.ifsc_code:
+        emp_ifsc = employee.bank_account.ifsc_code
             
     emp_doj = "—"
     if employee and hasattr(employee, 'joining_date') and employee.joining_date:
@@ -332,7 +341,7 @@ def generate_payslip_html(payslip, company=None, employee=None) -> str:
                     </div>
                     <div class="flex justify-between">
                         <span class="font-medium text-slate-500">Employee ID:</span>
-                        <span class="font-mono font-bold text-slate-900 text-right">#{emp_id_val}</span>
+                        <span class="font-mono font-bold text-slate-900 text-right">{emp_id_val}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="font-medium text-slate-500">Department:</span>
@@ -709,7 +718,7 @@ def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> Byte
 
     # 3. Employee & Payment Info
     emp_name = employee.name if employee and hasattr(employee, 'name') and employee.name else "Employee"
-    emp_id_val = f"#{employee.id:04d}" if employee and hasattr(employee, 'id') and employee.id else "#0001"
+    emp_id_val = format_emp_code(employee, company) if employee else "EMP-0001"
     
     dept_name = "—"
     if employee and hasattr(employee, 'department') and employee.department:
@@ -722,13 +731,21 @@ def generate_payslip_pdf_reportlab(payslip, company=None, employee=None) -> Byte
     emp_bank = "—"
     emp_acc = "—"
     emp_ifsc = "—"
-    if employee and hasattr(employee, 'bank_account') and employee.bank_account:
-        if employee.bank_account.bank_name:
-            emp_bank = employee.bank_account.bank_name
-        if employee.bank_account.account_number:
-            emp_acc = mask_account_number(employee.bank_account.account_number)
-        if employee.bank_account.ifsc_code:
-            emp_ifsc = employee.bank_account.ifsc_code
+    if payslip and getattr(payslip, 'bank_name', None):
+        emp_bank = payslip.bank_name
+    elif employee and hasattr(employee, 'bank_account') and employee.bank_account and employee.bank_account.bank_name:
+        emp_bank = employee.bank_account.bank_name
+
+    raw_acc = getattr(payslip, 'account_number', None)
+    if not raw_acc and employee and hasattr(employee, 'bank_account') and employee.bank_account:
+        raw_acc = employee.bank_account.account_number
+    if raw_acc:
+        emp_acc = mask_account_number(raw_acc)
+
+    if payslip and getattr(payslip, 'ifsc_code', None):
+        emp_ifsc = payslip.ifsc_code
+    elif employee and hasattr(employee, 'bank_account') and employee.bank_account and employee.bank_account.ifsc_code:
+        emp_ifsc = employee.bank_account.ifsc_code
             
     emp_doj = "—"
     if employee and hasattr(employee, 'joining_date') and employee.joining_date:

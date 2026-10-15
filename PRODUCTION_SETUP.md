@@ -470,13 +470,20 @@ sudo chmod +x /usr/local/bin/backup_hrms_mysql.sh
 ```
 
 ### 9.2 Zero-Downtime Rolling Application Updates
-When pulling updates from GitHub:
+When pulling updates from GitHub to your live production server:
 ```bash
 cd /var/www/hrms
+
+# 1. Pull the latest commits
 sudo -u hrms git pull origin main
+
+# 2. Update dependencies (if requirements.txt changed)
 sudo -u hrms /var/www/hrms/venv/bin/pip install -r requirements.txt
 
-# Perform seamless Gunicorn rolling reload (zero dropped connections)
+# 3. Apply all pending database schema migrations
+sudo -u hrms /var/www/hrms/venv/bin/python migrations/run_migrations.py
+
+# 4. Perform seamless Gunicorn rolling reload (zero dropped connections)
 sudo systemctl reload hrms
 ```
 

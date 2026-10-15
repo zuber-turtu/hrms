@@ -20,12 +20,14 @@ from app.services.payroll_calculator import (
     bulk_update_payslip_status,
     bulk_delete_draft_payslips,
     bulk_generate_payslips_zip,
+    freeze_payslip_bank_snapshot,
 )
 from app.services.pdf_generator import generate_payslip_pdf
 from app.services.formatters import number_to_words, get_month_name, mask_account_number, get_payslip_pdf_filename
 from app.templates_config import templates
 from app.utils.flash import flash_redirect
 from app.services.excel_exporter import export_payroll_excel
+from app.services.email_service import send_payslip_email
 
 router = APIRouter(prefix="/payroll")
 
@@ -238,6 +240,214 @@ async def bulk_delete_action(
     return flash_redirect(url="/payroll", message=msg, category="info")
 
 
+@router.post("/{payslip_id}/send-email")
+async def send_single_payslip_email_action(
+    payslip_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """Emails the finalized or paid payslip statement with PDF attachment to an individual employee."""
+    payslip = db.query(Payslip).filter(Payslip.id == payslip_id).first()
+    if not payslip:
+        return flash_redirect(url="/payroll", message="Payslip record not found", category="error")
+
+    if not can_manage_employee(current_user, payslip.employee):
+        return flash_redirect(url="/payroll", message="Operation not permitted: You cannot send payslips for an account of higher or equal role.", category="error")
+
+    if payslip.status not in ["finalized", "paid"]:
+        return flash_redirect(url="/payroll", message="Cannot email draft payslips. Please finalize or mark paid first.", category="error")
+
+    if not payslip.employee or not payslip.employee.email:
+        emp_name = payslip.employee.name if payslip.employee else "Employee"
+        return flash_redirect(url="/payroll", message=f"{emp_name} does not have a registered email address.", category="error")
+
+    company = db.query(Company).first()
+    month_name = get_month_name(payslip.month)
+
+    try:
+        sent = send_payslip_email(payslip, employee=payslip.employee, company=company)
+        if sent:
+            payslip.emailed_at = datetime.datetime.now()
+            audit = AuditLog(
+                actor_id=current_user.id,
+                actor_email=current_user.email,
+                action="PAYSLIP_EMAIL_SENT",
+                entity="Payslip",
+                entity_id=payslip.id,
+                new_value=f"Emailed payslip for {month_name} {payslip.year} to {payslip.employee.email}",
+            )
+            db.add(audit)
+            db.commit()
+            return flash_redirect(
+                url="/payroll",
+                message=f"Official payslip for {payslip.employee.name} ({month_name} {payslip.year}) was successfully emailed to {payslip.employee.email}.",
+                category="success",
+            )
+        else:
+            return flash_redirect(
+                url="/payroll",
+                message=f"Failed to send email to {payslip.employee.email}. Please verify SMTP configuration.",
+                category="error",
+            )
+    except Exception as e:
+        return flash_redirect(url="/payroll", message=f"Error sending payslip email: {str(e)}", category="error")
+
+
+@router.post("/bulk-send-email")
+async def bulk_send_email_action(
+    request: Request,
+    payslip_ids: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """Dispatches payslip emails with attached PDFs for all selected finalized or paid records."""
+    id_list = [int(x.strip()) for x in payslip_ids.split(",") if x.strip().isdigit()]
+    if not id_list:
+        return flash_redirect(url="/payroll", message="No payslips selected for email dispatch", category="error")
+
+    payslips = db.query(Payslip).filter(Payslip.id.in_(id_list)).all()
+    if not payslips:
+        return flash_redirect(url="/payroll", message="No matching payslips found", category="error")
+
+    company = db.query(Company).first()
+    sent_count = 0
+    failed_count = 0
+    draft_skipped = 0
+    no_email_skipped = 0
+
+    for p in payslips:
+        if p.status not in ["finalized", "paid"]:
+            draft_skipped += 1
+            continue
+
+        if not p.employee or not p.employee.email:
+            no_email_skipped += 1
+            continue
+
+        try:
+            ok = send_payslip_email(p, employee=p.employee, company=company)
+            if ok:
+                sent_count += 1
+                p.emailed_at = datetime.datetime.now()
+                audit = AuditLog(
+                    actor_id=current_user.id,
+                    actor_email=current_user.email,
+                    action="PAYSLIP_EMAIL_SENT",
+                    entity="Payslip",
+                    entity_id=p.id,
+                    new_value=f"Bulk emailed {get_month_name(p.month)} {p.year} payslip to {p.employee.email}",
+                )
+                db.add(audit)
+            else:
+                failed_count += 1
+        except Exception:
+            failed_count += 1
+
+    if sent_count > 0:
+        db.commit()
+
+    parts = [f"Successfully emailed {sent_count} payslip(s) to employees."]
+    if failed_count > 0:
+        parts.append(f"({failed_count} delivery failed)")
+    if draft_skipped > 0:
+        parts.append(f"(Protected {draft_skipped} unfinalized draft(s) from email dispatch)")
+    if no_email_skipped > 0:
+        parts.append(f"(Skipped {no_email_skipped} employee(s) without email addresses)")
+
+    category = "success" if sent_count > 0 else ("error" if failed_count > 0 else "info")
+    return flash_redirect(url="/payroll", message=" ".join(parts), category=category)
+
+
+@router.post("/department-send-email")
+async def department_send_email_action(
+    request: Request,
+    month: int = Form(...),
+    year: int = Form(...),
+    department_id: Optional[str] = Form("all"),
+    status_filter: Optional[str] = Form("all"),
+    skip_already_emailed: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(allow_hr_admin),
+):
+    """Dispatches payslip emails across a department or entire workforce for a selected month/year."""
+    query = db.query(Payslip).join(Employee, Payslip.employee_id == Employee.id)
+    query = query.filter(Payslip.month == month, Payslip.year == year)
+
+    # Strictly protect drafts - only finalized or paid
+    if status_filter == "finalized":
+        query = query.filter(Payslip.status == "finalized")
+    elif status_filter == "paid":
+        query = query.filter(Payslip.status == "paid")
+    else:
+        query = query.filter(Payslip.status.in_(["finalized", "paid"]))
+
+    dept_id_int = int(department_id) if department_id and department_id.strip() and department_id != "all" else None
+    if dept_id_int:
+        query = query.filter(Employee.department_id == dept_id_int)
+
+    is_skip = bool(skip_already_emailed and skip_already_emailed.lower() in ["true", "1", "on", "yes"])
+    if is_skip:
+        query = query.filter(Payslip.emailed_at == None)
+
+    eligible_payslips = query.all()
+    if not eligible_payslips:
+        period_str = f"{get_month_name(month)} {year}"
+        reason = "all matching records have already been emailed" if is_skip else "no finalized or paid records exist for this period"
+        return flash_redirect(
+            url="/payroll",
+            message=f"No eligible payslips found to email for {period_str} ({reason}).",
+            category="info",
+        )
+
+    company = db.query(Company).first()
+    sent_count = 0
+    failed_count = 0
+    no_email_count = 0
+
+    for p in eligible_payslips:
+        if not p.employee or not p.employee.email:
+            no_email_count += 1
+            continue
+
+        try:
+            ok = send_payslip_email(p, employee=p.employee, company=company)
+            if ok:
+                sent_count += 1
+                p.emailed_at = datetime.datetime.now()
+                audit = AuditLog(
+                    actor_id=current_user.id,
+                    actor_email=current_user.email,
+                    action="PAYSLIP_EMAIL_SENT",
+                    entity="Payslip",
+                    entity_id=p.id,
+                    new_value=f"Department/Batch emailed {get_month_name(p.month)} {p.year} payslip to {p.employee.email}",
+                )
+                db.add(audit)
+            else:
+                failed_count += 1
+        except Exception:
+            failed_count += 1
+
+    if sent_count > 0:
+        db.commit()
+
+    dept_label = "entire workforce"
+    if dept_id_int:
+        target_dept = db.query(Department).filter(Department.id == dept_id_int).first()
+        if target_dept:
+            dept_label = f"'{target_dept.name}' department"
+
+    msg = f"Dispatched {sent_count} payslip email(s) with PDF statements to {dept_label} for {get_month_name(month)} {year}."
+    if failed_count > 0:
+        msg += f" ({failed_count} delivery failed)"
+    if no_email_count > 0:
+        msg += f" (Skipped {no_email_count} without registered emails)"
+
+    category = "success" if sent_count > 0 else "error"
+    return flash_redirect(url="/payroll", message=msg, category=category)
+
+
 @router.get("/bulk-export-zip")
 @router.post("/bulk-export-zip")
 async def bulk_export_zip(
@@ -376,6 +586,12 @@ async def update_payslip(
         payslip.other_deductions = other_deductions
         payslip.net_salary = (basic + hra + allowances + bonus) - (pf + tax + other_deductions)
         payslip.status = status
+        if status in ["finalized", "paid"]:
+            freeze_payslip_bank_snapshot(payslip)
+        elif status == "draft":
+            payslip.bank_name = None
+            payslip.account_number = None
+            payslip.ifsc_code = None
 
         new_val = f"Date: {payslip.generated_on}, Basic: {payslip.basic}, Days: {payslip.days_worked}/{payslip.payable_days}, Net: {payslip.net_salary}, Status: {payslip.status}"
 
@@ -417,9 +633,10 @@ async def view_payslip(
     currency = company.currency_symbol if company and company.currency_symbol else "$"
     month_name = get_month_name(payslip.month)
     amount_in_words = number_to_words(payslip.net_salary, "Dollars" if currency == "$" else "Rupees")
-    masked_acc = mask_account_number(
+    raw_acc = payslip.account_number or (
         payslip.employee.bank_account.account_number if payslip.employee and payslip.employee.bank_account else ""
     )
+    masked_acc = mask_account_number(raw_acc)
     pdf_filename = get_payslip_pdf_filename(payslip)
 
     return templates.TemplateResponse(

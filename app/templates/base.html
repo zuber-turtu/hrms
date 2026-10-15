@@ -150,6 +150,11 @@
             padding: 0.5rem;
             z-index: 50;
         }
+
+        /* Strictly hide sidebar floating tooltips on mobile, drawer, and expanded views */
+        .sidebar-tooltip {
+            display: none !important;
+        }
     </style>
 
     <!-- Tailwind CSS CDN -->
@@ -212,7 +217,7 @@
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/styles.css?v=20261015">
     {% block extra_head %}{% endblock %}
 </head>
 

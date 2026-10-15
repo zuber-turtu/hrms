@@ -60,6 +60,9 @@
         
         {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
         <div class="flex flex-wrap items-center gap-2.5">
+            <button type="button" onclick="openEmailModal()" class="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-2xs transition-colors cursor-pointer" title="Email payslips to entire company or department">
+                <i data-lucide="mail" class="w-3.5 h-3.5 mr-1.5 text-sky-700"></i> Send Emails
+            </button>
             <button type="button" onclick="exportFilteredPayroll()" class="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-2xs transition-colors cursor-pointer" title="Export current payroll view as Excel spreadsheet">
                 <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 mr-1.5 text-emerald-600"></i> Export Excel
             </button>
@@ -199,6 +202,9 @@
         <button id="btnBatchMarkPaid" type="button" onclick="submitBatchStatus('paid')" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-xs transition-colors">
             <i data-lucide="banknote" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchMarkPaid">Mark Paid</span>
         </button>
+        <button id="btnBatchEmail" type="button" onclick="submitBatchEmail()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 shadow-xs transition-colors" title="Send official PDF payslip email to employees">
+            <i data-lucide="mail" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchEmail">Send Email</span>
+        </button>
         <button id="btnBatchExcel" type="button" onclick="submitBatchExportExcel()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-800/60 transition-colors">
             <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 mr-1.5"></i> <span id="lblBatchExcel">Export Excel</span>
         </button>
@@ -307,6 +313,101 @@
     </div>
 </div>
 
+<!-- Modal: Send Payslip Emails by Department / All Employees -->
+<div id="emailModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-start justify-center min-h-screen pt-12 sm:pt-16 pb-24 px-4 text-center">
+        <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" onclick="closeEmailModal()"></div>
+
+        <div class="relative inline-block w-full max-w-lg bg-white rounded-2xl text-left shadow-2xl transform transition-all my-auto border border-slate-200 z-10 overflow-visible">
+            <div class="p-5 sm:p-6">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0 border border-sky-200">
+                            <i data-lucide="mail" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold font-heading text-slate-900">Email Payslips to Workforce</h3>
+                            <p class="text-xs text-slate-500">Dispatch official PDF salary statements to employee emails</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeEmailModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                
+                <!-- Email Form -->
+                <form action="/payroll/department-send-email" method="POST" class="mt-4 space-y-4" onsubmit="return confirm('Dispatch official payslips and PDF attachments to the selected employees via email?');">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="email_month" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Payroll Month</label>
+                            <select name="month" id="email_month" required data-custom-select="true" class="custom-select w-full">
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}" {% if i == (current_month or get_today().month) %}selected{% endif %}>{{ "%02d" % i }} - {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i-1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="email_year" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Payroll Year</label>
+                            <select name="year" id="email_year" required data-custom-select="true" class="custom-select w-full">
+                                {% for yr in (available_years or range(app_year - 2, app_year + 3)) %}
+                                <option value="{{ yr }}" {% if yr == (current_year or app_year) %}selected{% endif %}>{{ yr }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="email_dept" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Target Department</label>
+                        <select name="department_id" id="email_dept" data-custom-select="true" class="custom-select w-full">
+                            <option value="all">Entire Company (All Departments)</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="email_status" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Target Payslip Status</label>
+                        <select name="status_filter" id="email_status" data-custom-select="true" class="custom-select w-full">
+                            <option value="all" selected>Both Finalized and Paid (Recommended)</option>
+                            <option value="finalized">Finalized Only</option>
+                            <option value="paid">Paid Only</option>
+                        </select>
+                    </div>
+
+                    <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <label class="flex items-start space-x-2.5 cursor-pointer">
+                            <input type="checkbox" name="skip_already_emailed" value="true" checked class="mt-0.5 w-4 h-4 rounded text-teal-700 focus:ring-teal-600 border-slate-300">
+                            <div>
+                                <span class="text-xs font-bold text-slate-800 block">Skip Already Emailed</span>
+                                <span class="text-[11px] text-slate-500 block leading-relaxed mt-0.5">
+                                    Avoid sending duplicate emails to employees who have already received their payslip statement for this period.
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Protection Hint -->
+                    <div class="flex items-center space-x-2 text-[11px] text-slate-600 bg-sky-50/70 p-2.5 rounded-lg border border-sky-200">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-sky-700 shrink-0"></i>
+                        <span>Draft records are strictly <strong>excluded</strong>. Each email includes a salary summary and the official PDF attachment.</span>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="closeEmailModal()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-sky-700 hover:bg-sky-800 transition-colors shadow-xs">
+                            <i data-lucide="send" class="w-3.5 h-3.5 inline mr-1"></i> Send Payslip Emails
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Generate Single Draft Payslip -->
 <div id="generateModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-start justify-center min-h-screen pt-12 sm:pt-16 pb-24 px-4 text-center">
@@ -337,9 +438,10 @@
                         
                         <!-- Trigger Box -->
                         <button type="button" id="payrollEmpTriggerBtn" onclick="togglePayrollEmpDropdown()" class="w-full flex items-center justify-between text-left text-xs sm:text-sm bg-slate-50 hover:bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 transition-colors shadow-2xs">
-                            <div class="min-w-0 flex-1 truncate">
+                            <div class="min-w-0 flex-1 truncate flex items-center">
+                                <span class="font-mono text-[11px] px-2 py-0.5 rounded bg-teal-50 text-teal-800 font-semibold mr-1.5 shrink-0" id="payrollSelectedEmpCode">{{ format_emp_code(employees[0], company) if employees else '' }}</span>
                                 <span class="font-bold text-slate-900 truncate" id="payrollSelectedEmpName">{{ employees[0].name if employees else 'Choose Employee' }}</span>
-                                <span class="text-slate-400 text-xs ml-1" id="payrollSelectedEmpDept">({{ (employees[0].department.name if employees[0].department and employees[0].department.name else (employees[0].department if employees[0].department else 'General')) if employees else '' }})</span>
+                                <span class="text-slate-400 text-xs ml-1 truncate" id="payrollSelectedEmpDept">({{ (employees[0].department.name if employees[0].department and employees[0].department.name else (employees[0].department if employees[0].department else 'General')) if employees else '' }})</span>
                             </div>
                             <i data-lucide="chevron-down" id="payrollDropdownChevron" class="w-4 h-4 text-slate-400 shrink-0 ml-2 transition-transform"></i>
                         </button>
@@ -363,7 +465,7 @@
                                      data-name="{{ emp.name }}"
                                      data-dept="{{ emp_dept }}"
                                      data-code="{{ format_emp_code(emp, company) }}"
-                                     onclick="selectPayrollEmployee('{{ emp.id }}', '{{ emp.name|escape }}', '{{ emp_dept|escape }}')">
+                                     onclick="selectPayrollEmployee('{{ emp.id }}', '{{ emp.name|escape }}', '{{ emp_dept|escape }}', '{{ format_emp_code(emp, company)|escape }}')">
                                     <div class="min-w-0 flex-1 pr-2">
                                         <p class="text-xs font-bold text-slate-900 truncate leading-tight">{{ emp.name }}</p>
                                         <p class="text-[11px] text-slate-500 truncate mt-0.5"><span class="font-mono font-medium text-slate-400">{{ format_emp_code(emp, company) }}</span> • {{ emp_dept }} • <span class="capitalize text-teal-800 font-semibold">{{ emp.role|replace('_', ' ') }}</span></p>
@@ -570,7 +672,20 @@
             }
         }
 
-        // 4. Download ZIP Button: Always show
+        // 4. Send Email Button: Only show if there are finalized or paid items
+        const btnBatchEmail = document.getElementById('btnBatchEmail');
+        const lblBatchEmail = document.getElementById('lblBatchEmail');
+        const eligibleEmailCount = finalizedCount + paidCount;
+        if (btnBatchEmail) {
+            if (eligibleEmailCount > 0) {
+                btnBatchEmail.classList.remove('hidden');
+                if (lblBatchEmail) lblBatchEmail.textContent = `Send Email (${eligibleEmailCount})`;
+            } else {
+                btnBatchEmail.classList.add('hidden');
+            }
+        }
+
+        // 5. Download ZIP Button: Always show
         const btnZip = document.getElementById('btnBatchZip');
         const lblZip = document.getElementById('lblBatchZip');
         if (btnZip && lblZip) {
@@ -650,7 +765,51 @@
         window.location.href = `/payroll/bulk-export-zip?ids=${ids.join(',')}`;
     }
 
+    function submitBatchEmail() {
+        const eligibleIds = [];
+        let draftCount = 0;
+        selectedPayslipsState.forEach(item => {
+            const st = (item.status || '').toLowerCase().trim();
+            if (st === 'finalized' || st === 'paid') {
+                eligibleIds.push(item.id);
+            } else if (st === 'draft') {
+                draftCount++;
+            }
+        });
+
+        if (eligibleIds.length === 0) {
+            alert('No finalized or paid payslips selected. Draft payslips cannot be emailed to employees.');
+            return;
+        }
+
+        let confirmMsg = `Send official PDF payslips to ${eligibleIds.length} employee(s) via email?`;
+        if (draftCount > 0) {
+            confirmMsg += `\n\n(Note: ${draftCount} selected draft payslip(s) will be automatically excluded)`;
+        }
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        const form = document.getElementById('batchActionForm');
+        form.action = '/payroll/bulk-send-email';
+        document.getElementById('batchFormIds').value = eligibleIds.join(',');
+        form.submit();
+    }
+
     // Modal & Custom Downward Employee Dropdown UX Handlers
+    function openEmailModal() {
+        const modal = document.getElementById('emailModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+
+    function closeEmailModal() {
+        const modal = document.getElementById('emailModal');
+        if (modal) modal.classList.add('hidden');
+    }
     function openGenerateModal(empId) {
         const modal = document.getElementById('generateModal');
         if (!modal) return;
@@ -658,7 +817,7 @@
         if (empId) {
             const option = document.querySelector(`.payroll-emp-option[data-id="${empId}"]`);
             if (option) {
-                selectPayrollEmployee(empId, option.getAttribute('data-name'), option.getAttribute('data-dept'));
+                selectPayrollEmployee(empId, option.getAttribute('data-name'), option.getAttribute('data-dept'), option.getAttribute('data-code'));
             }
         }
         if (window.lucide) lucide.createIcons();
@@ -702,13 +861,15 @@
         }
     }
 
-    function selectPayrollEmployee(id, name, dept) {
+    function selectPayrollEmployee(id, name, dept, code) {
         const input = document.getElementById('payroll_modal_employee_id');
         const nameEl = document.getElementById('payrollSelectedEmpName');
         const deptEl = document.getElementById('payrollSelectedEmpDept');
+        const codeEl = document.getElementById('payrollSelectedEmpCode');
         if (input) input.value = id;
         if (nameEl) nameEl.textContent = name;
         if (deptEl) deptEl.textContent = dept ? `(${dept})` : '';
+        if (codeEl) codeEl.textContent = code || '';
         
         const menu = document.getElementById('payrollEmpDropdownMenu');
         if (menu) menu.classList.add('hidden');

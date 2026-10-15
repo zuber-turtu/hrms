@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date, Index
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date, DateTime, Index
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.utils.timezone import get_ist_today
@@ -32,6 +32,14 @@ class Payslip(Base):
     net_salary = Column(Float, default=0.0)
     
     status = Column(String, default="draft", index=True)  # draft, finalized, paid
+
+    # Point-in-time Bank Account Snapshot (Frozen on Finalized / Paid)
+    bank_name = Column(String, nullable=True)
+    account_number = Column(String, nullable=True)
+    ifsc_code = Column(String, nullable=True)
+
+    # Email Dispatch Audit Timestamp
+    emailed_at = Column(DateTime, nullable=True, default=None)
 
     employee = relationship("Employee", back_populates="payslips")
 

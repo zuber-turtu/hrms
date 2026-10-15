@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
+import os
+import datetime
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from jose import jwt
-import datetime
 
 from app.database import engine, Base, SessionLocal
 from app.models import (
@@ -124,6 +125,9 @@ def ensure_schema_columns(db_engine):
                 "other_deductions": "FLOAT DEFAULT 0.0",
                 "net_salary": "FLOAT DEFAULT 0.0",
                 "status": "VARCHAR(50) DEFAULT 'draft'",
+                "bank_name": "VARCHAR(255)",
+                "account_number": "VARCHAR(255)",
+                "ifsc_code": "VARCHAR(100)",
             },
             "document_types": {
                 "category": "VARCHAR(100) DEFAULT 'KYC'",
@@ -201,37 +205,61 @@ async def lifespan(app: FastAPI):
     ensure_schema_columns(engine)
     db = SessionLocal()
     try:
-        admin = db.query(Employee).filter(Employee.role == "admin").first()
-        if not admin:
-            dept = db.query(Department).filter(Department.name == "Management").first()
-            if not dept:
-                dept = Department(name="Management", code="MGMT")
-                db.add(dept)
+        from sqlalchemy import func
+        default_super_email = os.getenv("DEFAULT_SUPER_ADMIN_EMAIL", "admin@hrms.local").strip().lower()
+        default_super_password = os.getenv("DEFAULT_SUPER_ADMIN_PASSWORD", "Admin@123")
+        default_super_name = os.getenv("DEFAULT_SUPER_ADMIN_NAME", "Super Admin").strip()
+
+        # 1. Check if any super admin exists in the system
+        existing_super = db.query(Employee).filter(Employee.role == "super_admin").first()
+
+        if not existing_super:
+            # Check if an existing admin or account with default_super_email exists to elevate
+            target_admin = db.query(Employee).filter(
+                (func.lower(Employee.email) == default_super_email) | (Employee.role == "admin")
+            ).order_by(Employee.id.asc()).first()
+
+            if target_admin:
+                target_admin.role = "super_admin"
+                if target_admin.name in ("Admin", "admin"):
+                    target_admin.name = default_super_name
+                db.commit()
+                print(f"[Lifespan] Elevated account '{target_admin.email}' to role 'super_admin'.")
+            else:
+                dept = db.query(Department).filter(Department.name == "Management").first()
+                if not dept:
+                    dept = Department(name="Management", code="MGMT")
+                    db.add(dept)
+                    db.flush()
+                desig = db.query(Designation).filter(Designation.title == "System Administrator").first()
+                if not desig:
+                    desig = Designation(title="System Administrator", department_id=dept.id)
+                    db.add(desig)
+                    db.flush()
+                super_admin = Employee(
+                    name=default_super_name,
+                    email=default_super_email,
+                    hashed_password=get_password_hash(default_super_password),
+                    role="super_admin",
+                    department_id=dept.id,
+                    designation_id=desig.id,
+                )
+                db.add(super_admin)
                 db.flush()
-            desig = db.query(Designation).filter(Designation.title == "System Administrator").first()
-            if not desig:
-                desig = Designation(title="System Administrator", department_id=dept.id)
-                db.add(desig)
-                db.flush()
-            admin = Employee(
-                name="Admin",
-                email="admin@hrms.local",
-                hashed_password=get_password_hash("Admin@123"),
-                role="admin",
-                department_id=dept.id,
-                designation_id=desig.id,
-            )
-            db.add(admin)
-            db.flush()
-            admin_profile = EmployeeProfile(employee_id=admin.id)
-            admin_salary = SalaryStructure(employee_id=admin.id, base_salary=100000.0)
-            db.add(admin_profile)
-            db.add(admin_salary)
-            db.commit()
-            print("Seeded default admin: admin@hrms.local / Admin@123")
-        elif admin.role != "admin":
-            admin.role = "admin"
-            db.commit()
+                admin_profile = EmployeeProfile(employee_id=super_admin.id)
+                admin_salary = SalaryStructure(employee_id=super_admin.id, base_salary=100000.0)
+                db.add(admin_profile)
+                db.add(admin_salary)
+                db.commit()
+                print(f"[Lifespan] Seeded default super admin: {default_super_email} / {default_super_password}")
+        else:
+            # If a specific super admin email is explicitly set in env, ensure it has super_admin role
+            if "DEFAULT_SUPER_ADMIN_EMAIL" in os.environ:
+                configured_admin = db.query(Employee).filter(func.lower(Employee.email) == default_super_email).first()
+                if configured_admin and configured_admin.role != "super_admin":
+                    configured_admin.role = "super_admin"
+                    db.commit()
+                    print(f"[Lifespan] Configured user '{configured_admin.email}' ensured as 'super_admin'.")
 
         # Seed standard dynamic document types if empty
         if db.query(DocumentType).count() == 0:
@@ -658,6 +686,10 @@ def root(request: Request):
     if token:
         return RedirectResponse(url="/dashboard", status_code=302)
     return RedirectResponse(url="/login", status_code=302)
+
+@app.get("/settings", include_in_schema=False)
+def settings_shortcut(request: Request):
+    return RedirectResponse(url="/company/profile", status_code=302)
 
 if __name__ == "__main__":
     import uvicorn

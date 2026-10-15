@@ -108,7 +108,7 @@
         class="bg-white rounded-2xl border border-slate-200 p-1.5 sm:p-2 shadow-xs mb-6 overflow-x-auto no-scrollbar touch-scroll">
         <nav class="flex items-center space-x-1 sm:space-x-1.5 min-w-max">
             <button type="button" onclick="switchSettingsTab('branding')" id="tab-btn-branding"
-                class="settings-tab-btn flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer">
+                class="settings-tab-btn flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-teal-700 text-white shadow-xs transition-all cursor-pointer">
                 <i data-lucide="building" class="w-4 h-4 shrink-0"></i>
                 <span>Corporate Branding</span>
             </button>
@@ -156,7 +156,7 @@
 
         <!-- ================= PANEL 1: CORPORATE BRANDING ================= -->
         <div id="panel-branding"
-            class="settings-panel hidden bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
+            class="settings-panel bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-7">
             <form action="/company/profile" method="POST" class="space-y-6">
                 <input type="hidden" name="section" value="branding">
 
@@ -2246,15 +2246,15 @@
     const officeLocationsData = [
         {% for loc in locations %}
     {
-        id: { { loc.id } },
-        name: { { loc.name | tojson } },
-        code: { { (loc.code or '') | tojson } },
-        address: { { (loc.address or '') | tojson } },
-        latitude: { { loc.latitude } },
-        longitude: { { loc.longitude } },
-        radius_meters: { { loc.radius_meters } },
-        is_primary: { { 'true' if loc.is_primary else 'false' } }
-    } {% if not loop.last %}, {% endif %}
+        id: {{ loc.id }},
+        name: {{ loc.name | tojson }},
+        code: {{ (loc.code or '') | tojson }},
+        address: {{ (loc.address or '') | tojson }},
+        latitude: {{ loc.latitude }},
+        longitude: {{ loc.longitude }},
+        radius_meters: {{ loc.radius_meters }},
+        is_primary: {{ 'true' if loc.is_primary else 'false' }}
+    }{% if not loop.last %},{% endif %}
     {% endfor %}
     ];
 
@@ -2287,11 +2287,10 @@
 
         const defaultLat = officeLocationsData.length > 0
             ? officeLocationsData[0].latitude
-            : ({{ company.office_latitude or 12.971598 }
-    });
-    const defaultLng = officeLocationsData.length > 0
-        ? officeLocationsData[0].longitude
-        : ({{ company.office_longitude or 77.594562 }});
+            : ({{ company.office_latitude or 12.971598 }});
+        const defaultLng = officeLocationsData.length > 0
+            ? officeLocationsData[0].longitude
+            : ({{ company.office_longitude or 77.594562 }});
 
     if (!geofenceMap) {
         geofenceMap = L.map('geofenceMapContainer', {
@@ -2420,11 +2419,9 @@
                 geofenceMap.flyTo([officeLocationsData[0].latitude, officeLocationsData[0].longitude], 14, { duration: 0.8 });
             }
         } else {
-            const defaultLat = {{ company.office_latitude or 12.971598 }
-        };
-        const defaultLng = {{ company.office_longitude or 77.594562 }
-    };
-    geofenceMap.flyTo([defaultLat, defaultLng], 13, { duration: 0.8 });
+            const defaultLat = {{ company.office_latitude or 12.971598 }};
+            const defaultLng = {{ company.office_longitude or 77.594562 }};
+            geofenceMap.flyTo([defaultLat, defaultLng], 13, { duration: 0.8 });
         }
     }
 

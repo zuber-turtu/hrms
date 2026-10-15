@@ -13,7 +13,10 @@ router = APIRouter(prefix="/company", tags=["Company"])
 allow_hr_admin = RoleChecker(["super_admin", "admin", "hr", "hr_admin"])
 
 
+@router.get("", response_model=CompanyProfileOut)
+@router.get("/", response_model=CompanyProfileOut)
 @router.get("/profile", response_model=CompanyProfileOut)
+@router.get("/settings", response_model=CompanyProfileOut)
 async def get_company_profile(
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
@@ -22,7 +25,10 @@ async def get_company_profile(
     return company
 
 
+@router.put("", response_model=CompanyProfileOut)
+@router.put("/", response_model=CompanyProfileOut)
 @router.put("/profile", response_model=CompanyProfileOut)
+@router.put("/settings", response_model=CompanyProfileOut)
 async def update_company_profile(
     payload: CompanyProfileUpdate,
     db: Session = Depends(get_db),

@@ -212,6 +212,19 @@ def bulk_generate_payslips(
     }
 
 
+def freeze_payslip_bank_snapshot(payslip: Payslip):
+    """
+    Snapshots the employee's active bank account details onto the payslip.
+    Ensures that once a payslip is finalized or paid, subsequent changes to the employee's
+    bank account will not affect this historical payslip.
+    """
+    if payslip.employee and payslip.employee.bank_account:
+        bank = payslip.employee.bank_account
+        payslip.bank_name = bank.bank_name or None
+        payslip.account_number = bank.account_number or None
+        payslip.ifsc_code = bank.ifsc_code or None
+
+
 def bulk_update_payslip_status(
     db: Session,
     payslip_ids: List[int],
@@ -221,6 +234,8 @@ def bulk_update_payslip_status(
     """
     Updates the status of multiple payslips at once.
     Allowed target statuses: 'draft', 'finalized', 'paid'.
+    Freezes bank details on 'finalized' or 'paid'.
+    Clears frozen snapshot on 'draft' to allow dynamic re-syncing.
     """
     if new_status not in ["draft", "finalized", "paid"]:
         raise ValueError(f"Invalid status '{new_status}'. Allowed: draft, finalized, paid.")
@@ -230,6 +245,12 @@ def bulk_update_payslip_status(
 
     for p in payslips:
         p.status = new_status
+        if new_status in ["finalized", "paid"]:
+            freeze_payslip_bank_snapshot(p)
+        elif new_status == "draft":
+            p.bank_name = None
+            p.account_number = None
+            p.ifsc_code = None
         updated_count += 1
 
     db.commit()

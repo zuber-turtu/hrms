@@ -119,6 +119,14 @@
             <a href="/payroll/{{ payslip.id }}/edit" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs">
                 <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Edit
             </a>
+            {% if payslip.status in ['finalized', 'paid'] %}
+            <form action="/payroll/{{ payslip.id }}/send-email" method="POST" class="inline" onsubmit="return confirm('Send official PDF payslip email to {{ payslip.employee.name if payslip.employee else 'Employee' }} ({{ payslip.employee.email }})?');">
+                <button type="submit" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold {% if payslip.emailed_at %}text-teal-800 bg-teal-50 border-teal-200 hover:bg-teal-100{% else %}text-slate-700 bg-white hover:bg-slate-50{% endif %} transition-colors shadow-xs" title="{% if payslip.emailed_at %}Emailed on {{ payslip.emailed_at.strftime('%b %d, %Y') }}. Click to resend.{% else %}Email payslip PDF to employee{% endif %}">
+                    <i data-lucide="{% if payslip.emailed_at %}mail-check{% else %}mail{% endif %}" class="w-3.5 h-3.5 mr-1.5 {% if payslip.emailed_at %}text-teal-700{% else %}text-slate-500{% endif %}"></i>
+                    <span>{% if payslip.emailed_at %}Resend Email{% else %}Email Payslip{% endif %}</span>
+                </button>
+            </form>
+            {% endif %}
             {% endif %}
             <button onclick="window.print()" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs">
                 <i data-lucide="printer" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i> Print
@@ -223,7 +231,7 @@
                     <div class="flex justify-between">
                         <span class="font-medium text-slate-500">Bank Name:</span>
                         <span class="font-medium text-slate-900 text-right">
-                            {{ payslip.employee.bank_account.bank_name if payslip.employee.bank_account and payslip.employee.bank_account.bank_name else '—' }}
+                            {{ payslip.bank_name or (payslip.employee.bank_account.bank_name if payslip.employee.bank_account and payslip.employee.bank_account.bank_name else '—') }}
                         </span>
                     </div>
                     <div class="flex justify-between">
@@ -233,7 +241,7 @@
                     <div class="flex justify-between">
                         <span class="font-medium text-slate-500">IFSC Code:</span>
                         <span class="font-mono font-medium text-slate-900 uppercase text-right">
-                            {{ payslip.employee.bank_account.ifsc_code if payslip.employee.bank_account and payslip.employee.bank_account.ifsc_code else '—' }}
+                            {{ payslip.ifsc_code or (payslip.employee.bank_account.ifsc_code if payslip.employee.bank_account and payslip.employee.bank_account.ifsc_code else '—') }}
                         </span>
                     </div>
                     <div class="flex justify-between">
