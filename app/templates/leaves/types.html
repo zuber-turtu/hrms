@@ -273,8 +273,8 @@
     <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
         <div class="px-5 py-3.5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/70">
             <div>
-                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider font-heading">Dynamic Leave Types List</h3>
-                <p class="text-xs text-slate-500">All leave types are available across leave application workflows, balance trackers, and payroll.</p>
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider font-heading">Configured Leave Categories</h3>
+                <p class="text-xs text-slate-500">Standard leave entitlements for employee applications, quota balance tracking, and payroll.</p>
             </div>
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-semibold text-slate-500">Active Policy Year:</span>
@@ -429,8 +429,8 @@
                     <i data-lucide="plus" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm sm:text-base font-bold">Add Dynamic Leave Category</h3>
-                    <p class="text-[11px] text-teal-800 font-normal">Define entitlement policy, quota days, and eligibility</p>
+                    <h3 class="text-sm sm:text-base font-bold">Add Leave Category</h3>
+                    <p class="text-[11px] text-teal-800 font-normal">Configure annual quota, entitlement terms, and employee eligibility</p>
                 </div>
             </div>
             <button onclick="closeCreateLeaveTypeModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-teal-100/60 transition-colors cursor-pointer">
@@ -541,8 +541,8 @@
                 <label class="flex items-start space-x-2.5 cursor-pointer">
                     <input type="checkbox" name="auto_allocate_existing" checked class="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
                     <div class="text-xs">
-                        <span class="font-bold text-teal-950 block">Auto-provision quota for existing staff</span>
-                        <span class="text-slate-600 text-[11px]">Automatically credits this quota to all eligible active employees for current policy year ({{ selected_year }}).</span>
+                        <span class="font-bold text-teal-950 block">Allocate quota to active eligible staff</span>
+                        <span class="text-slate-600 text-[11px]">Automatically credits this quota to all eligible active employees for policy year {{ selected_year }}.</span>
                     </div>
                 </label>
             </div>
@@ -574,7 +574,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm sm:text-base font-bold">Edit Leave Category</h3>
-                    <p class="text-[11px] text-slate-500 font-normal">Modify statutory days, compensation nature, or active status</p>
+                    <p class="text-[11px] text-slate-500 font-normal">Update annual entitlement, compensation nature, and active status</p>
                 </div>
             </div>
             <button onclick="closeEditLeaveTypeModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">

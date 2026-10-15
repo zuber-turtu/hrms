@@ -462,14 +462,12 @@
                             <i data-lucide="clock" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Work Schedule &
-                                Lunch Policy</h3>
-
+                            <h3 class="text-sm sm:text-base font-bold font-heading text-slate-900">Work Shifts & Break Schedule</h3>
                         </div>
                     </div>
                     <span
-                        class="px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 font-mono">
-                        Uniform Policy
+                        class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                        Organization Policy
                     </span>
                 </div>
 
@@ -520,11 +518,11 @@
                 <div class="pt-4 border-t border-slate-100">
                     <div class="flex items-center justify-between mb-3">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center">
-                            <span class="mr-1.5">🍱</span> Official Lunch Break Standard (All Users)
+                            <i data-lucide="coffee" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Meal & Rest Break Standards
                         </h4>
                         <span
-                            class="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                            Governs Punch Buttons
+                            class="text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                            Automated Window
                         </span>
                     </div>
 
@@ -549,8 +547,7 @@
                             <input type="time" name="lunch_start_time" id="lunch_start_time"
                                 value="{{ company.lunch_start_time or '13:00' }}"
                                 class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                            <span class="text-[10px] text-slate-400 mt-1 block">Triggers "Go for Lunch" button for
-                                staff</span>
+                            <span class="text-[10px] text-slate-400 mt-1 block">Activates break punch window for employees</span>
                         </div>
 
                         <div>
@@ -560,22 +557,20 @@
                             <input type="time" name="lunch_end_time" id="lunch_end_time"
                                 value="{{ company.lunch_end_time or '14:00' }}"
                                 class="w-full text-xs sm:text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition-colors">
-                            <span class="text-[10px] text-slate-400 mt-1 block">Triggers "Return from Lunch" resume
-                                reminder</span>
+                            <span class="text-[10px] text-slate-400 mt-1 block">Sends resume shift reminder notification</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Live Interactive Schedule Timeline Visualizer -->
+                <!-- Shift Timeline Preview -->
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                     <div class="flex items-center justify-between">
                         <p class="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center">
-                            <i data-lucide="layout-grid" class="w-3.5 h-3.5 mr-1.5 text-teal-600"></i> Daily Shift &
-                            Lunch Visualizer
+                            <i data-lucide="calendar-range" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Daily Shift Schedule Preview
                         </p>
-                        <span class="text-[11px] font-mono font-bold text-slate-700">Total Work: {{
-                            company.standard_hours_per_day or 8.0 }}h + Lunch: {{ company.lunch_break_hours or 1.0
-                            }}h</span>
+                        <span class="text-[11px] font-mono font-bold text-slate-700">Scheduled: {{
+                            company.standard_hours_per_day or 8.0 }}h Work + {{ company.lunch_break_hours or 1.0
+                            }}h Break</span>
                     </div>
 
                     <!-- Timeline Bar -->
@@ -583,23 +578,23 @@
                         class="w-full h-8 rounded-lg overflow-hidden flex font-mono text-[11px] font-bold text-white shadow-2xs border border-slate-200">
                         <div class="bg-teal-700 flex items-center justify-center px-2 flex-1"
                             title="Morning Work Session">
-                            <span>Morning Work</span>
+                            <span>Morning Session</span>
                         </div>
                         <div class="bg-amber-500 text-amber-950 flex items-center justify-center px-3 shrink-0"
                             style="min-width: 130px;"
-                            title="Lunch Break ({{ company.lunch_start_time or '13:00' }} - {{ company.lunch_end_time or '14:00' }})">
-                            <span>🍱 Lunch ({{ company.lunch_break_hours or 1.0 }}h)</span>
+                            title="Meal Break ({{ company.lunch_start_time or '13:00' }} - {{ company.lunch_end_time or '14:00' }})">
+                            <span class="inline-flex items-center"><i data-lucide="coffee" class="w-3 h-3 mr-1 inline"></i>Break ({{ company.lunch_break_hours or 1.0 }}h)</span>
                         </div>
                         <div class="bg-teal-700 flex items-center justify-center px-2 flex-1"
                             title="Afternoon Work Session">
-                            <span>Afternoon Work</span>
+                            <span>Afternoon Session</span>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-1">
                         <span>09:00 AM (Check In)</span>
                         <span class="text-amber-800 font-bold font-mono">{{ company.lunch_start_time or '13:00' }}
-                            (Go for Lunch) – {{ company.lunch_end_time or '14:00' }} (Return)</span>
+                            (Break Start) – {{ company.lunch_end_time or '14:00' }} (Break End)</span>
                         <span>06:00 PM (Check Out)</span>
                     </div>
                 </div>
@@ -2366,7 +2361,7 @@
                         </div>
                         ${loc.code ? `<div style="color: #64748b; font-size: 11px; margin-bottom: 3px;">Code: <code style="background: #f1f5f9; padding: 1px 4px; border-radius: 3px;">${loc.code}</code></div>` : ''}
                         ${loc.address ? `<div style="color: #475569; font-size: 11px; margin-bottom: 4px;">${loc.address}</div>` : ''}
-                        <div style="color: #0d9488; font-weight: bold; font-size: 11px;">📍 Radius: ${loc.radius_meters}m</div>
+                        <div style="color: #0d9488; font-weight: 600; font-size: 11px;">Geofence Perimeter: ${loc.radius_meters}m</div>
                     </div>
                 `;
             marker.bindPopup(popupContent);
