@@ -87,7 +87,7 @@
                 </div>
                 <input type="text" id="payrollSearch" name="q" value="{{ q }}"
                     hx-get="/payroll"
-                    hx-trigger="keyup changed delay:300ms, search"
+                    hx-trigger="keyup changed delay:450ms, search"
                     hx-target="#payrollTableContainer"
                     hx-include="#payrollStatusFilter, #payrollYearFilter"
                     hx-push-url="true"
@@ -448,13 +448,11 @@
 
                         <!-- Downward-Opening Options Panel with Real-time Search -->
                         <div id="payrollEmpDropdownMenu" class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200 p-2 z-50 transition-all">
-                            <!-- Search Bar inside dropdown (only if > 7 records) -->
-                            {% if employees|length > 7 %}
+                            <!-- Search Bar inside dropdown -->
                             <div class="relative mb-2">
                                 <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
-                                <input type="text" id="payrollEmpSearchInput" onkeyup="filterPayrollEmpList()" placeholder="Search by name, ID, or department..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                                <input type="text" id="payrollEmpSearchInput" oninput="debouncePayrollEmpSearch(this.value)" placeholder="Search by name, ID, or department..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
                             </div>
-                            {% endif %}
 
                             <!-- Scrollable Employee Cards List -->
                             <div class="max-h-52 overflow-y-auto space-y-1 divide-y divide-slate-100" id="payrollEmpListContainer">
@@ -877,27 +875,96 @@
         if (chevron) chevron.style.transform = 'rotate(0deg)';
     }
 
+    let payrollEmpSearchTimer = null;
+    let payrollEmpAbortController = null;
+    const payrollEmpCache = new Map();
+
+    function debouncePayrollEmpSearch(query) {
+        clearTimeout(payrollEmpSearchTimer);
+        const q = (query || '').trim();
+        // Skip network request for single character to prevent keystroke spam
+        if (q.length === 1) return;
+
+        payrollEmpSearchTimer = setTimeout(() => {
+            fetchPayrollEmployees(q);
+        }, 400);
+    }
+
+    async function fetchPayrollEmployees(query) {
+        const container = document.getElementById('payrollEmpListContainer');
+        if (!container) return;
+
+        const q = (query || '').trim();
+
+        // 1. Instant Cache Hit: Return cached employees with 0 API calls
+        if (payrollEmpCache.has(q)) {
+            renderPayrollEmpList(payrollEmpCache.get(q));
+            return;
+        }
+
+        // 2. Abort previous in-flight request if user keeps typing
+        if (payrollEmpAbortController) {
+            payrollEmpAbortController.abort();
+        }
+        payrollEmpAbortController = new AbortController();
+
+        try {
+            const res = await fetch(`/employees/api/search?q=${encodeURIComponent(q)}&limit=15`, {
+                signal: payrollEmpAbortController.signal
+            });
+            if (!res.ok) return;
+            const employees = await res.json();
+            
+            payrollEmpCache.set(q, employees);
+            renderPayrollEmpList(employees);
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+            console.error('Failed to search employees:', err);
+        }
+    }
+
+    function renderPayrollEmpList(employees) {
+        const container = document.getElementById('payrollEmpListContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (employees.length === 0) {
+            container.innerHTML = `
+                <div id="payrollEmpEmptyState" class="py-4 text-center text-xs text-slate-400">
+                    No employees match your search
+                </div>`;
+            return;
+        }
+        
+        employees.forEach(emp => {
+            const item = document.createElement('div');
+            item.className = 'payroll-emp-option p-2 rounded-lg hover:bg-teal-50 cursor-pointer flex items-center justify-between transition-colors';
+            item.setAttribute('data-id', emp.id);
+            item.setAttribute('data-name', emp.name);
+            item.setAttribute('data-dept', emp.department);
+            item.setAttribute('data-code', emp.code);
+            item.onclick = () => selectPayrollEmployee(emp.id, emp.name, emp.department, emp.code);
+            
+            item.innerHTML = `
+                <div class="min-w-0 flex-1 pr-2">
+                    <p class="text-xs font-bold text-slate-900 truncate leading-tight">${escapeHtml(emp.name)}</p>
+                    <p class="text-[11px] text-slate-500 truncate mt-0.5"><span class="font-mono font-medium text-slate-400">${escapeHtml(emp.code)}</span> • ${escapeHtml(emp.department)} • <span class="capitalize text-teal-800 font-semibold">${escapeHtml(emp.role)}</span></p>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
     function filterPayrollEmpList() {
         const searchInput = document.getElementById('payrollEmpSearchInput');
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const items = document.querySelectorAll('.payroll-emp-option');
-        let count = 0;
-        items.forEach(item => {
-            const name = (item.getAttribute('data-name') || '').toLowerCase();
-            const dept = (item.getAttribute('data-dept') || '').toLowerCase();
-            const code = (item.getAttribute('data-code') || '').toLowerCase();
-            if (!query || name.includes(query) || dept.includes(query) || code.includes(query)) {
-                item.classList.remove('hidden');
-                count++;
-            } else {
-                item.classList.add('hidden');
-            }
-        });
-        const empty = document.getElementById('payrollEmpEmptyState');
-        if (empty) {
-            if (count === 0) empty.classList.remove('hidden');
-            else empty.classList.add('hidden');
-        }
+        if (searchInput) debouncePayrollEmpSearch(searchInput.value);
     }
 
     document.addEventListener('click', function(e) {

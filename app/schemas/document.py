@@ -11,8 +11,8 @@ class DocumentTypeBase(BaseModel):
     is_mandatory: bool = False
     who_uploads: str = "employee"
     allowed_extensions: str = "pdf,jpg,jpeg,png,webp,docx"
-    max_file_size_mb: int = 1
-    max_file_size_kb: Optional[int] = 1024
+    max_file_size_mb: int = 2
+    max_file_size_kb: Optional[int] = 2048
     department_id: Optional[int] = None
     is_active: bool = True
     display_order: int = 0

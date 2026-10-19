@@ -1,10 +1,12 @@
 import datetime
 import re
+from collections import defaultdict
 from typing import Optional, List, Union
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy.orm import Session
-from sqlalchemy import extract, or_, and_
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import extract, or_, and_, cast, String
+from app.utils.pagination import paginate_query, paginate_list
 
 from app.database import get_db
 from app.models.employee import Employee
@@ -372,11 +374,70 @@ def calculate_leave_days(start_date: datetime.date, end_date: datetime.date, is_
     return float((end_date - start_date).days + 1)
 
 
+def bulk_get_team_leave_profiles(db: Session, team_members: List[Employee], current_year: int) -> List[dict]:
+    """
+    Optimized bulk fetcher for team member leave quotas and balances.
+    Retrieves all LeaveBalance and related LeaveType records in a single joined query
+    to eliminate N+1 queries across the entire staff roster.
+    """
+    if not team_members:
+        return []
+
+    emp_ids = [m.id for m in team_members]
+    balances = (
+        db.query(LeaveBalance)
+        .options(joinedload(LeaveBalance.leave_type))
+        .filter(
+            LeaveBalance.employee_id.in_(emp_ids),
+            LeaveBalance.year == current_year,
+        )
+        .all()
+    )
+    bals_by_emp = defaultdict(list)
+    for b in balances:
+        if b.leave_type and b.leave_type.is_active:
+            bals_by_emp[b.employee_id].append(b)
+
+    profiles = []
+    missing_emp_ids = []
+    for member in team_members:
+        m_bals = bals_by_emp.get(member.id, [])
+        if not m_bals:
+            missing_emp_ids.append(member.id)
+        else:
+            profiles.append({
+                "employee": member,
+                "balances": m_bals,
+                "total_allocated": sum(b.total_allocated for b in m_bals),
+                "total_used": sum(b.used_days for b in m_bals),
+                "total_pending": sum(b.pending_days for b in m_bals),
+                "total_remaining": sum(b.remaining_days for b in m_bals),
+            })
+
+    # Only run full initialization for members that do not have balance rows at all
+    for emp_id in missing_emp_ids:
+        member = next((m for m in team_members if m.id == emp_id), None)
+        if member:
+            m_bals = ensure_employee_leave_balances(db, member.id, current_year)
+            profiles.append({
+                "employee": member,
+                "balances": m_bals,
+                "total_allocated": sum(b.total_allocated for b in m_bals),
+                "total_used": sum(b.used_days for b in m_bals),
+                "total_pending": sum(b.pending_days for b in m_bals),
+                "total_remaining": sum(b.remaining_days for b in m_bals),
+            })
+
+    return profiles
+
+
 @router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def leaves_dashboard(
     request: Request,
     tab: Optional[str] = None,
+    page: Optional[int] = 1,
+    page_size: Optional[int] = 15,
     status_filter: Optional[str] = None,
     q: Optional[str] = None,
     year: Optional[int] = None,
@@ -393,21 +454,64 @@ async def leaves_dashboard(
     # 1. Ensure user's own balances are initialized (gender filtered)
     my_balances = ensure_employee_leave_balances(db, current_user.id, current_year)
     
-    # 2. Query user's own leave applications
+    # 2. Query user's own leave applications (scoped to selected policy year with SQL pagination)
     my_leaves_query = (
         db.query(LeaveApplication)
-        .filter(LeaveApplication.employee_id == current_user.id)
-        .order_by(LeaveApplication.created_at.desc())
+        .options(joinedload(LeaveApplication.leave_type))
+        .filter(
+            LeaveApplication.employee_id == current_user.id,
+            or_(
+                extract("year", LeaveApplication.start_date) == current_year,
+                extract("year", LeaveApplication.created_at) == current_year,
+            )
+        )
     )
-    my_leaves = my_leaves_query.all()
+    if tab == "my_leaves" or not tab:
+        if q and q.strip():
+            sq = f"%{q.strip().lower()}%"
+            my_leaves_query = my_leaves_query.join(LeaveType, LeaveApplication.leave_type_id == LeaveType.id).filter(
+                or_(
+                    LeaveType.name.ilike(sq),
+                    LeaveType.code.ilike(sq),
+                    LeaveApplication.reason.ilike(sq),
+                    cast(LeaveApplication.start_date, String).ilike(sq),
+                    cast(LeaveApplication.end_date, String).ilike(sq),
+                )
+            )
+        if status_filter and status_filter.strip() and status_filter.strip().lower() != "all":
+            my_leaves_query = my_leaves_query.filter(LeaveApplication.status == status_filter.strip().lower())
 
-    # 3. Query user's own WFH requests
+    my_leaves_query = my_leaves_query.order_by(LeaveApplication.created_at.desc())
+    my_leaves_page = paginate_query(my_leaves_query, page=page if tab == "my_leaves" else 1, page_size=page_size)
+    my_leaves = my_leaves_page.items
+
+    # 3. Query user's own WFH requests (scoped to selected policy year with SQL pagination)
     my_wfh_query = (
         db.query(WfhRequest)
-        .filter(WfhRequest.employee_id == current_user.id)
-        .order_by(WfhRequest.created_at.desc())
+        .filter(
+            WfhRequest.employee_id == current_user.id,
+            or_(
+                extract("year", WfhRequest.start_date) == current_year,
+                extract("year", WfhRequest.created_at) == current_year,
+            )
+        )
     )
-    my_wfh = my_wfh_query.all()
+    if tab == "my_wfh":
+        if q and q.strip():
+            sq = f"%{q.strip().lower()}%"
+            my_wfh_query = my_wfh_query.filter(
+                or_(
+                    WfhRequest.reason.ilike(sq),
+                    cast(WfhRequest.start_date, String).ilike(sq),
+                    cast(WfhRequest.end_date, String).ilike(sq),
+                )
+            )
+        if status_filter and status_filter.strip() and status_filter.strip().lower() != "all":
+            my_wfh_query = my_wfh_query.filter(WfhRequest.status == status_filter.strip().lower())
+
+    my_wfh_query = my_wfh_query.order_by(WfhRequest.created_at.desc())
+    my_wfh_page = paginate_query(my_wfh_query, page=page if tab == "my_wfh" else 1, page_size=page_size)
+    my_wfh = my_wfh_page.items
 
     # 4. Approvals and Team Management (for Super Admin, Admins, HRs, & Managers)
     is_approver = current_user.role in ["super_admin", "admin", "hr", "hr_admin", "manager"]
@@ -606,19 +710,25 @@ async def leaves_dashboard(
                 .all()
             )
 
-    # 6. Team Member Leave Profiles & Balances for Approvers
-    team_leave_profiles = []
-    if is_approver:
-        for member in team_members:
-            m_bals = ensure_employee_leave_balances(db, member.id, current_year)
-            team_leave_profiles.append({
-                "employee": member,
-                "balances": m_bals,
-                "total_allocated": sum(b.total_allocated for b in m_bals),
-                "total_used": sum(b.used_days for b in m_bals),
-                "total_pending": sum(b.pending_days for b in m_bals),
-                "total_remaining": sum(b.remaining_days for b in m_bals),
-            })
+    # 6. Team Member Leave Profiles & Balances for Approvers (Single Bulk Joined Query)
+    all_team_leave_profiles = []
+    if is_approver and team_members:
+        all_team_leave_profiles = bulk_get_team_leave_profiles(db, team_members, current_year)
+        if tab == "team_balances" and q and q.strip():
+            sq = q.strip().lower()
+            all_team_leave_profiles = [
+                p for p in all_team_leave_profiles
+                if sq in (p["employee"].name or "").lower()
+                or sq in (p["employee"].email or "").lower()
+                or sq in (p["employee"].department or "").lower()
+            ]
+
+    team_balances_page = paginate_list(
+        all_team_leave_profiles,
+        page=page if tab == "team_balances" else 1,
+        page_size=page_size
+    )
+    team_leave_profiles = team_balances_page.items
 
     context = {
         "user": current_user,
@@ -629,18 +739,30 @@ async def leaves_dashboard(
         "all_departments": all_departments,
         "my_balances": my_balances,
         "my_leaves": my_leaves,
+        "my_leaves_page": my_leaves_page,
         "my_wfh": my_wfh,
+        "my_wfh_page": my_wfh_page,
         "is_approver": is_approver,
         "pending_leaves": pending_leaves,
         "pending_wfh": pending_wfh,
         "team_members": team_members,
         "team_leave_profiles": team_leave_profiles,
+        "team_balances_page": team_balances_page,
+        "total_team_profiles_count": len(all_team_leave_profiles),
         "active_today_wfh": active_today_wfh,
         "active_today_leaves": active_today_leaves,
         "today": today,
+        "q": q or "",
+        "status_filter": status_filter or "all",
     }
 
     if request.headers.get("HX-Request"):
+        if tab == "my_leaves":
+            return templates.TemplateResponse(request, "leaves/partials/_my_leaves_table.html", context)
+        elif tab == "my_wfh":
+            return templates.TemplateResponse(request, "leaves/partials/_my_wfh_table.html", context)
+        elif tab == "team_balances":
+            return templates.TemplateResponse(request, "leaves/partials/_team_balances_table.html", context)
         return templates.TemplateResponse(request, "leaves/partials/_content.html", context)
 
     return templates.TemplateResponse(request, "leaves/index.html", context)

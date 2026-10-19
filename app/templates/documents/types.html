@@ -260,14 +260,14 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Max File Size</label>
                     <div class="flex items-center space-x-2">
-                        <input type="number" name="max_size_value" id="form_max_size_value" value="1" min="1" step="any" required
+                        <input type="number" name="max_size_value" id="form_max_size_value" value="2" min="1" step="any" required
                             class="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 font-mono">
                         <select name="max_size_unit" id="form_max_size_unit" data-custom-select="true" class="custom-select w-24">
                             <option value="MB" selected>MB</option>
                             <option value="KB">KB</option>
                         </select>
                     </div>
-                    <span class="text-[10px] text-slate-400 mt-1 block">Default: 1 MB (can easily configure in KB e.g. 500 KB)</span>
+                    <span class="text-[10px] text-slate-400 mt-1 block">Default: 2 MB (can be increased or decreased dynamically in MB or KB)</span>
                 </div>
             </div>
 
@@ -322,7 +322,7 @@
         syncSelect('form_category', 'KYC');
         syncSelect('form_who_uploads', 'employee');
         document.getElementById('form_allowed_extensions').value = "pdf,jpg,jpeg,png,webp,docx";
-        document.getElementById('form_max_size_value').value = "1";
+        document.getElementById('form_max_size_value').value = "2";
         syncSelect('form_max_size_unit', 'MB');
         syncSelect('form_department_id', '');
         document.getElementById('form_is_mandatory').checked = false;
@@ -340,7 +340,7 @@
         syncSelect('form_who_uploads', who);
         document.getElementById('form_allowed_extensions').value = exts;
         
-        const kbVal = parseInt(maxKb) || 1024;
+        const kbVal = parseInt(maxKb) || 2048;
         if (kbVal < 1024 || (kbVal % 1024 !== 0)) {
             document.getElementById('form_max_size_value').value = kbVal;
             syncSelect('form_max_size_unit', 'KB');

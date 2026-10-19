@@ -750,7 +750,7 @@
                     {% if doc %}
                         <div class="flex items-center space-x-2">
                             {% if item.is_file_available %}
-                            <button onclick="previewDocument({{ doc.id }}, '{{ doc.title }}', '{{ doc.mime_type }}')" class="inline-flex items-center px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
+                            <button onclick="previewDocument({{ doc.id }}, '{{ doc.title|replace('\'', '\\\'') }}', '{{ doc.mime_type or '' }}', '{{ doc.file_name|replace('\'', '\\\'') }}')" class="inline-flex items-center px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
                                 <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> Preview
                             </button>
                             <a href="/documents/{{ doc.id }}/download" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Download">
@@ -767,7 +767,7 @@
                         {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
                         <div class="flex items-center space-x-1.5">
                             {% if not item.is_file_available %}
-                            <button onclick="openUploadSpecificModal({{ dt.id }}, '{{ dt.title }}')" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-2xs transition-colors">
+                            <button onclick="openUploadSpecificModal({{ dt.id }}, '{{ dt.title|replace('\'', '\\\'') }}')" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-2xs transition-colors">
                                 <i data-lucide="upload-cloud" class="w-3 h-3 mr-1"></i> Re-upload
                             </button>
                             {% else %}
@@ -780,7 +780,7 @@
                                 </form>
                                 {% endif %}
                                 {% if doc.is_pending or doc.is_verified %}
-                                <button onclick="openRejectModal({{ doc.id }}, '{{ doc.title }}')" class="inline-flex items-center px-2.5 py-1.5 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 hover:bg-rose-50 transition-colors">
+                                <button onclick="openRejectModal({{ doc.id }}, '{{ doc.title|replace('\'', '\\\'') }}')" class="inline-flex items-center px-2.5 py-1.5 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 hover:bg-rose-50 transition-colors">
                                     <i data-lucide="x" class="w-3 h-3 mr-1"></i> Reject
                                 </button>
                                 {% endif %}
@@ -792,7 +792,7 @@
                             <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-amber-500"></i> Awaiting Upload
                         </span>
                         {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
-                        <button onclick="openUploadSpecificModal({{ dt.id }}, '{{ dt.title }}')" class="inline-flex items-center px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
+                        <button onclick="openUploadSpecificModal({{ dt.id }}, '{{ dt.title|replace('\'', '\\\'') }}')" class="inline-flex items-center px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
                             <i data-lucide="upload" class="w-3 h-3 mr-1 text-teal-700"></i> Upload
                         </button>
                         {% endif %}
@@ -801,6 +801,56 @@
             </div>
             {% endfor %}
         </div>
+
+        {% if doc_unmapped %}
+        <!-- Additional Uploaded Documents -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6 mt-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60">
+                        <i data-lucide="folder-open" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold font-heading text-sm text-slate-900">Additional & Custom Uploaded Documents</h4>
+                        <p class="text-xs text-slate-500">Other confidential files, certificates, or letters uploaded for this employee</p>
+                    </div>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 font-mono">
+                    {{ doc_unmapped|length }} Files
+                </span>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                {% for doc in doc_unmapped %}
+                <div class="py-3 flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center space-x-3 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                            {% if doc.mime_type and 'pdf' in doc.mime_type %}
+                            <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
+                            {% elif doc.mime_type and 'image' in doc.mime_type %}
+                            <i data-lucide="image" class="w-4 h-4 text-teal-600"></i>
+                            {% else %}
+                            <i data-lucide="file" class="w-4 h-4 text-slate-600"></i>
+                            {% endif %}
+                        </div>
+                        <div class="min-w-0">
+                            <span class="font-bold text-xs text-slate-900 block truncate">{{ doc.title }}</span>
+                            <span class="text-[11px] text-slate-500 font-mono">{{ doc.file_name }} • {{ doc.file_size_formatted }} • {{ doc.uploaded_at.strftime('%d %b %Y') if doc.uploaded_at else '' }}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="previewDocument({{ doc.id }}, '{{ doc.title|replace('\'', '\\\'') }}', '{{ doc.mime_type or '' }}', '{{ doc.file_name|replace('\'', '\\\'') }}')" class="inline-flex items-center px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
+                            <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> Preview
+                        </button>
+                        <a href="/documents/{{ doc.id }}/download" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Download">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- ================= TAB 5: LEAVES & QUOTA ENTITLEMENTS ================= -->
@@ -1495,7 +1545,7 @@
                     {% for item in doc_checklist %}
                         <option value="{{ item.type.id }}" data-allowed-exts="{{ item.type.allowed_extensions }}" data-max-kb="{{ item.type.effective_max_kb }}" data-max-formatted="{{ item.type.formatted_max_size }}">{{ item.type.title }} (Max {{ item.type.formatted_max_size }})</option>
                     {% endfor %}
-                    <option value="" data-allowed-exts="pdf,jpg,jpeg,png,webp,docx" data-max-kb="1024" data-max-formatted="1 MB">Other / Custom Document (Max 1 MB)</option>
+                    <option value="" data-allowed-exts="pdf,jpg,jpeg,png,webp,docx" data-max-kb="2048" data-max-formatted="2 MB">Other / Custom Document (Max 2 MB)</option>
                 </select>
             </div>
 
@@ -1518,37 +1568,91 @@
 
 <!-- In-Browser Document Preview Modal -->
 <div id="docPreviewModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs hidden" onclick="closeDocPreviewModal()">
-    <div class="relative max-w-4xl w-full h-[88vh] bg-slate-900 rounded-2xl p-4 shadow-2xl border border-slate-800 flex flex-col" onclick="event.stopPropagation()">
+    <div class="relative max-w-5xl w-full h-[90vh] bg-slate-900 rounded-2xl p-4 shadow-2xl border border-slate-800 flex flex-col" onclick="event.stopPropagation()">
+        <!-- Header -->
         <div class="flex items-center justify-between pb-3 border-b border-slate-800 px-2 shrink-0">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center">
-                    <i data-lucide="file-check" class="w-4 h-4"></i>
+            <div class="flex items-center space-x-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-teal-600/20 text-teal-400 border border-teal-500/30 flex items-center justify-center shrink-0">
+                    <i data-lucide="file-check" class="w-5 h-5"></i>
                 </div>
-                <div>
+                <div class="min-w-0">
                     <h3 id="docPreviewTitle" class="text-sm font-bold text-white font-heading truncate max-w-md">Document Preview</h3>
-                    <span class="text-[11px] text-teal-300">{{ (company or get_company()).name }} Secure Viewer</span>
+                    <p class="text-[11px] text-teal-300 font-medium">{{ (company or get_company()).name }} Secure Document Viewer</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-1.5">
-                <a id="docPreviewDownloadLink" href="#" class="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors" title="Download Document">
-                    <i data-lucide="download" class="w-4 h-4"></i>
+            <div class="flex items-center space-x-2 shrink-0">
+                <a id="docPreviewExternalLink" href="#" target="_blank" class="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors inline-flex items-center text-xs font-semibold" title="Open in Full Window / New Tab">
+                    <i data-lucide="external-link" class="w-4 h-4 mr-1"></i> Full View
                 </a>
-                <button onclick="closeDocPreviewModal()" class="text-slate-300 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors">
+                <a id="docPreviewDownloadLink" href="#" class="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors inline-flex items-center text-xs font-semibold" title="Download Document">
+                    <i data-lucide="download" class="w-4 h-4 mr-1"></i> Download
+                </a>
+                <button onclick="closeDocPreviewModal()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors" title="Close Viewer">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
         </div>
 
-        <div class="flex-1 overflow-hidden rounded-xl bg-slate-950/60 mt-3 flex items-center justify-center relative">
+        <!-- Viewer Body -->
+        <div class="flex-1 overflow-hidden rounded-xl bg-slate-950/70 mt-3 flex items-center justify-center relative p-2">
+            <!-- Loading Indicator -->
+            <div id="docPreviewLoading" class="hidden text-center text-slate-400 space-y-2">
+                <div class="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-xs">Loading document...</p>
+            </div>
+
+            <!-- PDF Viewer Container (Object + Iframe Fallback) -->
+            <div id="docPreviewPdfContainer" class="w-full h-full relative rounded-lg overflow-hidden flex flex-col hidden">
+                <object id="docPreviewObject" data="" type="application/pdf" class="w-full h-full rounded-lg">
+                    <iframe id="docPreviewIframe" src="" class="w-full h-full border-0 rounded-lg">
+                        <div class="h-full w-full flex flex-col items-center justify-center p-8 text-center text-white bg-slate-900 space-y-4">
+                            <div class="w-14 h-14 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center mx-auto border border-teal-500/30">
+                                <i data-lucide="file-text" class="w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-white">PDF Document Ready</h4>
+                                <p class="text-xs text-slate-400 max-w-sm mt-1">If your browser blocks embedded frames, you can open the PDF directly or download it below.</p>
+                            </div>
+                            <div class="flex items-center space-x-3 pt-2">
+                                <a id="docPreviewFallbackOpen" href="#" target="_blank" class="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-semibold text-xs inline-flex items-center shadow-md">
+                                    <i data-lucide="external-link" class="w-4 h-4 mr-1.5"></i> Open in New Tab
+                                </a>
+                                <a id="docPreviewFallbackDownload" href="#" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold text-xs inline-flex items-center">
+                                    <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Download PDF
+                                </a>
+                            </div>
+                        </div>
+                    </iframe>
+                </object>
+            </div>
+
+            <!-- Image Viewer -->
+            <img id="docPreviewImg" src="" alt="Document Preview" class="max-h-full max-w-full object-contain rounded-lg shadow-inner hidden">
+
+            <!-- Office / Word Document Card -->
+            <div id="docPreviewOffice" class="hidden text-center p-8 text-white space-y-4">
+                <div class="w-16 h-16 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/30 shadow-lg">
+                    <i data-lucide="file-spreadsheet" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h4 id="docPreviewOfficeName" class="font-bold text-base text-white">Document</h4>
+                    <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Word and Office files can be downloaded to view or edit in your local office software.</p>
+                </div>
+                <div class="pt-2">
+                    <a id="docPreviewOfficeDownload" href="#" class="inline-flex items-center px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs shadow-md transition-colors">
+                        <i data-lucide="download" class="w-4 h-4 mr-2"></i> Download File
+                    </a>
+                </div>
+            </div>
+
+            <!-- Error Box -->
             <div id="docPreviewError" class="hidden text-center p-6 text-white space-y-3">
                 <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
                     <i data-lucide="alert-triangle" class="w-6 h-6"></i>
                 </div>
                 <h4 class="font-bold text-sm">Unable to Preview File</h4>
-                <p class="text-xs text-slate-400 max-w-sm">The document file could not be loaded from storage. It may need to be re-uploaded.</p>
+                <p class="text-xs text-slate-400 max-w-sm">The document file could not be retrieved from storage. Please verify or re-upload.</p>
             </div>
-            <iframe id="docPreviewIframe" src="" class="w-full h-full border-0 rounded-lg hidden" onerror="showDocPreviewError()"></iframe>
-            <img id="docPreviewImg" src="" alt="Document Preview" class="max-h-full max-w-full object-contain rounded-lg shadow-inner hidden" onerror="showDocPreviewError()">
         </div>
     </div>
 </div>
@@ -1733,36 +1837,74 @@
         if (modal) modal.classList.add('hidden');
     }
 
-    function previewDocument(docId, title, mimeType) {
-        document.getElementById('docPreviewTitle').textContent = title;
-        document.getElementById('docPreviewDownloadLink').href = "/documents/" + docId + "/download";
-        
+    function previewDocument(docId, title, mimeType, fileName) {
+        title = title || "Document Preview";
+        fileName = fileName || "";
+        mimeType = (mimeType || "").toLowerCase();
+        const ext = (fileName.split('.').pop() || "").toLowerCase();
+
+        const titleEl = document.getElementById('docPreviewTitle');
+        if (titleEl) titleEl.textContent = title;
+
+        const viewUrl = "/documents/" + docId + "/view";
+        const downloadUrl = "/documents/" + docId + "/download";
+
+        const downloadLink = document.getElementById('docPreviewDownloadLink');
+        if (downloadLink) downloadLink.href = downloadUrl;
+
+        const externalLink = document.getElementById('docPreviewExternalLink');
+        if (externalLink) externalLink.href = viewUrl;
+
+        const pdfContainer = document.getElementById('docPreviewPdfContainer');
+        const pdfObject = document.getElementById('docPreviewObject');
         const iframe = document.getElementById('docPreviewIframe');
         const img = document.getElementById('docPreviewImg');
+        const officeBox = document.getElementById('docPreviewOffice');
         const errBox = document.getElementById('docPreviewError');
-        if (errBox) errBox.classList.add('hidden');
-        const viewUrl = "/documents/" + docId + "/view";
 
-        if (mimeType && (mimeType.includes('image') || mimeType.includes('png') || mimeType.includes('jpeg') || mimeType.includes('jpg'))) {
-            iframe.classList.add('hidden');
-            iframe.src = "";
+        // Reset all viewer states
+        if (errBox) errBox.classList.add('hidden');
+        if (pdfContainer) pdfContainer.classList.add('hidden');
+        if (img) { img.classList.add('hidden'); img.src = ""; }
+        if (officeBox) officeBox.classList.add('hidden');
+
+        // Check file classification
+        const isImage = mimeType.includes('image') || ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext);
+        const isOffice = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext) || mimeType.includes('word') || mimeType.includes('officedocument');
+        const isPdf = mimeType.includes('pdf') || ext === 'pdf' || (!isImage && !isOffice);
+
+        if (isImage) {
             img.src = viewUrl;
             img.classList.remove('hidden');
+        } else if (isOffice) {
+            if (officeBox) {
+                const nameEl = document.getElementById('docPreviewOfficeName');
+                if (nameEl) nameEl.textContent = fileName || title;
+                const dlBtn = document.getElementById('docPreviewOfficeDownload');
+                if (dlBtn) dlBtn.href = downloadUrl;
+                officeBox.classList.remove('hidden');
+            }
         } else {
-            img.classList.add('hidden');
-            img.src = "";
-            iframe.src = viewUrl;
-            iframe.classList.remove('hidden');
+            // Default: PDF Stream (via Object tag + embedded Iframe fallback)
+            if (pdfContainer) pdfContainer.classList.remove('hidden');
+            if (pdfObject) pdfObject.data = viewUrl + '#toolbar=1&navpanes=0';
+            if (iframe) iframe.src = viewUrl;
+            const fbOpen = document.getElementById('docPreviewFallbackOpen');
+            if (fbOpen) fbOpen.href = viewUrl;
+            const fbDl = document.getElementById('docPreviewFallbackDownload');
+            if (fbDl) fbDl.href = downloadUrl;
         }
-        document.getElementById('docPreviewModal').classList.remove('hidden');
+
+        const modal = document.getElementById('docPreviewModal');
+        if (modal) modal.classList.remove('hidden');
         if (window.lucide) { lucide.createIcons(); }
     }
 
     function showDocPreviewError() {
-        const iframe = document.getElementById('docPreviewIframe');
+        const pdfContainer = document.getElementById('docPreviewPdfContainer');
         const img = document.getElementById('docPreviewImg');
         const errBox = document.getElementById('docPreviewError');
-        if (iframe) iframe.classList.add('hidden');
+        if (pdfContainer) pdfContainer.classList.add('hidden');
         if (img) img.classList.add('hidden');
         if (errBox) {
             errBox.classList.remove('hidden');
@@ -1771,13 +1913,20 @@
     }
 
     function closeDocPreviewModal() {
-        document.getElementById('docPreviewModal').classList.add('hidden');
+        const modal = document.getElementById('docPreviewModal');
+        if (modal) modal.classList.add('hidden');
+
+        const pdfObject = document.getElementById('docPreviewObject');
         const iframe = document.getElementById('docPreviewIframe');
         const img = document.getElementById('docPreviewImg');
         const errBox = document.getElementById('docPreviewError');
-        if (iframe) { iframe.src = ""; iframe.classList.add('hidden'); }
+        const officeBox = document.getElementById('docPreviewOffice');
+
+        if (pdfObject) pdfObject.data = "";
+        if (iframe) iframe.src = "";
         if (img) { img.src = ""; img.classList.add('hidden'); }
         if (errBox) errBox.classList.add('hidden');
+        if (officeBox) officeBox.classList.add('hidden');
     }
 
     function openRejectModal(docId, title) {
@@ -1799,7 +1948,7 @@
             const exts = opt.dataset.allowedExts.split(',').map(e => '.' + e.trim().toLowerCase()).join(',');
             fileInput.setAttribute('accept', exts);
         } else {
-            fileInput.setAttribute('accept', '.pdf,.jpg,.jpeg,.png,.webp,.docx');
+            fileInput.setAttribute('accept', '.pdf,.jpg,.jpeg,.png,.webp,.docx,.doc');
         }
     }
 
@@ -1810,10 +1959,19 @@
         const select = document.getElementById('hr_doc_type');
         const opt = select ? select.options[select.selectedIndex] : null;
         
-        const rawAllowed = opt && opt.dataset.allowedExts ? opt.dataset.allowedExts : 'pdf,jpg,jpeg,png,webp,docx';
+        const rawAllowed = opt && opt.dataset.allowedExts ? opt.dataset.allowedExts : 'pdf,jpg,jpeg,png,webp,docx,doc';
         const allowedList = rawAllowed.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-        const maxKb = parseInt(opt && opt.dataset.maxKb ? opt.dataset.maxKb : '1024') || 1024;
-        const formattedMax = opt && opt.dataset.maxFormatted ? opt.dataset.maxFormatted : '1 MB';
+        const configuredKb = parseInt(opt && opt.dataset.maxKb ? opt.dataset.maxKb : '2048') || 2048;
+        const maxKb = configuredKb;
+        let formattedMax = opt && opt.dataset.maxFormatted ? opt.dataset.maxFormatted : '';
+        if (!formattedMax) {
+            if (maxKb >= 1024) {
+                const mb = maxKb / 1024.0;
+                formattedMax = Number.isInteger(mb) ? `${mb} MB` : `${mb.toFixed(1)} MB`;
+            } else {
+                formattedMax = `${maxKb} KB`;
+            }
+        }
 
         const ext = file.name.split('.').pop().toLowerCase();
         if (!allowedList.includes(ext)) {
@@ -1823,7 +1981,7 @@
         }
 
         if (file.size > maxKb * 1024) {
-            alert(`File size (${(file.size / 1024).toFixed(1)} KB) exceeds the maximum allowed limit of ${formattedMax}.`);
+            alert(`File size (${(file.size / 1024 / 1024).toFixed(2)} MB) exceeds the maximum allowed limit of ${formattedMax}.`);
             input.value = '';
             return;
         }
@@ -1831,7 +1989,15 @@
 
     function openHRUploadDocModal() {
         updateHRDocAcceptList();
-        document.getElementById('hrUploadModal').classList.remove('hidden');
+        document.getElementById('hrUploadModal')?.classList.remove('hidden');
+    }
+
+    function openHRUploadModal() {
+        openHRUploadDocModal();
+    }
+
+    function closeHRUploadModal() {
+        document.getElementById('hrUploadModal')?.classList.add('hidden');
     }
 
     function openUploadSpecificModal(typeId, title) {
@@ -1911,37 +2077,7 @@
         document.getElementById('modal_check_in').value = inTime;
         document.getElementById('modal_check_out').value = outTime;
     }
-    function openHRUploadModal() {
-        document.getElementById('hrUploadModal')?.classList.remove('hidden');
-    }
-    function closeHRUploadModal() {
-        document.getElementById('hrUploadModal')?.classList.add('hidden');
-    }
-    function validateHRDocUpload(input) {
-        if (!input.files || !input.files[0]) return;
-        const file = input.files[0];
-        
-        const typeSelect = document.getElementById('hr_doc_type');
-        const selectedOpt = typeSelect?.options[typeSelect.selectedIndex];
-        const maxKb = selectedOpt?.dataset.maxKb ? parseInt(selectedOpt.dataset.maxKb) : 1024;
-        const formattedSize = selectedOpt?.dataset.maxFormatted || "1 MB";
-        
-        const maxBytes = maxKb * 1024;
-        const allowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'docx'];
-        const ext = file.name.split('.').pop().toLowerCase();
 
-        if (!allowedExts.includes(ext)) {
-            alert(`Invalid file format '.${ext}'. Allowed formats: PDF, JPG, JPEG, PNG, WEBP, DOCX.`);
-            input.value = '';
-            return;
-        }
-
-        if (file.size > maxBytes) {
-            alert(`File size (${(file.size / 1024).toFixed(1)} KB) exceeds the maximum allowed limit of ${formattedSize}.`);
-            input.value = '';
-            return;
-        }
-    }
     {% endif %}
 </script>
 {% endblock %}

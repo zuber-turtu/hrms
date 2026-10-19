@@ -80,8 +80,8 @@ async def api_create_document_type(
         is_mandatory=payload.is_mandatory,
         who_uploads=payload.who_uploads,
         allowed_extensions=payload.allowed_extensions.lower(),
-        max_file_size_mb=payload.max_file_size_mb or 1,
-        max_file_size_kb=payload.max_file_size_kb or ((payload.max_file_size_mb * 1024) if payload.max_file_size_mb else 1024),
+        max_file_size_mb=payload.max_file_size_mb or 2,
+        max_file_size_kb=payload.max_file_size_kb or ((payload.max_file_size_mb * 1024) if payload.max_file_size_mb else 2048),
         department_id=payload.department_id,
         is_active=payload.is_active,
         display_order=payload.display_order,
@@ -202,18 +202,33 @@ async def api_upload_employee_document(
         raise HTTPException(status_code=400, detail="Empty file content")
 
     file_size = len(file_bytes)
-    max_size_kb = doc_type.effective_max_kb if doc_type else 1024
+    # Dynamic document size set by higher roles; defaults to 2 MB (2048 KB) if unmapped
+    max_size_kb = doc_type.effective_max_kb if doc_type else 2048
     if file_size > max_size_kb * 1024:
-        display_max = doc_type.formatted_max_size if doc_type else "1 MB"
+        display_max = doc_type.formatted_max_size if doc_type else (f"{max_size_kb // 1024} MB" if max_size_kb >= 1024 else f"{max_size_kb} KB")
         raise HTTPException(status_code=400, detail=f"File exceeds maximum size of {display_max}")
 
     ext = os.path.splitext(file.filename)[1].lower().strip(".")
-    allowed = [x.strip() for x in (doc_type.allowed_extensions if doc_type else "pdf,jpg,jpeg,png,webp,docx").split(",")]
+    allowed = [x.strip() for x in (doc_type.allowed_extensions if doc_type else "pdf,jpg,jpeg,png,webp,docx,doc").split(",")]
     if ext not in allowed:
         raise HTTPException(status_code=400, detail=f"Invalid file extension '.{ext}'. Allowed: {', '.join(allowed)}")
 
+    if ext == "pdf":
+        content_type = "application/pdf"
+    elif ext in ["jpg", "jpeg"]:
+        content_type = "image/jpeg"
+    elif ext == "png":
+        content_type = "image/png"
+    elif ext == "webp":
+        content_type = "image/webp"
+    elif ext == "docx":
+        content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif ext == "doc":
+        content_type = "application/msword"
+    else:
+        content_type = file.content_type or "application/octet-stream"
+
     storage = get_storage_provider()
-    content_type = file.content_type or ("application/pdf" if ext == "pdf" else "image/jpeg")
     file_url, file_key = storage.upload_file(
         file_bytes,
         filename=file.filename,
@@ -319,14 +334,19 @@ async def api_download_document(
 
     file_bytes = storage.get_file_bytes(document.file_url)
     if not file_bytes:
+        base_name = os.path.basename(str(document.file_url).replace("\\", "/"))
+        file_bytes = storage.get_file_bytes(base_name)
+
+    if not file_bytes:
         if document.file_url.startswith("http://") or document.file_url.startswith("https://"):
             return {"download_url": document.file_url}
         raise HTTPException(status_code=404, detail="File could not be read from storage")
 
+    safe_filename = (document.file_name or "document.pdf").replace('"', '').replace(';', '').strip()
     return Response(
         content=file_bytes,
         media_type=document.mime_type or "application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{document.file_name}"'},
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
     )
 
 

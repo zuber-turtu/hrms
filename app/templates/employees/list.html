@@ -105,7 +105,7 @@
                 </div>
                 <input type="text" id="employeeSearch" name="q" value="{{ current_q }}"
                     hx-get="/employees"
-                    hx-trigger="keyup changed delay:300ms, search"
+                    hx-trigger="keyup changed delay:450ms, search"
                     hx-target="#employeesTableContainer"
                     hx-include="#roleFilter, #zoneFilter, #sortSelector, #employeeLetterInput"
                     hx-push-url="true"
@@ -275,13 +275,11 @@
 
                         <!-- Downward-Opening Options Panel with Real-time Search -->
                         <div id="empPayslipDropdownMenu" class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200 p-2 z-50 transition-all">
-                            <!-- Search Bar inside dropdown (only if > 7 records) -->
-                            {% if eligible_emps|length > 7 %}
+                            <!-- Search Bar inside dropdown -->
                             <div class="relative mb-2">
                                 <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
-                                <input type="text" id="empPayslipSearchInput" onkeyup="filterEmpPayslipList()" placeholder="Search by name, ID, or department..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
+                                <input type="text" id="empPayslipSearchInput" oninput="debounceEmpPayslipSearch(this.value)" placeholder="Search by name, ID, or department..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600">
                             </div>
-                            {% endif %}
 
                             <!-- Scrollable Employee Cards List -->
                             <div class="max-h-52 overflow-y-auto space-y-1 divide-y divide-slate-100" id="empPayslipListContainer">
@@ -539,27 +537,95 @@
         if (chevron) chevron.style.transform = 'rotate(0deg)';
     }
 
+    let empPayslipSearchTimer = null;
+    let empPayslipAbortController = null;
+    const empPayslipCache = new Map();
+
+    function debounceEmpPayslipSearch(query) {
+        clearTimeout(empPayslipSearchTimer);
+        const q = (query || '').trim();
+        if (q.length === 1) return;
+
+        empPayslipSearchTimer = setTimeout(() => {
+            fetchEmpPayslipEmployees(q);
+        }, 400);
+    }
+
+    async function fetchEmpPayslipEmployees(query) {
+        const container = document.getElementById('empPayslipListContainer');
+        if (!container) return;
+
+        const q = (query || '').trim();
+
+        // 1. Instant Cache Hit: Return cached employees with 0 API calls
+        if (empPayslipCache.has(q)) {
+            renderEmpPayslipList(empPayslipCache.get(q));
+            return;
+        }
+
+        // 2. Abort previous in-flight request if user keeps typing
+        if (empPayslipAbortController) {
+            empPayslipAbortController.abort();
+        }
+        empPayslipAbortController = new AbortController();
+
+        try {
+            const res = await fetch(`/employees/api/search?q=${encodeURIComponent(q)}&limit=15`, {
+                signal: empPayslipAbortController.signal
+            });
+            if (!res.ok) return;
+            const employees = await res.json();
+            
+            empPayslipCache.set(q, employees);
+            renderEmpPayslipList(employees);
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+            console.error('Failed to search employees:', err);
+        }
+    }
+
+    function renderEmpPayslipList(employees) {
+        const container = document.getElementById('empPayslipListContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (employees.length === 0) {
+            container.innerHTML = `
+                <div id="empPayslipEmptyState" class="py-4 text-center text-xs text-slate-400">
+                    No employees match your search
+                </div>`;
+            return;
+        }
+        
+        employees.forEach(emp => {
+            const item = document.createElement('div');
+            item.className = 'emp-payslip-option p-2 rounded-lg hover:bg-teal-50 cursor-pointer flex items-center justify-between transition-colors';
+            item.setAttribute('data-id', emp.id);
+            item.setAttribute('data-name', emp.name);
+            item.setAttribute('data-dept', emp.department);
+            item.setAttribute('data-code', emp.code);
+            item.onclick = () => selectEmpPayslipEmployee(emp.id, emp.name, emp.department);
+            
+            item.innerHTML = `
+                <div class="min-w-0 flex-1 pr-2">
+                    <p class="text-xs font-bold text-slate-900 truncate leading-tight">${escapeEmpHtml(emp.name)}</p>
+                    <p class="text-[11px] text-slate-500 truncate mt-0.5"><span class="font-mono font-medium text-slate-400">${escapeEmpHtml(emp.code)}</span> • ${escapeEmpHtml(emp.department)} • <span class="capitalize text-teal-800 font-semibold">${escapeEmpHtml(emp.role)}</span></p>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function escapeEmpHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
     function filterEmpPayslipList() {
         const searchInput = document.getElementById('empPayslipSearchInput');
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const items = document.querySelectorAll('.emp-payslip-option');
-        let count = 0;
-        items.forEach(item => {
-            const name = (item.getAttribute('data-name') || '').toLowerCase();
-            const dept = (item.getAttribute('data-dept') || '').toLowerCase();
-            const code = (item.getAttribute('data-code') || '').toLowerCase();
-            if (!query || name.includes(query) || dept.includes(query) || code.includes(query)) {
-                item.classList.remove('hidden');
-                count++;
-            } else {
-                item.classList.add('hidden');
-            }
-        });
-        const empty = document.getElementById('empPayslipEmptyState');
-        if (empty) {
-            if (count === 0) empty.classList.remove('hidden');
-            else empty.classList.add('hidden');
-        }
+        if (searchInput) debounceEmpPayslipSearch(searchInput.value);
     }
 
     document.addEventListener('click', function(e) {

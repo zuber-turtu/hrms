@@ -170,7 +170,7 @@
                 {% if doc %}
                     <div class="flex items-center space-x-1.5">
                         {% if item.is_file_available %}
-                            <button onclick="previewDocument({{ doc.id }}, '{{ doc.title }}', '{{ doc.mime_type }}')" class="inline-flex items-center px-2.5 py-1 border border-slate-300 rounded-md text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
+                            <button onclick="previewDocument({{ doc.id }}, '{{ doc.title|replace('\'', '\\\'') }}', '{{ doc.mime_type or '' }}', '{{ doc.file_name|replace('\'', '\\\'') }}')" class="inline-flex items-center px-2.5 py-1 border border-slate-300 rounded-md text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-2xs">
                                 <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-500"></i> Preview
                             </button>
                             <a href="/documents/{{ doc.id }}/download" class="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors" title="Download">
@@ -224,7 +224,7 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-1.5">
-                    <button onclick="previewDocument({{ doc.id }}, '{{ doc.title }}', '{{ doc.mime_type }}')" class="p-1.5 text-teal-700 hover:bg-teal-50 rounded-md">
+                    <button onclick="previewDocument({{ doc.id }}, '{{ doc.title|replace('\'', '\\\'') }}', '{{ doc.mime_type or '' }}', '{{ doc.file_name|replace('\'', '\\\'') }}')" class="p-1.5 text-teal-700 hover:bg-teal-50 rounded-md">
                         <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                     </button>
                     <a href="/documents/{{ doc.id }}/download" class="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md">
@@ -285,44 +285,98 @@
                     Upload & Submit
                 </button>
             </div>
-        </form>
     </div>
 </div>
 
 <!-- In-Browser Document Preview Modal -->
 <div id="previewModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs hidden" onclick="closePreviewModal()">
-    <div class="relative max-w-4xl w-full h-[88vh] bg-slate-900 rounded-2xl p-4 shadow-2xl border border-slate-800 flex flex-col" onclick="event.stopPropagation()">
+    <div class="relative max-w-5xl w-full h-[90vh] bg-slate-900 rounded-2xl p-4 shadow-2xl border border-slate-800 flex flex-col" onclick="event.stopPropagation()">
+        <!-- Header -->
         <div class="flex items-center justify-between pb-3 border-b border-slate-800 px-2 shrink-0">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center">
-                    <i data-lucide="file-check" class="w-4 h-4"></i>
+            <div class="flex items-center space-x-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-teal-600/20 text-teal-400 border border-teal-500/30 flex items-center justify-center shrink-0">
+                    <i data-lucide="file-check" class="w-5 h-5"></i>
                 </div>
-                <div>
+                <div class="min-w-0">
                     <h3 id="previewTitle" class="text-sm font-bold text-white font-heading truncate max-w-md">Document Preview</h3>
-                    <span class="text-[11px] text-teal-300">{{ (company or get_company()).name }} Secure Viewer</span>
+                    <p class="text-[11px] text-teal-300 font-medium">{{ (company or get_company()).name }} Secure Document Viewer</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-1.5">
-                <a id="previewDownloadLink" href="#" class="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors" title="Download Document">
-                    <i data-lucide="download" class="w-4 h-4"></i>
+            <div class="flex items-center space-x-2 shrink-0">
+                <a id="previewExternalLink" href="#" target="_blank" class="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors inline-flex items-center text-xs font-semibold" title="Open in Full Window / New Tab">
+                    <i data-lucide="external-link" class="w-4 h-4 mr-1"></i> Full View
                 </a>
-                <button onclick="closePreviewModal()" class="text-slate-300 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors">
-                    <i data-lucide="x" class="w-4 h-4"></i>
+                <a id="previewDownloadLink" href="#" class="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors inline-flex items-center text-xs font-semibold" title="Download Document">
+                    <i data-lucide="download" class="w-4 h-4 mr-1"></i> Download
+                </a>
+                <button onclick="closePreviewModal()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors" title="Close Viewer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
         </div>
 
-        <div class="flex-1 overflow-hidden rounded-xl bg-slate-950/60 mt-3 flex items-center justify-center">
-            <iframe id="previewIframe" src="" class="w-full h-full border-0 rounded-lg hidden"></iframe>
+        <!-- Viewer Body -->
+        <div class="flex-1 overflow-hidden rounded-xl bg-slate-950/70 mt-3 flex items-center justify-center relative p-2">
+            <!-- PDF Viewer Container (Object + Iframe Fallback) -->
+            <div id="previewPdfContainer" class="w-full h-full relative rounded-lg overflow-hidden flex flex-col hidden">
+                <object id="previewObject" data="" type="application/pdf" class="w-full h-full rounded-lg">
+                    <iframe id="previewIframe" src="" class="w-full h-full border-0 rounded-lg">
+                        <div class="h-full w-full flex flex-col items-center justify-center p-8 text-center text-white bg-slate-900 space-y-4">
+                            <div class="w-14 h-14 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center mx-auto border border-teal-500/30">
+                                <i data-lucide="file-text" class="w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-white">PDF Document Ready</h4>
+                                <p class="text-xs text-slate-400 max-w-sm mt-1">If your browser blocks embedded frames, you can open the PDF directly or download it below.</p>
+                            </div>
+                            <div class="flex items-center space-x-3 pt-2">
+                                <a id="previewFallbackOpen" href="#" target="_blank" class="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-semibold text-xs inline-flex items-center shadow-md">
+                                    <i data-lucide="external-link" class="w-4 h-4 mr-1.5"></i> Open in New Tab
+                                </a>
+                                <a id="previewFallbackDownload" href="#" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold text-xs inline-flex items-center">
+                                    <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Download PDF
+                                </a>
+                            </div>
+                        </div>
+                    </iframe>
+                </object>
+            </div>
+
+            <!-- Image Viewer -->
             <img id="previewImg" src="" alt="Document Preview" class="max-h-full max-w-full object-contain rounded-lg shadow-inner hidden">
+
+            <!-- Office / Word Document Card -->
+            <div id="previewOffice" class="hidden text-center p-8 text-white space-y-4">
+                <div class="w-16 h-16 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/30 shadow-lg">
+                    <i data-lucide="file-spreadsheet" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h4 id="previewOfficeName" class="font-bold text-base text-white">Document</h4>
+                    <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Word and Office files can be downloaded to view or edit in your local office software.</p>
+                </div>
+                <div class="pt-2">
+                    <a id="previewOfficeDownload" href="#" class="inline-flex items-center px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs shadow-md transition-colors">
+                        <i data-lucide="download" class="w-4 h-4 mr-2"></i> Download File
+                    </a>
+                </div>
+            </div>
+
+            <!-- Error Box -->
+            <div id="previewError" class="hidden text-center p-6 text-white space-y-3">
+                <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-bold text-sm">Unable to Preview File</h4>
+                <p class="text-xs text-slate-400 max-w-sm">The document file could not be retrieved from storage. Please verify or re-upload.</p>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    window.currentMaxDocKb = 1024;
-    window.currentFormattedDocSize = "1 MB";
-    window.currentAllowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'docx'];
+    window.currentMaxDocKb = 2048;
+    window.currentFormattedDocSize = "2 MB";
+    window.currentAllowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'docx', 'doc'];
 
     function openUploadModal(typeId, title, allowedExts, maxKb, formattedMaxSize) {
         document.getElementById('upload_type_id').value = typeId || "";
@@ -330,24 +384,33 @@
         document.getElementById('selectedFileName').classList.add('hidden');
         document.getElementById('selectedFileName').textContent = "";
         
-        window.currentMaxDocKb = parseInt(maxKb) || 1024;
-        window.currentFormattedDocSize = formattedMaxSize || "1 MB";
+        const parsedKb = parseInt(maxKb) || 2048;
+        window.currentMaxDocKb = parsedKb;
+        if (formattedMaxSize && formattedMaxSize.trim()) {
+            window.currentFormattedDocSize = formattedMaxSize;
+        } else if (parsedKb >= 1024) {
+            const mb = parsedKb / 1024.0;
+            window.currentFormattedDocSize = Number.isInteger(mb) ? `${mb} MB` : `${mb.toFixed(1)} MB`;
+        } else {
+            window.currentFormattedDocSize = `${parsedKb} KB`;
+        }
 
         const fileInput = document.getElementById('file_input');
         const helpSpan = document.getElementById('uploadHelpText');
         
         if (allowedExts && allowedExts.trim()) {
             window.currentAllowedExts = allowedExts.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+            if (!window.currentAllowedExts.includes('doc')) window.currentAllowedExts.push('doc');
             const acceptList = window.currentAllowedExts.map(e => '.' + e).join(',');
             fileInput.setAttribute('accept', acceptList);
             if (helpSpan) {
                 helpSpan.textContent = "Allowed: " + window.currentAllowedExts.join(', ').toUpperCase() + " (Max " + window.currentFormattedDocSize + ")";
             }
         } else {
-            window.currentAllowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'docx'];
-            fileInput.setAttribute('accept', '.pdf,.jpg,.jpeg,.png,.webp,.docx');
+            window.currentAllowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'docx', 'doc'];
+            fileInput.setAttribute('accept', '.pdf,.jpg,.jpeg,.png,.webp,.docx,.doc');
             if (helpSpan) {
-                helpSpan.textContent = "Supports PDF, JPG, PNG, WEBP, DOCX (Max " + window.currentFormattedDocSize + ")";
+                helpSpan.textContent = "Supports PDF, JPG, PNG, WEBP, DOCX, DOC (Max " + window.currentFormattedDocSize + ")";
             }
         }
 
@@ -359,6 +422,7 @@
             document.getElementById('upload_custom_title').required = false;
         }
         document.getElementById('uploadModal').classList.remove('hidden');
+        if (window.lucide) { lucide.createIcons(); }
     }
 
     function closeUploadModal() {
@@ -370,8 +434,8 @@
         const file = input.files ? input.files[0] : null;
         if (!file) return;
 
-        const maxBytes = (window.currentMaxDocKb || 1024) * 1024;
-        const allowedList = window.currentAllowedExts || ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'docx'];
+        const maxBytes = (window.currentMaxDocKb || 2048) * 1024;
+        const allowedList = window.currentAllowedExts || ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'docx', 'doc'];
         const ext = file.name.split('.').pop().toLowerCase();
 
         if (!allowedList.includes(ext)) {
@@ -383,7 +447,7 @@
         }
 
         if (file.size > maxBytes) {
-            alert(`File size (${(file.size / 1024).toFixed(1)} KB) exceeds the maximum allowed limit of ${window.currentFormattedDocSize || '1 MB'}.`);
+            alert(`File size (${(file.size / 1024 / 1024).toFixed(2)} MB) exceeds the maximum allowed limit of ${window.currentFormattedDocSize || '2 MB'}.`);
             input.value = '';
             const nameSpan = document.getElementById('selectedFileName');
             if (nameSpan) nameSpan.classList.add('hidden');
@@ -392,37 +456,85 @@
 
         const nameSpan = document.getElementById('selectedFileName');
         if (nameSpan) {
-            nameSpan.textContent = "Selected: " + file.name + " (" + (file.size / 1024).toFixed(1) + " KB)";
+            nameSpan.textContent = "Selected: " + file.name + " (" + (file.size / 1024 / 1024).toFixed(2) + " MB)";
             nameSpan.classList.remove('hidden');
         }
     }
 
-    function previewDocument(docId, title, mimeType) {
-        document.getElementById('previewTitle').textContent = title;
-        document.getElementById('previewDownloadLink').href = "/documents/" + docId + "/download";
-        
+    function previewDocument(docId, title, mimeType, fileName) {
+        title = title || "Document Preview";
+        fileName = fileName || "";
+        mimeType = (mimeType || "").toLowerCase();
+        const ext = (fileName.split('.').pop() || "").toLowerCase();
+
+        const titleEl = document.getElementById('previewTitle');
+        if (titleEl) titleEl.textContent = title;
+
+        const viewUrl = "/documents/" + docId + "/view";
+        const downloadUrl = "/documents/" + docId + "/download";
+
+        const downloadLink = document.getElementById('previewDownloadLink');
+        if (downloadLink) downloadLink.href = downloadUrl;
+
+        const externalLink = document.getElementById('previewExternalLink');
+        if (externalLink) externalLink.href = viewUrl;
+
+        const pdfContainer = document.getElementById('previewPdfContainer');
+        const pdfObject = document.getElementById('previewObject');
         const iframe = document.getElementById('previewIframe');
         const img = document.getElementById('previewImg');
-        const viewUrl = "/documents/" + docId + "/view";
+        const officeBox = document.getElementById('previewOffice');
+        const errBox = document.getElementById('previewError');
 
-        if (mimeType && (mimeType.includes('image') || mimeType.includes('png') || mimeType.includes('jpeg') || mimeType.includes('jpg'))) {
-            iframe.classList.add('hidden');
-            iframe.src = "";
+        // Reset all states
+        if (errBox) errBox.classList.add('hidden');
+        if (pdfContainer) pdfContainer.classList.add('hidden');
+        if (img) { img.classList.add('hidden'); img.src = ""; }
+        if (officeBox) officeBox.classList.add('hidden');
+
+        const isImage = mimeType.includes('image') || ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext);
+        const isOffice = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext) || mimeType.includes('word') || mimeType.includes('officedocument');
+        const isPdf = mimeType.includes('pdf') || ext === 'pdf' || (!isImage && !isOffice);
+
+        if (isImage) {
             img.src = viewUrl;
             img.classList.remove('hidden');
+        } else if (isOffice) {
+            if (officeBox) {
+                const nameEl = document.getElementById('previewOfficeName');
+                if (nameEl) nameEl.textContent = fileName || title;
+                const dlBtn = document.getElementById('previewOfficeDownload');
+                if (dlBtn) dlBtn.href = downloadUrl;
+                officeBox.classList.remove('hidden');
+            }
         } else {
-            img.classList.add('hidden');
-            img.src = "";
-            iframe.src = viewUrl;
-            iframe.classList.remove('hidden');
+            // PDF Stream
+            if (pdfContainer) pdfContainer.classList.remove('hidden');
+            if (pdfObject) pdfObject.data = viewUrl + '#toolbar=1&navpanes=0';
+            if (iframe) iframe.src = viewUrl;
+            const fbOpen = document.getElementById('previewFallbackOpen');
+            if (fbOpen) fbOpen.href = viewUrl;
+            const fbDl = document.getElementById('previewFallbackDownload');
+            if (fbDl) fbDl.href = downloadUrl;
         }
+
         document.getElementById('previewModal').classList.remove('hidden');
+        if (window.lucide) { lucide.createIcons(); }
     }
 
     function closePreviewModal() {
         document.getElementById('previewModal').classList.add('hidden');
-        document.getElementById('previewIframe').src = "";
-        document.getElementById('previewImg').src = "";
+        const pdfObject = document.getElementById('previewObject');
+        const iframe = document.getElementById('previewIframe');
+        const img = document.getElementById('previewImg');
+        const officeBox = document.getElementById('previewOffice');
+        const errBox = document.getElementById('previewError');
+
+        if (pdfObject) pdfObject.data = "";
+        if (iframe) iframe.src = "";
+        if (img) { img.src = ""; img.classList.add('hidden'); }
+        if (officeBox) officeBox.classList.add('hidden');
+        if (errBox) errBox.classList.add('hidden');
     }
 </script>
 {% endblock %}

@@ -1,0 +1,114 @@
+<div id="teamBalancesTableContainer"
+    hx-get="/leaves?tab=team_balances"
+    hx-trigger="refreshTeamBalances from:body"
+    hx-include="#team-balance-search"
+    hx-target="#teamBalancesTableContainer"
+    hx-swap="outerHTML">
+    <!-- Team Balances Table -->
+    <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
+                <tr>
+                    <th class="px-5 py-3.5">Employee Member</th>
+                    <th class="px-4 py-3.5">Department & Role</th>
+                    <th class="px-4 py-3.5">Gender Policy</th>
+                    <th class="px-4 py-3.5">Category Leave Entitlements & Balances</th>
+                    <th class="px-4 py-3.5 text-center">Net Available</th>
+                    <th class="px-5 py-3.5 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="team-balances-table-body" class="divide-y divide-slate-100 bg-white">
+                {% if team_leave_profiles %}
+                    {% for prof in team_leave_profiles %}
+                    {% set emp = prof.employee %}
+                    <tr class="hover:bg-slate-50/80 transition-colors team-balance-row">
+                        <!-- Employee Info -->
+                        <td class="px-5 py-3.5 whitespace-nowrap">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold text-xs font-heading shrink-0 shadow-2xs">
+                                    {{ emp.name[0]|upper }}
+                                </div>
+                                <div class="min-w-0">
+                                    <a href="/employees/{{ emp.id }}/view#leaves" class="font-bold text-slate-900 hover:text-teal-700 transition-colors truncate block">
+                                        {{ emp.name }}
+                                    </a>
+                                    <p class="text-[11px] text-slate-400 font-mono">{{ format_emp_code(emp) }}</p>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Dept & Role -->
+                        <td class="px-4 py-3.5 whitespace-nowrap">
+                            <span class="font-semibold text-slate-800 text-xs block">{{ emp.department or 'General' }}</span>
+                            <span class="text-[11px] text-slate-400 capitalize">{{ emp.role.replace('_', ' ') }}</span>
+                        </td>
+
+                        <!-- Gender Policy -->
+                        <td class="px-4 py-3.5 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold capitalize
+                                {{ 'bg-pink-50 text-pink-700 border border-pink-200' if emp.gender in ['female', 'f', 'woman'] else 'bg-blue-50 text-blue-700 border border-blue-200' if emp.gender else 'bg-slate-100 text-slate-600 border border-slate-200' }}">
+                                {{ emp.gender or 'All' }}
+                            </span>
+                        </td>
+
+                        <!-- Category Entitlements Badges -->
+                        <td class="px-4 py-3.5">
+                            <div class="flex flex-wrap gap-1.5 max-w-lg">
+                                {% for b in prof.balances %}
+                                <div class="inline-flex items-center space-x-1.5 px-2 py-1 rounded-lg border border-slate-200 bg-slate-50/90 text-[10px]" title="{{ b.leave_type.name }}: {{ b.total_allocated }}d Quota, {{ b.used_days }}d Availed, {{ b.pending_days }}d Pending, {{ b.remaining_days }}d Remaining">
+                                    <span class="w-2 h-2 rounded-full shrink-0" style="background-color: {{ b.leave_type.color_code or '#008080' }};"></span>
+                                    <span class="font-mono font-bold text-slate-800">{{ b.leave_type.code }}:</span>
+                                    <span class="font-mono font-bold text-teal-800">{{ b.remaining_days|int if b.remaining_days.is_integer() else b.remaining_days }}</span><span class="text-slate-400">/{{ b.total_allocated|int if b.total_allocated.is_integer() else b.total_allocated }}d</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <!-- Net Available Days -->
+                        <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                            <span class="font-mono font-extrabold text-sm text-teal-900 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200/80">
+                                {{ prof.total_remaining|int if prof.total_remaining.is_integer() else prof.total_remaining }} days
+                            </span>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-5 py-3.5 whitespace-nowrap text-right space-x-1">
+                            {% if user.role in ['super_admin', 'admin', 'hr', 'hr_admin'] %}
+                            <button type="button" onclick="openAdjustQuotaModal({{ emp.id }}, '{{ emp.name|e }}', {{ prof.balances|map(attribute='id')|list|tojson }}, {{ prof.balances|map(attribute='leave_type.name')|list|tojson }}, {{ prof.balances|map(attribute='total_allocated')|list|tojson }}, {{ prof.balances|map(attribute='used_days')|list|tojson }}, {{ prof.balances|map(attribute='remaining_days')|list|tojson }})" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors cursor-pointer" title="Adjust specific leave quota for this employee">
+                                <i data-lucide="sliders" class="w-3.5 h-3.5 mr-1 text-teal-600"></i> Adjust Quota
+                            </button>
+                            {% endif %}
+                            <a href="/employees/{{ emp.id }}/view#leaves" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" title="View detailed leave history on dossier">
+                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="py-12 text-center text-slate-400 text-xs">
+                            <i data-lucide="users" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+                            No active employee balance records found.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Server-Side Pagination Bar -->
+    {% if team_balances_page %}
+        {% set page_data = team_balances_page %}
+        {% set target_id = "#teamBalancesTableContainer" %}
+        {% set url_path = "/leaves" %}
+        {% set include_inputs = "#team-balance-search, input[name='tab']" %}
+        {% set entity_label = "team balances" %}
+        {% include "partials/_pagination.html" %}
+    {% endif %}
+
+    <script>
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</div>

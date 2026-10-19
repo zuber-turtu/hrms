@@ -2,6 +2,7 @@ import json
 from urllib.parse import quote_plus
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import cast, String
 from sqlalchemy.orm import Session
 from typing import Optional
 import datetime
@@ -41,7 +42,8 @@ async def attendance_log(
     current_user: Employee = Depends(require_auth),
 ):
     from collections import defaultdict
-    from app.utils.pagination import paginate_list
+    import math
+    from app.utils.pagination import PageResult, generate_page_numbers
     
     query = db.query(Attendance)
 
@@ -67,109 +69,163 @@ async def attendance_log(
             .filter(Employee.role != "super_admin")
         )
 
-    # Filter by date at database level
-    if date and date.strip():
-        query = query.filter(Attendance.date == date.strip())
-
-    raw_logs = query.order_by(Attendance.date.desc(), Attendance.check_in.desc(), Attendance.id.desc()).all()
-
-    # Group raw logs by (date, employee_id)
-    grouped = defaultdict(list)
-    for log in raw_logs:
-        grouped[(log.date, log.employee_id)].append(log)
-
-    logs_data = []
     today = get_ist_today()
     now_ist = get_ist_now()
-    for (log_date, emp_id), group_logs in grouped.items():
-        employee = group_logs[0].employee
-        
-        total_seconds = 0
-        sessions = []
-        is_overridden = False
-        override_reason = ""
-        is_missed = False
-        
-        for log in group_logs:
-            if log.is_overridden:
-                is_overridden = True
-                override_reason = log.override_reason
-                
-            start = log.check_in
-            if not start and not log.check_out:
-                sessions.append("No Punch")
-                continue
 
-            if log.check_out:
-                end = log.check_out
-                out_str = log.check_out.strftime('%I:%M %p')
-            else:
-                if log.date < today:
-                    end = log.check_in  # 0 duration
-                    out_str = "Missed"
-                    is_missed = True
+    # Filter by date at database level, or default to recent window (last 45 days) to prevent unbounded full-table scans
+    if date and date.strip():
+        query = query.filter(Attendance.date == date.strip())
+    else:
+        window_start = today - datetime.timedelta(days=45)
+        query = query.filter(Attendance.date >= window_start)
+
+    # Search keyword filtering directly in SQL
+    if q and q.strip():
+        search_term = f"%{q.strip()}%"
+        if current_user.role in ["employee", "intern"]:
+            query = query.join(Employee, Attendance.employee_id == Employee.id)
+        query = query.filter(
+            (Employee.name.ilike(search_term))
+            | (Employee.email.ilike(search_term))
+            | (cast(Attendance.date, String).ilike(search_term))
+        )
+
+    # Status filter directly in SQL
+    if status and status.strip() and status.strip() != "all":
+        st = status.strip().lower()
+        if st == "missed":
+            query = query.filter(Attendance.check_out.is_(None), Attendance.date < today)
+        elif st == "overridden":
+            query = query.filter(Attendance.is_overridden == True)
+        elif st == "normal":
+            query = query.filter(
+                Attendance.is_overridden == False,
+                or_(Attendance.check_out.isnot(None), Attendance.date >= today)
+            )
+
+    # Stage 1: Paginate distinct (date, employee_id) pairs directly in SQL
+    distinct_q = query.with_entities(Attendance.date, Attendance.employee_id).distinct()
+    total_records = distinct_q.count()
+    size_int = max(1, min(int(page_size or 25), 100))
+    total_pages = max(1, math.ceil(total_records / size_int))
+    page_int = min(max(1, int(page or 1)), total_pages)
+    offset = (page_int - 1) * size_int
+
+    page_pairs = (
+        distinct_q.order_by(Attendance.date.desc(), Attendance.employee_id.asc())
+        .offset(offset)
+        .limit(size_int)
+        .all()
+    )
+
+    # Stage 2: Fetch only the punch rows matching those target pairs
+    logs_data = []
+    if page_pairs:
+        from sqlalchemy.orm import joinedload
+        from sqlalchemy import and_, or_
+        pair_filters = [and_(Attendance.date == d, Attendance.employee_id == eid) for d, eid in page_pairs]
+        target_logs = (
+            db.query(Attendance)
+            .options(
+                joinedload(Attendance.employee).joinedload(Employee.profile),
+                joinedload(Attendance.employee).joinedload(Employee.zone)
+            )
+            .filter(or_(*pair_filters))
+            .order_by(Attendance.date.desc(), Attendance.check_in.desc(), Attendance.id.desc())
+            .all()
+        )
+        grouped = defaultdict(list)
+        for log in target_logs:
+            grouped[(log.date, log.employee_id)].append(log)
+
+        for (log_date, emp_id) in page_pairs:
+            group_logs = grouped.get((log_date, emp_id), [])
+            if not group_logs:
+                continue
+            employee = group_logs[0].employee
+            
+            total_seconds = 0
+            sessions = []
+            is_overridden = False
+            override_reason = ""
+            is_missed = False
+            
+            for log in group_logs:
+                if log.is_overridden:
+                    is_overridden = True
+                    override_reason = log.override_reason
+                    
+                start = log.check_in
+                if not start and not log.check_out:
+                    sessions.append("No Punch")
+                    continue
+
+                if log.check_out:
+                    end = log.check_out
+                    out_str = log.check_out.strftime('%I:%M %p')
                 else:
-                    end = now_ist
-                    out_str = "Active"
+                    if log.date < today:
+                        end = log.check_in  # 0 duration
+                        out_str = "Missed"
+                        is_missed = True
+                    else:
+                        end = now_ist
+                        out_str = "Active"
+                
+                if start and end:
+                    diff = (end - start).total_seconds()
+                    total_seconds += max(0, diff)
+                
+                in_str = log.check_in.strftime('%I:%M %p') if log.check_in else "--"
+                sessions.append(f"{in_str} - {out_str}")
+                
+            hrs = int(total_seconds // 3600)
+            mins = int((total_seconds % 3600) // 60)
+            secs = int(total_seconds % 60)
+            total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
             
-            if start and end:
-                diff = (end - start).total_seconds()
-                total_seconds += max(0, diff)
-            
-            in_str = log.check_in.strftime('%I:%M %p') if log.check_in else "--"
-            sessions.append(f"{in_str} - {out_str}")
-            
-        hrs = int(total_seconds // 3600)
-        mins = int((total_seconds % 3600) // 60)
-        secs = int(total_seconds % 60)
-        total_active_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
-        
-        latest_log = group_logs[0]
-        latest_dist = latest_log.check_in_distance_m if latest_log.check_in_distance_m is not None else latest_log.check_out_distance_m
-        latest_in_range = latest_log.check_in_in_range if latest_log.check_in_in_range is not None else latest_log.check_out_in_range
-        is_exempt = bool(employee and employee.profile and employee.profile.is_geofence_exempt)
-        work_mode = latest_log.work_mode or ("wfh" if latest_log.wfh_request_id else "office")
-        loc_name = latest_log.check_in_location_name or latest_log.check_out_location_name or ("Office" if latest_in_range else "Outside Perimeter")
+            latest_log = group_logs[0]
+            latest_dist = latest_log.check_in_distance_m if latest_log.check_in_distance_m is not None else latest_log.check_out_distance_m
+            latest_in_range = latest_log.check_in_in_range if latest_log.check_in_in_range is not None else latest_log.check_out_in_range
+            is_exempt = bool(employee and employee.profile and employee.profile.is_geofence_exempt)
+            work_mode = latest_log.work_mode or ("wfh" if latest_log.wfh_request_id else "office")
+            loc_name = latest_log.check_in_location_name or latest_log.check_out_location_name or ("Office" if latest_in_range else "Outside Perimeter")
 
-        item = {
-            "id": latest_log.id,  # primary ID for override actions (latest punch session)
-            "date": log_date,
-            "employee": employee,
-            "sessions": ", ".join(sessions),
-            "total_active": f"{total_active_str} (Missed)" if is_missed else total_active_str,
-            "is_overridden": is_overridden,
-            "override_reason": override_reason,
-            "is_missed": is_missed,
-            "check_in": latest_log.check_in,
-            "check_out": latest_log.check_out,
-            "distance_m": latest_dist,
-            "in_range": latest_in_range,
-            "is_exempt": is_exempt,
-            "work_mode": work_mode,
-            "location_name": loc_name,
-        }
+            item = {
+                "id": latest_log.id,  # primary ID for override actions (latest punch session)
+                "date": log_date,
+                "employee": employee,
+                "sessions": ", ".join(sessions),
+                "total_active": f"{total_active_str} (Missed)" if is_missed else total_active_str,
+                "is_overridden": is_overridden,
+                "override_reason": override_reason,
+                "is_missed": is_missed,
+                "check_in": latest_log.check_in,
+                "check_out": latest_log.check_out,
+                "distance_m": latest_dist,
+                "in_range": latest_in_range,
+                "is_exempt": is_exempt,
+                "work_mode": work_mode,
+                "location_name": loc_name,
+            }
+            logs_data.append(item)
 
-        # Apply search filter (date or employee name)
-        if q and q.strip():
-            query_lower = q.strip().lower()
-            emp_name = (employee.name or "").lower() if employee else ""
-            date_str = str(log_date).lower()
-            if query_lower not in emp_name and query_lower not in date_str:
-                continue
-
-        # Apply status filter
-        if status and status.strip() and status.strip() != "all":
-            st = status.strip().lower()
-            if st == "missed" and not is_missed:
-                continue
-            elif st == "overridden" and not is_overridden:
-                continue
-            elif st == "normal" and (is_missed or is_overridden):
-                continue
-
-        logs_data.append(item)
-
-    page_data = paginate_list(logs_data, page=page, page_size=page_size)
+    start_record = (offset + 1) if total_records > 0 else 0
+    end_record = min(offset + size_int, total_records)
+    page_data = PageResult(
+        items=logs_data,
+        total_records=total_records,
+        current_page=page_int,
+        total_pages=total_pages,
+        page_size=size_int,
+        start_record=start_record,
+        end_record=end_record,
+        has_prev=page_int > 1,
+        has_next=page_int < total_pages,
+        prev_page=max(1, page_int - 1),
+        next_page=min(total_pages, page_int + 1),
+        page_numbers=generate_page_numbers(page_int, total_pages),
+    )
 
     context_payload = {
         "request": request,

@@ -31,7 +31,7 @@
         </div>
         <input type="text" id="auditSearch" name="q" value="{{ q }}"
             hx-get="/audit"
-            hx-trigger="keyup changed delay:300ms, search"
+            hx-trigger="keyup changed delay:450ms, search"
             hx-target="#auditTableContainer"
             hx-include="#auditDateFilter, #auditActionFilter"
             hx-push-url="true"

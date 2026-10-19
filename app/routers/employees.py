@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, cast, String, or_
 from io import BytesIO
 from collections import defaultdict
@@ -26,7 +26,7 @@ from app.config import settings
 from app.utils.timezone import get_ist_today, get_ist_now
 from app.utils.security import get_safe_redirect
 from app.services.storage import get_storage_provider
-from app.templates_config import templates
+from app.templates_config import templates, format_emp_code
 from app.services.excel_exporter import export_employees_excel, export_employee_sample_template
 import secrets
 from app.services.email_service import (
@@ -585,6 +585,70 @@ async def download_sample_template(
 ):
     """Downloads sample employee import template spreadsheet."""
     return export_employee_sample_template()
+
+
+@router.get("/api/search")
+async def search_employees_api(
+    q: str = "",
+    limit: int = 15,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(require_auth),
+):
+    """
+    Fast async autocomplete/typeahead search endpoint for employee selectors and modal dropdowns.
+    Returns JSON list of active non-super-admin employees with preformatted employee code,
+    name, department, and role.
+    """
+    query = (
+        db.query(Employee)
+        .options(joinedload(Employee.department))
+        .filter(Employee.is_active == True, Employee.role != "super_admin")
+    )
+
+    if current_user.role == "manager":
+        query = query.filter(
+            Employee.department_id == current_user.department_id,
+            Employee.role.notin_(["super_admin", "admin", "hr", "hr_admin"]),
+        )
+    elif current_user.role in ["hr", "hr_admin"] and getattr(current_user, "hr_zone_scope", "all") == "zone_only" and current_user.zone_id:
+        query = query.filter(
+            Employee.zone_id == current_user.zone_id,
+            Employee.role.notin_(["super_admin", "admin"]),
+        )
+
+    if q and q.strip():
+        search_raw = q.strip()
+        search_term = f"%{search_raw}%"
+        digits_only = "".join(filter(str.isdigit, search_raw))
+        id_conditions = []
+        if digits_only:
+            try:
+                emp_id_num = int(digits_only)
+                id_conditions.append(Employee.id == emp_id_num)
+            except ValueError:
+                pass
+        id_conditions.append(cast(Employee.id, String).ilike(search_term))
+        query = query.outerjoin(Department, Employee.department_id == Department.id).filter(
+            (Employee.name.ilike(search_term))
+            | (Employee.email.ilike(search_term))
+            | (Department.name.ilike(search_term))
+            | or_(*id_conditions)
+        )
+
+    safe_limit = min(max(1, limit), 50)
+    employees = query.order_by(Employee.name.asc()).limit(safe_limit).all()
+    company = db.query(Company).first()
+    results = []
+    for emp in employees:
+        dept_name = emp.department.name if emp.department else "General"
+        results.append({
+            "id": emp.id,
+            "name": emp.name,
+            "code": format_emp_code(emp, company),
+            "department": dept_name,
+            "role": (emp.role or "").replace("_", " "),
+        })
+    return results
 
 
 @router.get("/{emp_id}", response_class=HTMLResponse)

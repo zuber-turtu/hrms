@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
+from sqlalchemy import cast, String, func
 from sqlalchemy.orm import Session
 from io import BytesIO
-from typing import Optional, List
+from typing import Optional, List, Union
 import datetime
 import os
 import re
+import urllib.parse
 
 from app.database import get_db
 from app.models.employee import Employee
-from app.models.department import Department
+from app.models.department import Department, Designation
 from app.models.document import DocumentType, EmployeeDocument
 from app.models.company import Company
 from app.models.audit import AuditLog
@@ -19,6 +21,7 @@ from app.utils.timezone import get_ist_now
 from app.utils.flash import flash_redirect
 from app.utils.permissions import assert_can_manage_employee, can_manage_employee
 from app.services.excel_exporter import export_kyc_compliance_excel
+from app.utils.pagination import paginate_query
 
 from app.templates_config import templates
 
@@ -102,7 +105,7 @@ async def create_document_type(
 
     parsed_dept_id = int(department_id.strip()) if department_id and str(department_id).strip().isdigit() and int(department_id.strip()) > 0 else None
 
-    # Calculate size in KB and MB (Default: 1 MB = 1024 KB)
+    # Calculate size in KB and MB (Default: 2 MB = 2048 KB)
     if max_size_value is not None:
         if (max_size_unit or "").upper() == "KB":
             calc_kb = max(50, int(max_size_value))
@@ -117,8 +120,8 @@ async def create_document_type(
         calc_mb = max(1, max_file_size_mb)
         calc_kb = calc_mb * 1024
     else:
-        calc_kb = 1024
-        calc_mb = 1
+        calc_kb = 2048
+        calc_mb = 2
 
     clean_extensions = ",".join([x.strip().lower().lstrip(".") for x in (allowed_extensions or "").split(",") if x.strip().lower().lstrip(".")]) or "pdf,jpg,jpeg,png,webp,docx"
 
@@ -357,14 +360,15 @@ async def upload_employee_document(
         return flash_redirect(url=target_redirect, message="Uploaded file is empty", category="error")
 
     file_size = len(file_bytes)
-    max_size_kb = doc_type.effective_max_kb if doc_type else 1024
+    # Dynamic document size set by higher roles; defaults to 2 MB (2048 KB) if unmapped
+    max_size_kb = doc_type.effective_max_kb if doc_type else 2048
     if file_size > max_size_kb * 1024:
-        display_max = doc_type.formatted_max_size if doc_type else "1 MB"
+        display_max = doc_type.formatted_max_size if doc_type else (f"{max_size_kb // 1024} MB" if max_size_kb >= 1024 else f"{max_size_kb} KB")
         return flash_redirect(url=target_redirect, message=f"File exceeds maximum allowed size of {display_max}", category="error")
 
     # Validate allowed extensions
     ext = os.path.splitext(file.filename)[1].lower().strip(".")
-    allowed_list = [x.strip().lower() for x in (doc_type.allowed_extensions if doc_type else "pdf,jpg,jpeg,png,webp,docx").split(",") if x.strip()]
+    allowed_list = [x.strip().lower() for x in (doc_type.allowed_extensions if doc_type else "pdf,jpg,jpeg,png,webp,docx,doc").split(",") if x.strip()]
     if ext not in allowed_list:
         return flash_redirect(
             url=target_redirect,
@@ -372,9 +376,24 @@ async def upload_employee_document(
             category="error"
         )
 
+    # Normalize content_type based on verified extension
+    if ext == "pdf":
+        content_type = "application/pdf"
+    elif ext in ["jpg", "jpeg"]:
+        content_type = "image/jpeg"
+    elif ext == "png":
+        content_type = "image/png"
+    elif ext == "webp":
+        content_type = "image/webp"
+    elif ext == "docx":
+        content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif ext == "doc":
+        content_type = "application/msword"
+    else:
+        content_type = file.content_type or "application/octet-stream"
+
     # Upload to storage provider under 'documents/' folder
     storage = get_storage_provider()
-    content_type = file.content_type or ("application/pdf" if ext == "pdf" else "image/jpeg")
     file_url, file_key = storage.upload_file(
         file_bytes,
         filename=file.filename,
@@ -478,6 +497,10 @@ async def view_document_file(
 
     storage = get_storage_provider()
     file_bytes = storage.get_file_bytes(document.file_url)
+    if not file_bytes:
+        # Fallback: try by basename if file_url was stored with an alternate or legacy path convention
+        base_name = os.path.basename(str(document.file_url).replace("\\", "/"))
+        file_bytes = storage.get_file_bytes(base_name)
     
     if not file_bytes:
         # If stored as full external URL and provider doesn't support raw bytes, redirect
@@ -485,13 +508,33 @@ async def view_document_file(
             return RedirectResponse(url=document.file_url)
         raise HTTPException(status_code=404, detail="File could not be retrieved from storage.")
 
-    media_type = document.mime_type or "application/pdf"
+    # Accurately deduce MIME type for in-browser PDF and image rendering
+    fname_lower = (document.file_name or "").lower()
+    if fname_lower.endswith(".pdf"):
+        media_type = "application/pdf"
+    elif fname_lower.endswith(".png"):
+        media_type = "image/png"
+    elif fname_lower.endswith((".jpg", ".jpeg")):
+        media_type = "image/jpeg"
+    elif fname_lower.endswith(".webp"):
+        media_type = "image/webp"
+    elif fname_lower.endswith(".docx"):
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif fname_lower.endswith(".doc"):
+        media_type = "application/msword"
+    else:
+        media_type = document.mime_type or "application/pdf"
+
+    safe_filename = (document.file_name or "document.pdf").replace('"', '').replace(';', '').strip()
+    encoded_name = urllib.parse.quote(safe_filename)
+
     return Response(
         content=file_bytes,
         media_type=media_type,
         headers={
-            "Content-Disposition": f'inline; filename="{document.file_name}"',
+            "Content-Disposition": f'inline; filename="{safe_filename}"; filename*=UTF-8\'\'{encoded_name}',
             "Cache-Control": "private, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
         },
     )
 
@@ -519,15 +562,22 @@ async def download_document_file(
 
     file_bytes = storage.get_file_bytes(document.file_url)
     if not file_bytes:
+        base_name = os.path.basename(str(document.file_url).replace("\\", "/"))
+        file_bytes = storage.get_file_bytes(base_name)
+
+    if not file_bytes:
         if document.file_url.startswith("http://") or document.file_url.startswith("https://"):
             return RedirectResponse(url=document.file_url)
         raise HTTPException(status_code=404, detail="File could not be retrieved from storage.")
+
+    safe_filename = (document.file_name or "document.pdf").replace('"', '').replace(';', '').strip()
+    encoded_name = urllib.parse.quote(safe_filename)
 
     return Response(
         content=file_bytes,
         media_type=document.mime_type or "application/octet-stream",
         headers={
-            "Content-Disposition": f'attachment; filename="{document.file_name}"',
+            "Content-Disposition": f'attachment; filename="{safe_filename}"; filename*=UTF-8\'\'{encoded_name}',
             "Cache-Control": "no-cache",
         },
     )
@@ -619,47 +669,112 @@ async def delete_document(
 @router.get("/documents/compliance", response_class=HTMLResponse)
 async def documents_compliance_dashboard(
     request: Request,
+    page: Optional[Union[int, str]] = 1,
+    page_size: Optional[Union[int, str]] = 15,
     department_id: Optional[str] = None,
     status_filter: Optional[str] = None,
+    q: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_manager_or_hr),
 ):
-    """Organization document compliance dashboard."""
+    """Organization document compliance dashboard with fast SQL KPIs and server-side pagination."""
     dept_id = None
     if department_id and str(department_id).strip().isdigit():
         dept_id = int(str(department_id).strip())
 
-    query = db.query(Employee).filter(Employee.is_active.is_(True))
+    base_query = db.query(Employee).filter(Employee.is_active.is_(True))
     if current_user.role == "manager":
-        query = query.filter(Employee.department_id == current_user.department_id)
+        base_query = base_query.filter(Employee.department_id == current_user.department_id)
     elif dept_id:
-        query = query.filter(Employee.department_id == dept_id)
+        base_query = base_query.filter(Employee.department_id == dept_id)
 
-    employees = query.order_by(Employee.name.asc()).all()
-    departments = db.query(Department).order_by(Department.name.asc()).all()
+    # 1. Fast SQL Aggregations for Top KPI Cards (no N+1 loops)
+    total_employees = base_query.count()
 
+    doc_scope = db.query(EmployeeDocument).join(Employee, EmployeeDocument.employee_id == Employee.id).filter(Employee.is_active.is_(True))
+    if current_user.role == "manager":
+        doc_scope = doc_scope.filter(Employee.department_id == current_user.department_id)
+    elif dept_id:
+        doc_scope = doc_scope.filter(Employee.department_id == dept_id)
+
+    total_pending_verifications = doc_scope.filter(EmployeeDocument.status == "pending").count()
+    total_rejected = doc_scope.filter(EmployeeDocument.status == "rejected").count()
+
+    # Active mandatory document types
+    mand_types = db.query(DocumentType.id).filter(
+        DocumentType.is_mandatory.is_(True),
+        DocumentType.is_active.is_(True)
+    ).all()
+    mand_type_ids = [m.id for m in mand_types]
+    required_count = len(mand_type_ids)
+
+    compliant_emp_ids = set()
+    if required_count == 0:
+        total_compliant = total_employees
+    else:
+        verified_subquery = db.query(
+            EmployeeDocument.employee_id
+        ).join(
+            Employee, EmployeeDocument.employee_id == Employee.id
+        ).filter(
+            Employee.is_active.is_(True),
+            EmployeeDocument.status == "verified",
+            EmployeeDocument.document_type_id.in_(mand_type_ids)
+        )
+        if current_user.role == "manager":
+            verified_subquery = verified_subquery.filter(Employee.department_id == current_user.department_id)
+        elif dept_id:
+            verified_subquery = verified_subquery.filter(Employee.department_id == dept_id)
+
+        compliant_emp_rows = verified_subquery.group_by(
+            EmployeeDocument.employee_id
+        ).having(
+            func.count(func.distinct(EmployeeDocument.document_type_id)) >= required_count
+        ).all()
+        compliant_emp_ids = {r[0] for r in compliant_emp_rows}
+        total_compliant = len(compliant_emp_ids)
+
+    overall_compliance_rate = round((total_compliant / total_employees * 100), 1) if total_employees > 0 else 100.0
+
+    # 2. Filter Table Query by Search and Compliance Status
+    query = base_query
+
+    if q and q.strip():
+        search_term = f"%{q.strip()}%"
+        query = query.outerjoin(Department, Employee.department_id == Department.id)\
+                     .outerjoin(Designation, Employee.designation_id == Designation.id)\
+                     .filter(
+                         (Employee.name.ilike(search_term))
+                         | (Employee.email.ilike(search_term))
+                         | (Department.name.ilike(search_term))
+                         | (Designation.title.ilike(search_term))
+                         | (cast(Employee.id, String).ilike(search_term))
+                     )
+
+    if status_filter == "compliant":
+        if required_count > 0:
+            query = query.filter(Employee.id.in_(compliant_emp_ids if compliant_emp_ids else [-1]))
+    elif status_filter == "pending":
+        pending_subquery = db.query(EmployeeDocument.employee_id).filter(
+            EmployeeDocument.status == "pending"
+        ).distinct()
+        query = query.filter(Employee.id.in_(pending_subquery))
+    elif status_filter == "non_compliant":
+        if required_count > 0 and compliant_emp_ids:
+            query = query.filter(Employee.id.notin_(compliant_emp_ids))
+
+    query = query.order_by(Employee.name.asc())
+
+    # 3. Server-side SQL Pagination (Fetches ONLY 15 records!)
+    page_data = paginate_query(query, page=page, page_size=page_size)
+
+    # 4. Only compute dossiers for the current page items
     report_data = []
-    total_compliant = 0
-    total_pending_verifications = 0
-    total_rejected = 0
-
-    for emp in employees:
+    for emp in page_data.items:
         checklist_data = get_employee_document_checklist(emp, db)
         is_compliant = checklist_data["compliance_percent"] == 100
-        if is_compliant:
-            total_compliant += 1
-
         pending_count = sum(1 for item in checklist_data["checklist"] if item["status"] == "pending")
         rejected_count = sum(1 for item in checklist_data["checklist"] if item["status"] == "rejected")
-        total_pending_verifications += pending_count
-        total_rejected += rejected_count
-
-        if status_filter == "compliant" and not is_compliant:
-            continue
-        if status_filter == "pending" and pending_count == 0:
-            continue
-        if status_filter == "non_compliant" and is_compliant:
-            continue
 
         report_data.append({
             "employee": emp,
@@ -669,30 +784,35 @@ async def documents_compliance_dashboard(
             "rejected_count": rejected_count,
         })
 
-    overall_compliance_rate = round((total_compliant / len(employees) * 100), 1) if len(employees) > 0 else 100.0
+    departments = db.query(Department).order_by(Department.name.asc()).all()
 
-    return templates.TemplateResponse(
-        request=request,
-        name="documents/compliance.html",
-        context={
-            "user": current_user,
-            "report_data": report_data,
-            "departments": departments,
-            "selected_dept": dept_id,
-            "selected_status": status_filter,
-            "total_employees": len(employees),
-            "total_compliant": total_compliant,
-            "overall_compliance_rate": overall_compliance_rate,
-            "total_pending_verifications": total_pending_verifications,
-            "total_rejected": total_rejected,
-        },
-    )
+    context = {
+        "request": request,
+        "user": current_user,
+        "report_data": report_data,
+        "page_data": page_data,
+        "departments": departments,
+        "selected_dept": dept_id,
+        "selected_status": status_filter,
+        "current_q": q or "",
+        "total_employees": total_employees,
+        "total_compliant": total_compliant,
+        "overall_compliance_rate": overall_compliance_rate,
+        "total_pending_verifications": total_pending_verifications,
+        "total_rejected": total_rejected,
+    }
+
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(request=request, name="documents/partials/_compliance_table.html", context=context)
+
+    return templates.TemplateResponse(request=request, name="documents/compliance.html", context=context)
 
 
 @router.get("/documents/compliance/export-excel")
 async def export_kyc_compliance_spreadsheet(
     department_id: Optional[str] = None,
     status_filter: Optional[str] = "all",
+    q: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: Employee = Depends(allow_manager_or_hr),
 ):
@@ -706,6 +826,18 @@ async def export_kyc_compliance_spreadsheet(
         query = query.filter(Employee.department_id == current_user.department_id)
     elif dept_id:
         query = query.filter(Employee.department_id == dept_id)
+
+    if q and q.strip():
+        search_term = f"%{q.strip()}%"
+        query = query.outerjoin(Department, Employee.department_id == Department.id)\
+                     .outerjoin(Designation, Employee.designation_id == Designation.id)\
+                     .filter(
+                         (Employee.name.ilike(search_term))
+                         | (Employee.email.ilike(search_term))
+                         | (Department.name.ilike(search_term))
+                         | (Designation.title.ilike(search_term))
+                         | (cast(Employee.id, String).ilike(search_term))
+                     )
 
     employees = query.order_by(Employee.name.asc()).all()
 

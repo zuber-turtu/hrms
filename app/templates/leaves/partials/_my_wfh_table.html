@@ -1,0 +1,165 @@
+<div id="myWfhTableContainer"
+    hx-get="/leaves?tab=my_wfh"
+    hx-trigger="refreshMyWfh from:body"
+    hx-include="#wfh-search, #wfh-status-filter"
+    hx-target="#myWfhTableContainer"
+    hx-swap="outerHTML">
+    <!-- WFH Table -->
+    <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table id="my-wfh-table" class="min-w-full divide-y divide-slate-200 text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
+                <tr>
+                    <th class="px-5 py-3.5">Allocation Source</th>
+                    <th class="px-5 py-3.5">Remote Work Dates</th>
+                    <th class="px-5 py-3.5">Total Days</th>
+                    <th class="px-5 py-3.5">Reason & Objectives</th>
+                    <th class="px-5 py-3.5">Status</th>
+                    <th class="px-5 py-3.5">Geofence Rule</th>
+                    <th class="px-5 py-3.5 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="wfh-table-body" class="divide-y divide-slate-100 bg-white">
+                {% if my_wfh %}
+                    {% for w in my_wfh %}
+                    <tr class="hover:bg-slate-50/80 transition-colors wfh-row">
+                        <!-- Source Badge -->
+                        <td class="px-5 py-3.5 whitespace-nowrap">
+                            {% if w.is_direct_allocation %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200 shadow-2xs font-heading">
+                                <i data-lucide="shield-check" class="w-3 h-3 mr-1 text-purple-600"></i> Management Allocated
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs font-heading">
+                                <i data-lucide="user" class="w-3 h-3 mr-1 text-teal-600"></i> Self Requested
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Dates -->
+                        <td class="px-5 py-3.5 whitespace-nowrap font-mono text-slate-800 font-semibold text-xs">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>{{ w.start_date }}</span>
+                                {% if w.start_date != w.end_date %}
+                                <span class="text-slate-400">→</span>
+                                <span>{{ w.end_date }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Total Days -->
+                        <td class="px-5 py-3.5 whitespace-nowrap font-mono text-xs">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                                {{ w.total_days }} day(s)
+                            </span>
+                            {% if w.is_half_day %}
+                            <span class="block text-[10px] text-teal-700 font-semibold mt-0.5">
+                                {{ w.half_day_session|replace('_', ' ')|title }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Reason & Reviewer Notes -->
+                        <td class="px-5 py-3.5 max-w-[260px] overflow-hidden text-slate-700 cursor-pointer group hover:bg-teal-50/30 transition-colors"
+                            data-title="Work From Home (WFH)"
+                            data-reason="{{ w.reason }}"
+                            data-remarks="{{ w.rejection_reason or '' }}"
+                            data-emp="{{ w.employee.name if w.employee else user.name }}"
+                            data-dates="{{ w.start_date }} → {{ w.end_date }} ({{ w.total_days }} day(s))"
+                            data-status="{{ w.status }}"
+                            onclick="openReasonFromData(this)"
+                            title="Click to view full reason">
+                            <div class="w-full max-w-full min-w-0">
+                                <div class="flex items-center justify-between space-x-1.5 min-w-0">
+                                    <p class="truncate text-xs text-slate-800 group-hover:text-teal-700 font-medium transition-colors min-w-0">{{ w.reason }}</p>
+                                    <span class="text-[10px] text-teal-600 font-semibold group-hover:underline shrink-0 bg-teal-50 group-hover:bg-teal-100 border border-teal-200 px-1.5 py-0.5 rounded transition-colors hidden sm:inline-block">Full view</span>
+                                </div>
+                                {% if w.rejection_reason %}
+                                <div class="text-rose-700 text-[11px] font-semibold mt-1.5 flex items-center space-x-1.5 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/80 max-w-full overflow-hidden" title="Remark: {{ w.rejection_reason }}">
+                                    <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-500 shrink-0"></i>
+                                    <span class="truncate min-w-0 flex-1">Remark: {{ w.rejection_reason }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Status Pill -->
+                        <td class="px-5 py-3.5 whitespace-nowrap">
+                            {% if w.status == 'approved' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i> Approved
+                            </span>
+                            {% elif w.status == 'rejected' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs">
+                                <i data-lucide="x-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i> Rejected
+                            </span>
+                            {% elif w.status == 'lapsed' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-300 shadow-2xs">
+                                <i data-lucide="clock-alert" class="w-3.5 h-3.5 mr-1 text-slate-500"></i> Lapsed
+                            </span>
+                            {% elif w.status == 'cancelled' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                Cancelled
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs animate-pulse">
+                                <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-amber-600"></i> Pending Review
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Geofence Rule -->
+                        <td class="px-5 py-3.5 whitespace-nowrap text-slate-500 font-mono text-[11px]">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-800 border border-teal-200">
+                                <i data-lucide="map-pin-off" class="w-3 h-3 mr-1 text-teal-600"></i> Geofence Relaxed
+                            </span>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-5 py-3.5 whitespace-nowrap text-right font-medium">
+                            {% if w.status in ['pending', 'approved'] and not w.is_direct_allocation %}
+                            <form method="POST" action="/leaves/wfh/{{ w.id }}/cancel" onsubmit="return confirm('Are you sure you want to cancel this WFH request?');" class="inline">
+                                <button type="submit" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all active:scale-95 cursor-pointer shadow-2xs">
+                                    <i data-lucide="x" class="w-3 h-3 mr-1"></i> Cancel
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-slate-400 font-mono text-xs">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr id="wfh-empty-state">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                            <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3 border border-teal-200/70">
+                                <i data-lucide="laptop" class="w-6 h-6"></i>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-900 font-heading">No WFH Requests Found</h4>
+                            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">You haven't submitted any matching remote work requests for {{ selected_year }}.</p>
+                            <button onclick="openApplyWfhModal()" class="mt-3 inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all cursor-pointer">
+                                <i data-lucide="plus" class="w-3.5 h-3.5 mr-1.5"></i> Request WFH Now
+                            </button>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Server-Side Pagination Bar -->
+    {% if my_wfh_page %}
+        {% set page_data = my_wfh_page %}
+        {% set target_id = "#myWfhTableContainer" %}
+        {% set url_path = "/leaves" %}
+        {% set include_inputs = "#wfh-search, #wfh-status-filter, input[name='tab']" %}
+        {% set entity_label = "WFH requests" %}
+        {% include "partials/_pagination.html" %}
+    {% endif %}
+
+    <script>
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</div>

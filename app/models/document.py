@@ -22,9 +22,9 @@ class DocumentType(Base):
     # Requirement rules
     is_mandatory = Column(Boolean, default=False)
     who_uploads = Column(String, default="employee")               # "employee" or "admin_only"
-    allowed_extensions = Column(String, default="pdf,jpg,jpeg,png,webp,docx")
-    max_file_size_mb = Column(Integer, default=1)
-    max_file_size_kb = Column(Integer, default=1024)
+    allowed_extensions = Column(String, default="pdf,jpg,jpeg,png,webp,docx,doc")
+    max_file_size_mb = Column(Integer, default=2)
+    max_file_size_kb = Column(Integer, default=2048)
     
     # Scope: optionally limit this document requirement to a specific department (e.g. Drivers only)
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
@@ -35,7 +35,7 @@ class DocumentType(Base):
 
     @property
     def formatted_max_size(self) -> str:
-        kb = getattr(self, "max_file_size_kb", None) or (self.max_file_size_mb * 1024 if self.max_file_size_mb else 1024)
+        kb = getattr(self, "max_file_size_kb", None) or (self.max_file_size_mb * 1024 if self.max_file_size_mb else 2048)
         if kb < 1024:
             return f"{kb} KB"
         mb = kb / 1024.0
@@ -43,7 +43,7 @@ class DocumentType(Base):
 
     @property
     def effective_max_kb(self) -> int:
-        return getattr(self, "max_file_size_kb", None) or (self.max_file_size_mb * 1024 if self.max_file_size_mb else 1024)
+        return getattr(self, "max_file_size_kb", None) or (self.max_file_size_mb * 1024 if self.max_file_size_mb else 2048)
 
     # Relational mappings
     department = orm_relationship("Department", backref="required_document_types")

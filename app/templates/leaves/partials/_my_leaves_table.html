@@ -1,0 +1,159 @@
+<div id="myLeavesTableContainer"
+    hx-get="/leaves?tab=my_leaves"
+    hx-trigger="refreshMyLeaves from:body"
+    hx-include="#leaves-search, #leaves-status-filter"
+    hx-target="#myLeavesTableContainer"
+    hx-swap="outerHTML">
+    <!-- Leave Table -->
+    <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table id="my-leaves-table" class="min-w-full divide-y divide-slate-200 text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider font-heading">
+                <tr>
+                    <th class="px-5 py-3.5">Leave Category</th>
+                    <th class="px-5 py-3.5">Time-Off Period</th>
+                    <th class="px-5 py-3.5">Duration</th>
+                    <th class="px-5 py-3.5">Reason & Reviewer Notes</th>
+                    <th class="px-5 py-3.5">Status</th>
+                    <th class="px-5 py-3.5">Applied Date</th>
+                    <th class="px-5 py-3.5 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="leaves-table-body" class="divide-y divide-slate-100 bg-white">
+                {% if my_leaves %}
+                    {% for l in my_leaves %}
+                    <tr class="hover:bg-slate-50/80 transition-colors leave-row">
+                        <!-- Category Badge -->
+                        <td class="px-5 py-3.5 whitespace-nowrap">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ l.leave_type.color_code if l.leave_type else '#008080' }};"></span>
+                                <span class="font-bold text-slate-900 text-xs">{{ l.leave_type.name if l.leave_type else 'Leave' }}</span>
+                                <span class="text-[10px] font-mono text-slate-500 font-semibold">({{ l.leave_type.code if l.leave_type else 'LV' }})</span>
+                            </div>
+                        </td>
+
+                        <!-- Period -->
+                        <td class="px-5 py-3.5 whitespace-nowrap font-mono text-slate-800 font-semibold text-xs">
+                            <div class="flex items-center space-x-1.5">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span>{{ l.start_date }}</span>
+                                {% if l.start_date != l.end_date %}
+                                <span class="text-slate-400">→</span>
+                                <span>{{ l.end_date }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Duration -->
+                        <td class="px-5 py-3.5 whitespace-nowrap font-mono text-xs">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                                {{ l.total_days }} day(s)
+                            </span>
+                            {% if l.is_half_day %}
+                            <span class="block text-[10px] text-teal-700 font-semibold mt-0.5">
+                                {{ l.half_day_session|replace('_', ' ')|title }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Reason & Reviewer Notes -->
+                        <td class="px-5 py-3.5 max-w-[260px] overflow-hidden text-slate-700 cursor-pointer group hover:bg-teal-50/30 transition-colors"
+                            data-title="{{ l.leave_type.name if l.leave_type else 'Leave Request' }}"
+                            data-reason="{{ l.reason }}"
+                            data-remarks="{{ l.rejection_reason or '' }}"
+                            data-emp="{{ l.employee.name if l.employee else user.name }}"
+                            data-dates="{{ l.start_date }} → {{ l.end_date }} ({{ l.total_days }} day(s))"
+                            data-status="{{ l.status }}"
+                            onclick="openReasonFromData(this)"
+                            title="Click to view full reason">
+                            <div class="w-full max-w-full min-w-0">
+                                <div class="flex items-center justify-between space-x-1.5 min-w-0">
+                                    <p class="truncate text-xs text-slate-800 group-hover:text-teal-700 font-medium transition-colors min-w-0">{{ l.reason }}</p>
+                                    <span class="text-[10px] text-teal-600 font-semibold group-hover:underline shrink-0 bg-teal-50 group-hover:bg-teal-100 border border-teal-200 px-1.5 py-0.5 rounded transition-colors hidden sm:inline-block">Full view</span>
+                                </div>
+                                {% if l.rejection_reason %}
+                                <div class="text-rose-700 text-[11px] font-semibold mt-1.5 flex items-center space-x-1.5 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/80 max-w-full overflow-hidden" title="Remark: {{ l.rejection_reason }}">
+                                    <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-500 shrink-0"></i>
+                                    <span class="truncate min-w-0 flex-1">Remark: {{ l.rejection_reason }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Status Pill -->
+                        <td class="px-5 py-3.5 whitespace-nowrap">
+                            {% if l.status == 'approved' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i> Approved
+                            </span>
+                            {% elif l.status == 'rejected' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs">
+                                <i data-lucide="x-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i> Rejected
+                            </span>
+                            {% elif l.status == 'lapsed' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-300 shadow-2xs">
+                                <i data-lucide="clock-alert" class="w-3.5 h-3.5 mr-1 text-slate-500"></i> Lapsed
+                            </span>
+                            {% elif l.status == 'cancelled' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                Cancelled
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs animate-pulse">
+                                <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-amber-600"></i> Pending Review
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Applied Date -->
+                        <td class="px-5 py-3.5 whitespace-nowrap text-slate-500 font-mono text-[11px]">
+                            {{ l.created_at.strftime('%Y-%m-%d') if l.created_at else '—' }}
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-5 py-3.5 whitespace-nowrap text-right font-medium">
+                            {% if l.status in ['pending', 'approved'] %}
+                            <form method="POST" action="/leaves/{{ l.id }}/cancel" onsubmit="return confirm('Are you sure you want to cancel this leave application?');" class="inline">
+                                <button type="submit" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all active:scale-95 cursor-pointer shadow-2xs">
+                                    <i data-lucide="x" class="w-3 h-3 mr-1"></i> Cancel
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-slate-400 font-mono text-xs">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr id="leaves-empty-state">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                            <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3 border border-teal-200/70">
+                                <i data-lucide="calendar-plus" class="w-6 h-6"></i>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-900 font-heading">No Leave Applications Found</h4>
+                            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">You haven't submitted any matching leave applications for {{ selected_year }}.</p>
+                            <button onclick="openApplyLeaveModal()" class="mt-3 inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#008080] hover:bg-[#006666] shadow-sm transition-all cursor-pointer">
+                                <i data-lucide="plus" class="w-3.5 h-3.5 mr-1.5"></i> Apply for Leave Now
+                            </button>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Server-Side Pagination Bar -->
+    {% if my_leaves_page %}
+        {% set page_data = my_leaves_page %}
+        {% set target_id = "#myLeavesTableContainer" %}
+        {% set url_path = "/leaves" %}
+        {% set include_inputs = "#leaves-search, #leaves-status-filter, input[name='tab']" %}
+        {% set entity_label = "leave applications" %}
+        {% include "partials/_pagination.html" %}
+    {% endif %}
+
+    <script>
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</div>

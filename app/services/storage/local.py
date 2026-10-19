@@ -54,39 +54,45 @@ class LocalStorageProvider(BaseStorageProvider):
 
     def _is_safe_path(self, file_path: str) -> bool:
         """Defense-in-depth against directory traversal attacks."""
-        resolved = os.path.abspath(file_path)
-        return resolved.startswith(self.base_upload_dir) or resolved.startswith(self.private_upload_dir)
+        resolved = os.path.normcase(os.path.abspath(file_path))
+        base_dir = os.path.normcase(self.base_upload_dir)
+        private_dir = os.path.normcase(self.private_upload_dir)
+        return resolved.startswith(base_dir) or resolved.startswith(private_dir)
 
     def _resolve_local_path(self, file_identifier: str) -> Optional[str]:
         if not file_identifier:
             return None
 
         file_identifier_clean = str(file_identifier).strip()
+        norm_id = file_identifier_clean.replace("\\", "/")
 
         # Case 1: Private scheme
-        if file_identifier_clean.startswith("private://documents/"):
-            base_name = file_identifier_clean.replace("private://documents/", "").lstrip("/\\")
+        if norm_id.startswith("private://documents/"):
+            base_name = norm_id.replace("private://documents/", "").lstrip("/\\")
             file_path = os.path.join(self.private_upload_dir, base_name)
-        elif file_identifier_clean.startswith("private://"):
-            base_name = file_identifier_clean.replace("private://", "").lstrip("/\\")
+        elif norm_id.startswith("private://"):
+            base_name = norm_id.replace("private://", "").lstrip("/\\")
             file_path = os.path.join(self.private_upload_dir, base_name)
         # Case 2: Legacy or static URL path
-        elif file_identifier_clean.startswith("/static/uploads/documents/"):
-            base_name = file_identifier_clean.replace("/static/uploads/documents/", "").lstrip("/\\")
+        elif norm_id.startswith("/static/uploads/documents/"):
+            base_name = norm_id.replace("/static/uploads/documents/", "").lstrip("/\\")
             # First check private storage, fallback to static if not yet moved
             file_path = os.path.join(self.private_upload_dir, base_name)
             if not os.path.exists(file_path):
                 file_path = os.path.join(self.base_upload_dir, "documents", base_name)
-        elif file_identifier_clean.startswith("/static/uploads/"):
-            clean_rel = file_identifier_clean.replace("/static/uploads/", "").lstrip("/\\")
+        elif norm_id.startswith("/static/uploads/"):
+            clean_rel = norm_id.replace("/static/uploads/", "").lstrip("/\\")
             file_path = os.path.join(self.base_upload_dir, clean_rel)
-        elif "/" in file_identifier_clean or "\\" in file_identifier_clean:
-            base_name = os.path.basename(file_identifier_clean)
+        elif norm_id.startswith("storage/private_documents/"):
+            base_name = norm_id.replace("storage/private_documents/", "").lstrip("/\\")
+            file_path = os.path.join(self.private_upload_dir, base_name)
+        elif "/" in norm_id:
+            base_name = os.path.basename(norm_id)
             file_path = os.path.join(self.private_upload_dir, base_name)
             if not os.path.exists(file_path):
-                file_path = os.path.join(self.base_upload_dir, file_identifier_clean.lstrip("/\\"))
+                file_path = os.path.join(self.base_upload_dir, norm_id.lstrip("/\\"))
         else:
-            base_name = os.path.basename(file_identifier_clean)
+            base_name = os.path.basename(norm_id)
             file_path = os.path.join(self.private_upload_dir, base_name)
             if not os.path.exists(file_path):
                 file_path = os.path.join(self.base_upload_dir, "documents", base_name)

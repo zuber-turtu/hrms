@@ -2,7 +2,7 @@ from typing import Optional, List
 import datetime
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models.employee import Employee
@@ -90,7 +90,14 @@ async def list_payroll(
 
     page_data = paginate_query(query, page=page, page_size=page_size)
 
-    employees = db.query(Employee).filter(Employee.is_active == True, Employee.role != "super_admin").all()
+    employees = (
+        db.query(Employee)
+        .options(joinedload(Employee.department))
+        .filter(Employee.is_active == True, Employee.role != "super_admin")
+        .order_by(Employee.name.asc())
+        .limit(10)
+        .all()
+    )
     departments = db.query(Department).all()
 
     today = get_ist_today()
