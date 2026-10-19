@@ -707,6 +707,38 @@ async def get_employee_avatar(
     return RedirectResponse(url=avatar_url)
 
 
+@router.post("/{emp_id}/avatar/remove")
+async def remove_employee_avatar(
+    emp_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(require_auth),
+):
+    """Removes the employee profile photo and deletes it from storage."""
+    employee = db.query(Employee).filter(Employee.id == emp_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    if current_user.id != emp_id and current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
+        if current_user.role != "manager" or employee.department_id != current_user.department_id:
+            raise HTTPException(status_code=403, detail="Permission denied")
+
+    if employee.profile and (employee.profile.avatar_url or employee.profile.photo_file_id):
+        storage = get_storage_provider()
+        old_id = employee.profile.photo_file_id or employee.profile.avatar_url
+        if old_id:
+            try:
+                storage.delete_file(old_id)
+            except Exception:
+                pass
+        employee.profile.avatar_url = None
+        employee.profile.photo_file_id = None
+        db.commit()
+
+    referer = request.headers.get("referer") or f"/employees/{emp_id}/view"
+    return RedirectResponse(url=referer, status_code=302)
+
+
 @router.get("/{emp_id}", response_class=HTMLResponse)
 @router.get("/{emp_id}/view", response_class=HTMLResponse)
 async def view_employee(
@@ -935,6 +967,7 @@ async def edit_employee(
     ifsc_code: str = Form(None),
     is_geofence_exempt: bool = Form(False),
     photo: Optional[UploadFile] = File(None),
+    remove_photo: Optional[str] = Form("0"),
     db: Session = Depends(get_db),
     current_user: Employee = Depends(require_auth),
 ):
@@ -1082,7 +1115,8 @@ async def edit_employee(
     if current_user.role in ["super_admin", "admin", "hr", "hr_admin"]:
         employee.profile.is_geofence_exempt = is_geofence_exempt
 
-    # Handle Photo Upload if present
+    # Handle Photo Upload or Removal if present
+    storage = get_storage_provider()
     if photo and photo.filename:
         ext = photo.filename.split(".")[-1].lower() if "." in photo.filename else ""
         if ext not in ALLOWED_AVATAR_EXTENSIONS:
@@ -1098,16 +1132,34 @@ async def edit_employee(
             )
         if len(file_bytes) > 0:
             try:
-                storage = get_storage_provider()
+                # Delete old avatar from storage if replacing
+                if employee.profile:
+                    old_id = employee.profile.photo_file_id or employee.profile.avatar_url
+                    if old_id:
+                        storage.delete_file(old_id)
+
                 avatar_url, photo_file_id = storage.upload_file(
                     file_bytes,
                     filename=photo.filename,
                     content_type=photo.content_type or "image/jpeg",
                     folder="avatars",
                 )
+                if not employee.profile:
+                    employee.profile = EmployeeProfile(employee_id=employee.id)
+                    db.add(employee.profile)
                 employee.profile.avatar_url = avatar_url
                 employee.profile.photo_file_id = photo_file_id
             except Exception as e:
+                pass
+    elif remove_photo in ("1", "true", "yes", "on"):
+        if employee.profile and (employee.profile.avatar_url or employee.profile.photo_file_id):
+            try:
+                old_id = employee.profile.photo_file_id or employee.profile.avatar_url
+                if old_id:
+                    storage.delete_file(old_id)
+                employee.profile.avatar_url = None
+                employee.profile.photo_file_id = None
+            except Exception:
                 pass
 
     # Bank Account Update

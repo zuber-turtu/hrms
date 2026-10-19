@@ -59,11 +59,18 @@
                 <div class="flex-1 text-center sm:text-left">
                     <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-1">Profile Photo / Avatar</h4>
                     <p class="text-xs text-slate-500 mb-2.5">Upload a clear portrait photo (JPG, PNG, or WEBP, max 2MB). Synced to storage.</p>
-                    <label class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-teal-700 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-xs cursor-pointer transition-colors">
-                        <i data-lucide="camera" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> Choose Photo
-                        <input type="file" name="photo" id="photo_input" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden" onchange="previewAvatar(event)">
-                    </label>
-                    <span id="photo-filename" class="text-xs text-slate-500 ml-2 italic"></span>
+                    <input type="hidden" name="remove_photo" id="remove_photo_input" value="0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-teal-700 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-xs cursor-pointer transition-colors">
+                            <i data-lucide="camera" class="w-3.5 h-3.5 mr-1.5 text-teal-700"></i> <span id="choose-photo-text">{% if employee and employee.avatar_url %}Replace Photo{% else %}Choose Photo{% endif %}</span>
+                            <input type="file" name="photo" id="photo_input" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden" onchange="previewAvatar(event)">
+                        </label>
+                        <button type="button" id="remove-photo-btn" onclick="removeAvatar()" class="{% if not employee or not employee.avatar_url %}hidden{% endif %} inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 bg-white border border-rose-200 hover:bg-rose-50 hover:border-rose-300 shadow-xs cursor-pointer transition-colors">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1.5 text-rose-500"></i> Remove Photo
+                        </button>
+                        <span id="photo-removal-badge" class="hidden text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">Photo will be removed on Save</span>
+                        <span id="photo-filename" class="text-xs text-slate-500 italic"></span>
+                    </div>
                 </div>
             </div>
 
@@ -544,6 +551,39 @@
             }
         };
         reader.readAsDataURL(file);
+
+        document.getElementById('remove_photo_input').value = '0';
+        const removeBtn = document.getElementById('remove-photo-btn');
+        if (removeBtn) removeBtn.classList.remove('hidden');
+        const removalBadge = document.getElementById('photo-removal-badge');
+        if (removalBadge) removalBadge.classList.add('hidden');
+        const chooseText = document.getElementById('choose-photo-text');
+        if (chooseText) chooseText.textContent = 'Change Selection';
+    }
+
+    function removeAvatar() {
+        document.getElementById('remove_photo_input').value = '1';
+        const photoInput = document.getElementById('photo_input');
+        if (photoInput) photoInput.value = '';
+
+        const previewImg = document.getElementById('avatar-preview-img');
+        const placeholderText = document.getElementById('avatar-placeholder-text');
+        const filenameSpan = document.getElementById('photo-filename');
+        const removeBtn = document.getElementById('remove-photo-btn');
+        const removalBadge = document.getElementById('photo-removal-badge');
+        const chooseText = document.getElementById('choose-photo-text');
+
+        if (previewImg) {
+            previewImg.src = '';
+            previewImg.classList.add('hidden');
+        }
+        if (placeholderText) {
+            placeholderText.classList.remove('hidden');
+        }
+        if (filenameSpan) filenameSpan.textContent = '';
+        if (removeBtn) removeBtn.classList.add('hidden');
+        if (removalBadge) removalBadge.classList.remove('hidden');
+        if (chooseText) chooseText.textContent = 'Choose Photo';
     }
 
     function filterDesignations() {

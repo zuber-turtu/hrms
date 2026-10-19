@@ -572,6 +572,43 @@ async def api_upload_employee_avatar(
     return _format_employee_out(employee)
 
 
+@router.delete("/{emp_id}/avatar", response_model=EmployeeOut)
+async def api_remove_employee_avatar(
+    emp_id: int,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(require_auth),
+):
+    """Deletes employee profile photo from storage backend and resets profile avatar."""
+    employee = db.query(Employee).filter(Employee.id == emp_id).first()
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Employee #{emp_id} not found."
+        )
+
+    if current_user.id != emp_id and current_user.role not in ["super_admin", "admin", "hr", "hr_admin"]:
+        if current_user.role != "manager" or employee.department_id != current_user.department_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to modify this employee's avatar."
+            )
+
+    if employee.profile and (employee.profile.avatar_url or employee.profile.photo_file_id):
+        storage = get_storage_provider()
+        old_id = employee.profile.photo_file_id or employee.profile.avatar_url
+        if old_id:
+            try:
+                storage.delete_file(old_id)
+            except Exception:
+                pass
+        employee.profile.avatar_url = None
+        employee.profile.photo_file_id = None
+        db.commit()
+        db.refresh(employee)
+
+    return _format_employee_out(employee)
+
+
 @router.post("/{emp_id}/reset-password")
 async def api_admin_reset_password(
     emp_id: int,
