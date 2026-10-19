@@ -50,17 +50,18 @@ class S3StorageProvider(BaseStorageProvider):
         """Extracts S3 object key from raw keys, s3:// URIs, or full HTTPS URLs."""
         if not file_identifier:
             return ""
-        if file_identifier.startswith("s3://"):
-            return file_identifier.replace("s3://", "", 1).lstrip("/")
-        if "amazonaws.com/" in file_identifier:
-            return file_identifier.split("amazonaws.com/", 1)[1].lstrip("/")
-        if self.public_url_prefix and file_identifier.startswith(self.public_url_prefix):
-            return file_identifier[len(self.public_url_prefix):].lstrip("/")
-        if file_identifier.startswith("http://") or file_identifier.startswith("https://"):
+        clean = file_identifier.split("?")[0]
+        if clean.startswith("s3://"):
+            return clean.replace("s3://", "", 1).lstrip("/")
+        if "amazonaws.com/" in clean:
+            return clean.split("amazonaws.com/", 1)[1].lstrip("/")
+        if self.public_url_prefix and clean.startswith(self.public_url_prefix):
+            return clean[len(self.public_url_prefix):].lstrip("/")
+        if clean.startswith("http://") or clean.startswith("https://"):
             from urllib.parse import urlparse
-            path = urlparse(file_identifier).path
+            path = urlparse(clean).path
             return path.lstrip("/")
-        return file_identifier.lstrip("/")
+        return clean.lstrip("/")
 
     def upload_file(
         self,
@@ -93,6 +94,8 @@ class S3StorageProvider(BaseStorageProvider):
             public_url = f"{prefix}/{object_key}"
         elif self.endpoint_url and "r2.cloudflarestorage.com" in self.endpoint_url:
             public_url = f"https://pub-{self.bucket_name}.r2.dev/{object_key}"
+        elif self.region_name and self.region_name != "auto":
+            public_url = f"https://{self.bucket_name}.s3.{self.region_name}.amazonaws.com/{object_key}"
         else:
             public_url = f"https://{self.bucket_name}.s3.amazonaws.com/{object_key}"
 

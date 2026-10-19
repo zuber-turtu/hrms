@@ -1,5 +1,6 @@
+import os
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException, BackgroundTasks
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, cast, String, or_
 from io import BytesIO
@@ -649,6 +650,61 @@ async def search_employees_api(
             "role": (emp.role or "").replace("_", " "),
         })
     return results
+
+
+@router.get("/{emp_id}/avatar")
+async def get_employee_avatar(
+    emp_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Serves employee avatar or redirects to a secure presigned download URL.
+    Works seamlessly across all storage backends (Local, AWS S3, Cloudflare R2, Supabase, Google Drive)
+    even when private cloud buckets enforce Block All Public Access.
+    """
+    employee = db.query(Employee).filter(Employee.id == emp_id).first()
+    if not employee or not employee.profile or not employee.profile.avatar_url:
+        raise HTTPException(status_code=404, detail="Avatar not found")
+
+    avatar_url = employee.profile.avatar_url
+
+    # 1. Local disk storage
+    if avatar_url.startswith("/static/"):
+        return RedirectResponse(url=avatar_url)
+
+    # 2. External public avatar (e.g. Google OAuth profile picture)
+    if "googleusercontent.com" in avatar_url or "google.com" in avatar_url:
+        return RedirectResponse(url=avatar_url)
+
+    # 3. Cloud storage provider (S3 / R2 / Supabase / GDrive)
+    storage = get_storage_provider()
+
+    # Try presigned URL first (fast, offloads bandwidth to S3/CDN, valid for 24 hours)
+    signed_url = storage.get_signed_download_url(avatar_url, expires_in_seconds=86400)
+    if signed_url:
+        return RedirectResponse(
+            url=signed_url,
+            status_code=307,
+            headers={"Cache-Control": "public, max-age=3600"}
+        )
+
+    # Fallback: stream file bytes directly
+    file_bytes = storage.get_file_bytes(avatar_url)
+    if not file_bytes:
+        base_name = os.path.basename(avatar_url.replace("\\", "/"))
+        file_bytes = storage.get_file_bytes(base_name)
+
+    if file_bytes:
+        ext = avatar_url.split(".")[-1].split("?")[0].lower() if "." in avatar_url else "jpeg"
+        media_type = f"image/{ext}" if ext in ["png", "webp", "gif", "svg+xml"] else "image/jpeg"
+        return Response(
+            content=file_bytes,
+            media_type=media_type,
+            headers={"Cache-Control": "public, max-age=86400"}
+        )
+
+    # Ultimate fallback: redirect to raw stored URL
+    return RedirectResponse(url=avatar_url)
 
 
 @router.get("/{emp_id}", response_class=HTMLResponse)

@@ -1667,8 +1667,12 @@
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
-        <div class="rounded-xl overflow-hidden bg-black/40 max-h-[70vh] flex items-center justify-center">
-            <img src="{{ employee.avatar_url or employee.profile.avatar_url }}" alt="{{ employee.name }}" class="max-h-[68vh] w-auto max-w-full object-contain rounded-lg shadow-inner">
+        <div class="rounded-xl overflow-hidden bg-black/40 max-h-[70vh] flex items-center justify-center min-h-[160px] p-2">
+            <img src="{{ employee.avatar_url or employee.profile.avatar_url }}" alt="{{ employee.name }}" class="max-h-[68vh] w-auto max-w-full object-contain rounded-lg shadow-inner" onerror="this.classList.add('hidden'); document.getElementById('lightbox-fallback').classList.remove('hidden');">
+            <div id="lightbox-fallback" class="hidden py-8 text-center text-slate-400">
+                <i data-lucide="image-off" class="w-10 h-10 mx-auto mb-2 text-slate-500"></i>
+                <p class="text-xs">Image preview could not be loaded directly.</p>
+            </div>
         </div>
         <div class="mt-3 flex items-center justify-between text-xs text-slate-400 px-2">
             <span>{{ employee.designation or 'Employee' }} ({{ employee.role | title }})</span>

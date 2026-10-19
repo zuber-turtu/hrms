@@ -52,7 +52,15 @@ class Employee(Base):
     # Backward compatibility properties for templates and helper access
     @property
     def avatar_url(self):
-        return self.profile.avatar_url if self.profile else None
+        if not self.profile or not self.profile.avatar_url:
+            return None
+        url = self.profile.avatar_url
+        if url.startswith("/static/"):
+            return url
+        if "googleusercontent.com" in url or "google.com" in url:
+            return url
+        # For cloud/S3 storage, route through server avatar endpoint to generate signed URLs or stream
+        return f"/employees/{self.id}/avatar"
 
     @property
     def phone_number(self):
